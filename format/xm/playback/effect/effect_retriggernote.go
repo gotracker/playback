@@ -5,21 +5,21 @@ import (
 
 	"github.com/gotracker/gomixing/sampling"
 
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/layout/channel"
-	"github.com/gotracker/playback/player/intf"
 )
 
 // RetriggerNote defines a retriggering effect
 type RetriggerNote channel.DataEffect // 'E9x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e RetriggerNote) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e RetriggerNote) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e RetriggerNote) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
+func (e RetriggerNote) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
 	y := channel.DataEffect(e) & 0x0F
 	if y == 0 {
 		return nil

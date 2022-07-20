@@ -3,16 +3,16 @@ package effect
 import (
 	"fmt"
 
+	"github.com/gotracker/playback"
 	s3mPanning "github.com/gotracker/playback/format/s3m/conversion/panning"
 	"github.com/gotracker/playback/format/s3m/layout/channel"
-	"github.com/gotracker/playback/player/intf"
 )
 
 // StereoControl defines a set stereo control effect
 type StereoControl ChannelCommand // 'SAx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e StereoControl) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e StereoControl) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xf

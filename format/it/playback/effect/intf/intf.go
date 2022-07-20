@@ -2,7 +2,7 @@ package intf
 
 import (
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/playback/song/index"
+	"github.com/gotracker/playback/index"
 )
 
 // IT is an interface to IT effect operations

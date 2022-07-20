@@ -3,16 +3,16 @@ package effect
 import (
 	"fmt"
 
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/s3m/layout/channel"
 	effectIntf "github.com/gotracker/playback/format/s3m/playback/effect/intf"
-	"github.com/gotracker/playback/player/intf"
 )
 
 // EnableFilter defines a set filter enable effect
 type EnableFilter ChannelCommand // 'S0x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e EnableFilter) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e EnableFilter) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := channel.DataEffect(e) & 0xf

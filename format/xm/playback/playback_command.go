@@ -1,14 +1,14 @@
 package playback
 
 import (
+	"github.com/gotracker/playback"
 	"github.com/gotracker/voice"
 
 	"github.com/gotracker/playback/filter"
 	xmPeriod "github.com/gotracker/playback/format/xm/conversion/period"
 	"github.com/gotracker/playback/format/xm/layout/channel"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/state"
-	"github.com/gotracker/playback/song/note"
 	"github.com/gotracker/voice/period"
 )
 
@@ -17,7 +17,7 @@ type doNoteCalc struct {
 	UpdateFunc state.PeriodUpdateFunc
 }
 
-func (o doNoteCalc) Process(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+func (o doNoteCalc) Process(p playback.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
 	if o.UpdateFunc == nil {
 		return nil
 	}

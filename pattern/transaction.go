@@ -1,7 +1,7 @@
 package pattern
 
 import (
-	"github.com/gotracker/playback/song/index"
+	"github.com/gotracker/playback/index"
 	"github.com/heucuva/optional"
 )
 

@@ -2,7 +2,7 @@ package period
 
 import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/note"
 	"github.com/gotracker/voice/period"
 )
 

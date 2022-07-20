@@ -3,16 +3,16 @@ package effect
 import (
 	"fmt"
 
+	"github.com/gotracker/playback"
 	xmPanning "github.com/gotracker/playback/format/xm/conversion/panning"
 	"github.com/gotracker/playback/format/xm/layout/channel"
-	"github.com/gotracker/playback/player/intf"
 )
 
 // SetCoarsePanPosition defines a set pan position effect
 type SetCoarsePanPosition channel.DataEffect // 'E8x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetCoarsePanPosition) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e SetCoarsePanPosition) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xy := channel.DataEffect(e)

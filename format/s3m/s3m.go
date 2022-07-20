@@ -2,9 +2,9 @@
 package s3m
 
 import (
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/s3m/load"
 	"github.com/gotracker/playback/format/settings"
-	"github.com/gotracker/playback/player/intf"
 )
 
 type format struct{}
@@ -15,11 +15,11 @@ var (
 )
 
 // LoadMOD loads a MOD file and upgrades it into an S3M file internally
-func LoadMOD(filename string, s *settings.Settings) (intf.Playback, error) {
+func LoadMOD(filename string, s *settings.Settings) (playback.Playback, error) {
 	return load.MOD(filename, s)
 }
 
 // Load loads an S3M file into a playback system
-func (f format) Load(filename string, s *settings.Settings) (intf.Playback, error) {
+func (f format) Load(filename string, s *settings.Settings) (playback.Playback, error) {
 	return load.S3M(filename, s)
 }

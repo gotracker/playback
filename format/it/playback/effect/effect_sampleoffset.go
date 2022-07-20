@@ -5,15 +5,15 @@ import (
 
 	"github.com/gotracker/gomixing/sampling"
 
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/layout/channel"
-	"github.com/gotracker/playback/player/intf"
 )
 
 // SampleOffset defines a sample offset effect
 type SampleOffset channel.DataEffect // 'O'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SampleOffset) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e SampleOffset) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	mem := cs.GetMemory()
 	xx := mem.SampleOffset(channel.DataEffect(e))

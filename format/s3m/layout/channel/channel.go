@@ -9,8 +9,8 @@ import (
 
 	s3mNote "github.com/gotracker/playback/format/s3m/conversion/note"
 	s3mVolume "github.com/gotracker/playback/format/s3m/conversion/volume"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 )
 
 // S3MInstrumentID is an instrument ID in S3M world

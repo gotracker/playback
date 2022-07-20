@@ -1,15 +1,15 @@
-package intf
+package playback
 
 import (
 	"time"
 
 	device "github.com/gotracker/gosound"
 
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/player/output"
 	"github.com/gotracker/playback/song"
-	"github.com/gotracker/playback/song/index"
-	"github.com/gotracker/playback/song/pattern"
 )
 
 // Playback is an interface for rendering a song to output data

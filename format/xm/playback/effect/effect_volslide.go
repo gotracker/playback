@@ -3,21 +3,21 @@ package effect
 import (
 	"fmt"
 
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/layout/channel"
-	"github.com/gotracker/playback/player/intf"
 )
 
 // VolumeSlide defines a volume slide effect
 type VolumeSlide channel.DataEffect // 'A'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e VolumeSlide) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e VolumeSlide) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e VolumeSlide) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
+func (e VolumeSlide) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, y := mem.VolumeSlide(channel.DataEffect(e))
 

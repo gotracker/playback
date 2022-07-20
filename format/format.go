@@ -4,21 +4,21 @@ import (
 	"errors"
 	"os"
 
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it"
 	"github.com/gotracker/playback/format/mod"
 	"github.com/gotracker/playback/format/s3m"
 	"github.com/gotracker/playback/format/settings"
 	"github.com/gotracker/playback/format/xm"
-	"github.com/gotracker/playback/player/intf"
 	"github.com/gotracker/playback/song"
 )
 
 var (
-	supportedFormats = make(map[string]intf.Format[song.ChannelData])
+	supportedFormats = make(map[string]playback.Format[song.ChannelData])
 )
 
 // Load loads the a file into a playback manager
-func Load(filename string, options ...settings.OptionFunc) (intf.Playback, intf.Format[song.ChannelData], error) {
+func Load(filename string, options ...settings.OptionFunc) (playback.Playback, playback.Format[song.ChannelData], error) {
 	s := &settings.Settings{}
 	for _, opt := range options {
 		if err := opt(s); err != nil {

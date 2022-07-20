@@ -16,10 +16,10 @@ import (
 	"github.com/gotracker/playback/format/it/layout"
 	"github.com/gotracker/playback/format/it/layout/channel"
 	"github.com/gotracker/playback/format/settings"
-	"github.com/gotracker/playback/song/index"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
-	"github.com/gotracker/playback/song/pattern"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/pattern"
 	formatutil "github.com/gotracker/playback/util"
 )
 

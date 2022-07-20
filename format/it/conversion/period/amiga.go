@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/gotracker/playback/note"
 	per "github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/song/note"
 	"github.com/heucuva/comparison"
 
 	"github.com/gotracker/voice/period"

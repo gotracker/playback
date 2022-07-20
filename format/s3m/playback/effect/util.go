@@ -4,14 +4,14 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/voice/oscillator"
 
+	"github.com/gotracker/playback"
 	s3mVolume "github.com/gotracker/playback/format/s3m/conversion/volume"
 	"github.com/gotracker/playback/format/s3m/layout/channel"
-	"github.com/gotracker/playback/player/intf"
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/note"
 	"github.com/heucuva/comparison"
 )
 
-func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, multiplier float32) error {
+func doVolSlide(cs playback.Channel[channel.Memory, channel.Data], delta float32, multiplier float32) error {
 	av := cs.GetActiveVolume()
 	v := s3mVolume.VolumeToS3M(av)
 	vol := int16((float32(v) + delta) * multiplier)
@@ -27,7 +27,7 @@ func doVolSlide(cs intf.Channel[channel.Memory, channel.Data], delta float32, mu
 	return nil
 }
 
-func doPortaUp(cs intf.Channel[channel.Memory, channel.Data], amount float32, multiplier float32) error {
+func doPortaUp(cs playback.Channel[channel.Memory, channel.Data], amount float32, multiplier float32) error {
 	period := cs.GetPeriod()
 	if period == nil {
 		return nil
@@ -40,7 +40,7 @@ func doPortaUp(cs intf.Channel[channel.Memory, channel.Data], amount float32, mu
 	return nil
 }
 
-func doPortaUpToNote(cs intf.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, target note.Period) error {
+func doPortaUpToNote(cs playback.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, target note.Period) error {
 	period := cs.GetPeriod()
 	if period == nil {
 		return nil
@@ -56,7 +56,7 @@ func doPortaUpToNote(cs intf.Channel[channel.Memory, channel.Data], amount float
 	return nil
 }
 
-func doPortaDown(cs intf.Channel[channel.Memory, channel.Data], amount float32, multiplier float32) error {
+func doPortaDown(cs playback.Channel[channel.Memory, channel.Data], amount float32, multiplier float32) error {
 	period := cs.GetPeriod()
 	if period == nil {
 		return nil
@@ -69,7 +69,7 @@ func doPortaDown(cs intf.Channel[channel.Memory, channel.Data], amount float32, 
 	return nil
 }
 
-func doPortaDownToNote(cs intf.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, target note.Period) error {
+func doPortaDownToNote(cs playback.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, target note.Period) error {
 	period := cs.GetPeriod()
 	if period == nil {
 		return nil
@@ -85,14 +85,14 @@ func doPortaDownToNote(cs intf.Channel[channel.Memory, channel.Data], amount flo
 	return nil
 }
 
-func doVibrato(cs intf.Channel[channel.Memory, channel.Data], currentTick int, speed channel.DataEffect, depth channel.DataEffect, multiplier float32) error {
+func doVibrato(cs playback.Channel[channel.Memory, channel.Data], currentTick int, speed channel.DataEffect, depth channel.DataEffect, multiplier float32) error {
 	mem := cs.GetMemory()
 	delta := calculateWaveTable(cs, currentTick, channel.DataEffect(speed), channel.DataEffect(depth), multiplier, mem.VibratoOscillator())
 	cs.SetPeriodDelta(note.PeriodDelta(delta))
 	return nil
 }
 
-func doTremor(cs intf.Channel[channel.Memory, channel.Data], currentTick int, onTicks int, offTicks int) error {
+func doTremor(cs playback.Channel[channel.Memory, channel.Data], currentTick int, onTicks int, offTicks int) error {
 	mem := cs.GetMemory()
 	tremor := mem.TremorMem()
 	if tremor.IsActive() {
@@ -108,7 +108,7 @@ func doTremor(cs intf.Channel[channel.Memory, channel.Data], currentTick int, on
 	return nil
 }
 
-func doArpeggio(cs intf.Channel[channel.Memory, channel.Data], currentTick int, arpSemitoneADelta int8, arpSemitoneBDelta int8) error {
+func doArpeggio(cs playback.Channel[channel.Memory, channel.Data], currentTick int, arpSemitoneADelta int8, arpSemitoneBDelta int8) error {
 	ns := cs.GetNoteSemitone()
 	var arpSemitoneTarget note.Semitone
 	switch currentTick % 3 {
@@ -133,7 +133,7 @@ var (
 	}
 )
 
-func doVolSlideTwoThirds(cs intf.Channel[channel.Memory, channel.Data]) error {
+func doVolSlideTwoThirds(cs playback.Channel[channel.Memory, channel.Data]) error {
 	vol := s3mVolume.VolumeToS3M(cs.GetActiveVolume())
 	if vol >= 64 {
 		vol = 63
@@ -142,13 +142,13 @@ func doVolSlideTwoThirds(cs intf.Channel[channel.Memory, channel.Data]) error {
 	return nil
 }
 
-func doTremolo(cs intf.Channel[channel.Memory, channel.Data], currentTick int, speed channel.DataEffect, depth channel.DataEffect, multiplier float32) error {
+func doTremolo(cs playback.Channel[channel.Memory, channel.Data], currentTick int, speed channel.DataEffect, depth channel.DataEffect, multiplier float32) error {
 	mem := cs.GetMemory()
 	delta := calculateWaveTable(cs, currentTick, speed, depth, multiplier, mem.TremoloOscillator())
 	return doVolSlide(cs, delta, 1.0)
 }
 
-func calculateWaveTable(cs intf.Channel[channel.Memory, channel.Data], currentTick int, speed channel.DataEffect, depth channel.DataEffect, multiplier float32, o oscillator.Oscillator) float32 {
+func calculateWaveTable(cs playback.Channel[channel.Memory, channel.Data], currentTick int, speed channel.DataEffect, depth channel.DataEffect, multiplier float32, o oscillator.Oscillator) float32 {
 	delta := o.GetWave(float32(depth)) * multiplier
 	o.Advance(int(speed))
 	return delta

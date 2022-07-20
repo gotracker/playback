@@ -8,7 +8,7 @@ import (
 	"github.com/gotracker/voice"
 
 	"github.com/gotracker/playback/filter"
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/note"
 	"github.com/heucuva/optional"
 )
 

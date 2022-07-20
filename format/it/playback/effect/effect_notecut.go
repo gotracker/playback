@@ -3,21 +3,21 @@ package effect
 import (
 	"fmt"
 
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/layout/channel"
-	"github.com/gotracker/playback/player/intf"
 )
 
 // NoteCut defines a note cut effect
 type NoteCut channel.DataEffect // 'SCx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e NoteCut) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e NoteCut) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e NoteCut) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
+func (e NoteCut) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
 	x := channel.DataEffect(e) & 0xf
 
 	if x != 0 && currentTick == int(x) {

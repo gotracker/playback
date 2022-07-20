@@ -19,11 +19,11 @@ import (
 	xmVolume "github.com/gotracker/playback/format/xm/conversion/volume"
 	"github.com/gotracker/playback/format/xm/layout"
 	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/oscillator"
-	"github.com/gotracker/playback/song/index"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
-	"github.com/gotracker/playback/song/pattern"
+	"github.com/gotracker/playback/pattern"
 	formatutil "github.com/gotracker/playback/util"
 )
 

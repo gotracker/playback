@@ -1,7 +1,7 @@
 package state
 
 import (
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/note"
 	"github.com/heucuva/optional"
 )
 

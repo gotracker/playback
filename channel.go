@@ -1,4 +1,4 @@
-package intf
+package playback
 
 import (
 	"github.com/gotracker/gomixing/panning"
@@ -6,9 +6,9 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice"
 
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/output"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
 )
 
 // Channel is an interface for channel state

@@ -6,19 +6,19 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
 
+	"github.com/gotracker/playback"
 	s3mPeriod "github.com/gotracker/playback/format/s3m/conversion/period"
 	"github.com/gotracker/playback/format/s3m/layout"
 	"github.com/gotracker/playback/format/s3m/layout/channel"
 	"github.com/gotracker/playback/format/s3m/playback/state/pattern"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/note"
+	playpattern "github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/player"
 	"github.com/gotracker/playback/player/feature"
-	"github.com/gotracker/playback/player/intf"
 	"github.com/gotracker/playback/player/output"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
-	"github.com/gotracker/playback/song/index"
-	"github.com/gotracker/playback/song/note"
-	playpattern "github.com/gotracker/playback/song/pattern"
 )
 
 // Manager is a playback manager for S3M music
@@ -35,7 +35,7 @@ type Manager struct {
 	premix        *device.PremixData
 
 	rowRenderState *rowRenderState
-	OnEffect       func(intf.Effect)
+	OnEffect       func(playback.Effect)
 
 	chOrder [4][]*state.ChannelState[channel.Memory, channel.Data]
 }
@@ -341,11 +341,11 @@ func (m *Manager) GetName() string {
 }
 
 // SetOnEffect sets the callback for an effect being generated for a channel
-func (m *Manager) SetOnEffect(fn func(intf.Effect)) {
+func (m *Manager) SetOnEffect(fn func(playback.Effect)) {
 	m.OnEffect = fn
 }
 
-func (m Manager) GetOnEffect() func(intf.Effect) {
+func (m Manager) GetOnEffect() func(playback.Effect) {
 	return m.OnEffect
 }
 

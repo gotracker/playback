@@ -5,15 +5,15 @@ import (
 
 	"github.com/gotracker/voice/oscillator"
 
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/layout/channel"
-	"github.com/gotracker/playback/player/intf"
 )
 
 // SetPanbrelloWaveform defines a set panbrello waveform effect
 type SetPanbrelloWaveform channel.DataEffect // 'S5x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetPanbrelloWaveform) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e SetPanbrelloWaveform) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := channel.DataEffect(e) & 0xf

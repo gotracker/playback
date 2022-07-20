@@ -1,10 +1,10 @@
 package load
 
 import (
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/s3m/layout"
 	"github.com/gotracker/playback/format/s3m/load/modconv"
 	"github.com/gotracker/playback/format/settings"
-	"github.com/gotracker/playback/player/intf"
 	formatutil "github.com/gotracker/playback/util"
 )
 
@@ -25,11 +25,11 @@ func readMOD(filename string, s *settings.Settings) (*layout.Song, error) {
 }
 
 // MOD loads a MOD file and upgrades it into an S3M file internally
-func MOD(filename string, s *settings.Settings) (intf.Playback, error) {
+func MOD(filename string, s *settings.Settings) (playback.Playback, error) {
 	return load(filename, readMOD, s)
 }
 
 // S3M loads an S3M file into a new Playback object
-func S3M(filename string, s *settings.Settings) (intf.Playback, error) {
+func S3M(filename string, s *settings.Settings) (playback.Playback, error) {
 	return load(filename, readS3M, s)
 }

@@ -3,15 +3,15 @@ package effect
 import (
 	"fmt"
 
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/layout/channel"
-	"github.com/gotracker/playback/player/intf"
 )
 
 // PatternLoop defines a pattern loop effect
 type PatternLoop channel.DataEffect // 'E6x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PatternLoop) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e PatternLoop) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := channel.DataEffect(e) & 0xF

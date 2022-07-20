@@ -3,15 +3,15 @@ package effect
 import (
 	"fmt"
 
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/layout/channel"
-	"github.com/gotracker/playback/player/intf"
 )
 
 // VolumeEnvelopeOn defines a volume envelope: on effect
 type VolumeEnvelopeOn channel.DataEffect // 'S78'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e VolumeEnvelopeOn) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e VolumeEnvelopeOn) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	cs.SetVolumeEnvelopeEnable(true)

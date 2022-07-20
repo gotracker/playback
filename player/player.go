@@ -8,7 +8,7 @@ import (
 
 	device "github.com/gotracker/gosound"
 
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/song"
 )
 
@@ -36,7 +36,7 @@ type Player struct {
 	stopCh         chan struct{}
 	stopRespCh     chan error
 	lastUpdateTime time.Time
-	playback       intf.Playback
+	playback       playback.Playback
 	ticker         *time.Ticker
 	tickerCh       <-chan time.Time
 	myTickerCh     chan time.Time
@@ -92,7 +92,7 @@ func NewPlayer(ctx context.Context, output chan<- *device.PremixData, tickInterv
 }
 
 // Play starts a player playing
-func (p *Player) Play(playback intf.Playback) error {
+func (p *Player) Play(playback playback.Playback) error {
 	if err := p.ctx.Err(); err != nil {
 		return err
 	}
@@ -142,9 +142,6 @@ func (p *Player) runStateMachine() error {
 		case playerStatePaused:
 			stateFunc = p.runStatePaused
 		default:
-			return song.ErrStopSong
-		}
-		if stateFunc == nil {
 			return song.ErrStopSong
 		}
 		if err := stateFunc(); err != nil {

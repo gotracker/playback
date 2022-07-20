@@ -9,8 +9,8 @@ import (
 
 	itNote "github.com/gotracker/playback/format/it/conversion/note"
 	itVolume "github.com/gotracker/playback/format/it/conversion/volume"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 )
 
 const MaxTotalChannels = 64

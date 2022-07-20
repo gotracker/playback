@@ -6,11 +6,11 @@ import (
 
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/format/it/layout/channel"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/song"
-	"github.com/gotracker/playback/song/index"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
-	"github.com/gotracker/playback/song/pattern"
 )
 
 // Header is a mildly-decoded XM header definition

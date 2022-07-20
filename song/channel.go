@@ -5,8 +5,8 @@ import (
 
 	"github.com/gotracker/gomixing/volume"
 
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 )
 
 // ChannelData is an interface for channel data

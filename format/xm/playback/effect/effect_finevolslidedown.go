@@ -3,15 +3,15 @@ package effect
 import (
 	"fmt"
 
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/layout/channel"
-	"github.com/gotracker/playback/player/intf"
 )
 
 // FineVolumeSlideDown defines a volume slide effect
 type FineVolumeSlideDown channel.DataEffect // 'EAx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FineVolumeSlideDown) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e FineVolumeSlideDown) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	mem := cs.GetMemory()

@@ -3,20 +3,20 @@ package playback
 import (
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
+	"github.com/gotracker/playback"
 
 	xmPeriod "github.com/gotracker/playback/format/xm/conversion/period"
 	"github.com/gotracker/playback/format/xm/layout"
 	"github.com/gotracker/playback/format/xm/layout/channel"
 	"github.com/gotracker/playback/format/xm/playback/state/pattern"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/note"
+	playpattern "github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/player"
 	"github.com/gotracker/playback/player/feature"
-	"github.com/gotracker/playback/player/intf"
 	"github.com/gotracker/playback/player/output"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
-	"github.com/gotracker/playback/song/index"
-	"github.com/gotracker/playback/song/note"
-	playpattern "github.com/gotracker/playback/song/pattern"
 )
 
 // Manager is a playback manager for XM music
@@ -33,7 +33,7 @@ type Manager struct {
 	premix        *device.PremixData
 
 	rowRenderState *rowRenderState
-	OnEffect       func(intf.Effect)
+	OnEffect       func(playback.Effect)
 }
 
 // NewManager creates a new manager for an XM song
@@ -312,11 +312,11 @@ func (m *Manager) GetName() string {
 }
 
 // SetOnEffect sets the callback for an effect being generated for a channel
-func (m *Manager) SetOnEffect(fn func(intf.Effect)) {
+func (m *Manager) SetOnEffect(fn func(playback.Effect)) {
 	m.OnEffect = fn
 }
 
-func (m Manager) GetOnEffect() func(intf.Effect) {
+func (m Manager) GetOnEffect() func(playback.Effect) {
 	return m.OnEffect
 }
 

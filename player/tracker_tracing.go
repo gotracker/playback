@@ -123,14 +123,8 @@ func (t *Tracker) OutputTraces() {
 				t.tracingState.wg.Add(1)
 				defer t.tracingState.wg.Done()
 
-				for {
-					select {
-					case tr, ok := <-t.tracingState.c:
-						if !ok {
-							return
-						}
-						tr(t.tracingFile)
-					}
+				for tr := range t.tracingState.c {
+					tr(t.tracingFile)
 				}
 			}()
 		}

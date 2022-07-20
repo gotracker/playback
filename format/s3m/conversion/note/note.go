@@ -2,7 +2,7 @@ package note
 
 import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/note"
 )
 
 // NoteFromS3MNote converts an S3M file note into a player note

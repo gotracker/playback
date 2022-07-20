@@ -1,9 +1,9 @@
 package song
 
 import (
-	"github.com/gotracker/playback/song/index"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 )
 
 // Data is an interface to the song data

@@ -1,7 +1,7 @@
 package note
 
 import (
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/note"
 )
 
 // FromXmNote converts an xm file note into a player note

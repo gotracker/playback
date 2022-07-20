@@ -9,8 +9,8 @@ import (
 
 	xmNote "github.com/gotracker/playback/format/xm/conversion/note"
 	xmVolume "github.com/gotracker/playback/format/xm/conversion/volume"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 )
 
 // DataEffect is the type of a channel's EffectParameter value

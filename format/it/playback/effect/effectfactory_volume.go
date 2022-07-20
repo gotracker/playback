@@ -6,7 +6,7 @@ import (
 
 func volPanEffectFactory(mem *channel.Memory, v uint8) EffectIT {
 	switch {
-	case v >= 0x00 && v <= 0x40: // volume set - handled elsewhere
+	case v <= 0x40: // volume set - handled elsewhere
 		return nil
 	case v >= 0x41 && v <= 0x4a: // fine volume slide up
 		return VolChanFineVolumeSlideUp(v - 0x41)

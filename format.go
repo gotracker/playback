@@ -1,4 +1,4 @@
-package intf
+package playback
 
 import "github.com/gotracker/playback/format/settings"
 

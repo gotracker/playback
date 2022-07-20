@@ -3,21 +3,21 @@ package effect
 import (
 	"fmt"
 
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/layout/channel"
-	"github.com/gotracker/playback/player/intf"
 )
 
 // FineVolumeSlideDown defines a fine volume slide down effect
 type FineVolumeSlideDown channel.DataEffect // 'D'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FineVolumeSlideDown) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e FineVolumeSlideDown) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e FineVolumeSlideDown) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
+func (e FineVolumeSlideDown) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	_, y := mem.VolumeSlide(channel.DataEffect(e))
 
@@ -37,7 +37,7 @@ func (e FineVolumeSlideDown) String() string {
 type VolChanFineVolumeSlideDown channel.DataEffect // 'd'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e VolChanFineVolumeSlideDown) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e VolChanFineVolumeSlideDown) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	mem := cs.GetMemory()
 	y := mem.VolChanVolumeSlide(channel.DataEffect(e))
 

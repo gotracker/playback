@@ -3,13 +3,13 @@ package effect
 import (
 	"fmt"
 
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/layout/channel"
-	"github.com/gotracker/playback/player/intf"
 )
 
 // PortaVolumeSlide defines a portamento-to-note combined with a volume slide effect
 type PortaVolumeSlide struct { // '5'
-	intf.CombinedEffect[channel.Memory, channel.Data]
+	playback.CombinedEffect[channel.Memory, channel.Data]
 }
 
 // NewPortaVolumeSlide creates a new PortaVolumeSlide object

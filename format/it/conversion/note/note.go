@@ -3,7 +3,7 @@ package note
 import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/note"
 )
 
 // FromItNote converts an it file note into a player note

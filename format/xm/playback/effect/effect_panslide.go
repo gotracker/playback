@@ -3,16 +3,16 @@ package effect
 import (
 	"fmt"
 
+	"github.com/gotracker/playback"
 	xmPanning "github.com/gotracker/playback/format/xm/conversion/panning"
 	"github.com/gotracker/playback/format/xm/layout/channel"
-	"github.com/gotracker/playback/player/intf"
 )
 
 // PanSlide defines a pan slide effect
 type PanSlide channel.DataEffect // 'Pxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PanSlide) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e PanSlide) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	xx := channel.DataEffect(e)
 	x := xx >> 4
 	y := xx & 0x0F
