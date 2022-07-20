@@ -3,10 +3,10 @@ package channel
 import (
 	"github.com/gotracker/voice/oscillator"
 
-	"github.com/gotracker/playback/format/internal/memory"
-	formatutil "github.com/gotracker/playback/format/internal/util"
+	"github.com/gotracker/playback/memory"
 	oscillatorImpl "github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/tremor"
+	formatutil "github.com/gotracker/playback/util"
 )
 
 type SharedMemory struct {

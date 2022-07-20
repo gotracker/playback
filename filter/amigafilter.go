@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/voice/period"
 )
 
@@ -33,7 +32,7 @@ func NewAmigaLPF(instrument, playback period.Frequency) *AmigaLPF {
 	return &lpf
 }
 
-func (f *AmigaLPF) Clone() filter.Filter {
+func (f *AmigaLPF) Clone() Filter {
 	c := *f
 	c.channels = make([]channelData, len(f.channels))
 	for i := range f.channels {

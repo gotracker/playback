@@ -12,8 +12,6 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/playback/filter"
-	fmtfilter "github.com/gotracker/playback/format/internal/filter"
-	formatutil "github.com/gotracker/playback/format/internal/util"
 	itPanning "github.com/gotracker/playback/format/it/conversion/panning"
 	"github.com/gotracker/playback/format/it/layout"
 	"github.com/gotracker/playback/format/it/layout/channel"
@@ -22,6 +20,7 @@ import (
 	"github.com/gotracker/playback/song/instrument"
 	"github.com/gotracker/playback/song/note"
 	"github.com/gotracker/playback/song/pattern"
+	formatutil "github.com/gotracker/playback/util"
 )
 
 func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
@@ -204,7 +203,7 @@ func decodeFilter(f *itblock.FX) (filter.Factory, error) {
 	switch {
 	case lib == "Echo" && name == "Echo":
 		r := bytes.NewReader(f.Data)
-		e := fmtfilter.EchoFilterFactory{}
+		e := filter.EchoFilterFactory{}
 		if err := binary.Read(r, binary.LittleEndian, &e); err != nil {
 			return nil, err
 		}

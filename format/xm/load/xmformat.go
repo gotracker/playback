@@ -13,7 +13,6 @@ import (
 	"github.com/gotracker/voice/loop"
 	"github.com/gotracker/voice/pcm"
 
-	formatutil "github.com/gotracker/playback/format/internal/util"
 	"github.com/gotracker/playback/format/settings"
 	xmPanning "github.com/gotracker/playback/format/xm/conversion/panning"
 	xmPeriod "github.com/gotracker/playback/format/xm/conversion/period"
@@ -25,6 +24,7 @@ import (
 	"github.com/gotracker/playback/song/instrument"
 	"github.com/gotracker/playback/song/note"
 	"github.com/gotracker/playback/song/pattern"
+	formatutil "github.com/gotracker/playback/util"
 )
 
 func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {

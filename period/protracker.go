@@ -1,8 +1,8 @@
 package period
 
 import (
-	"github.com/gotracker/playback/format/internal/util"
 	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/util"
 	"github.com/gotracker/voice/period"
 )
 

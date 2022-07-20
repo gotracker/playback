@@ -12,7 +12,6 @@ import (
 	"github.com/gotracker/voice/loop"
 	"github.com/gotracker/voice/pcm"
 
-	formatutil "github.com/gotracker/playback/format/internal/util"
 	s3mPanning "github.com/gotracker/playback/format/s3m/conversion/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/conversion/volume"
 	"github.com/gotracker/playback/format/s3m/layout"
@@ -22,6 +21,7 @@ import (
 	"github.com/gotracker/playback/song/instrument"
 	"github.com/gotracker/playback/song/note"
 	"github.com/gotracker/playback/song/pattern"
+	formatutil "github.com/gotracker/playback/util"
 )
 
 func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*layout.Header, error) {

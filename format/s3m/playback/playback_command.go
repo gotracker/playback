@@ -1,7 +1,7 @@
 package playback
 
 import (
-	"github.com/gotracker/playback/format/internal/filter"
+	"github.com/gotracker/playback/filter"
 	s3mPeriod "github.com/gotracker/playback/format/s3m/conversion/period"
 	"github.com/gotracker/playback/format/s3m/layout/channel"
 	"github.com/gotracker/playback/player/intf"
