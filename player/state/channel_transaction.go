@@ -3,10 +3,10 @@ package state
 import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/song"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
 	"github.com/heucuva/optional"
 )
 
@@ -14,13 +14,13 @@ type ChannelDataTransaction[TMemory, TChannelData any] interface {
 	GetData() *TChannelData
 	SetData(data *TChannelData, s song.Data, cs *ChannelState[TMemory, TChannelData]) error
 
-	CommitPreRow(p intf.Playback, cs *ChannelState[TMemory, TChannelData], semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error
-	CommitRow(p intf.Playback, cs *ChannelState[TMemory, TChannelData], semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error
-	CommitPostRow(p intf.Playback, cs *ChannelState[TMemory, TChannelData], semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error
+	CommitPreRow(p playback.Playback, cs *ChannelState[TMemory, TChannelData], semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error
+	CommitRow(p playback.Playback, cs *ChannelState[TMemory, TChannelData], semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error
+	CommitPostRow(p playback.Playback, cs *ChannelState[TMemory, TChannelData], semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error
 
-	CommitPreTick(p intf.Playback, cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error
-	CommitTick(p intf.Playback, cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error
-	CommitPostTick(p intf.Playback, cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error
+	CommitPreTick(p playback.Playback, cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error
+	CommitTick(p playback.Playback, cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error
+	CommitPostTick(p playback.Playback, cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error
 
 	AddVolOp(op VolOp[TMemory, TChannelData])
 	AddNoteOp(op NoteOp[TMemory, TChannelData])
@@ -62,19 +62,19 @@ func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) Set
 	return converter.Process(&d.ChannelDataActions, cd, s, cs)
 }
 
-func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) CommitPreRow(p intf.Playback, cs *ChannelState[TMemory, TChannelData], semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error {
+func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) CommitPreRow(p playback.Playback, cs *ChannelState[TMemory, TChannelData], semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error {
 	return nil
 }
 
-func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) CommitRow(p intf.Playback, cs *ChannelState[TMemory, TChannelData], semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error {
+func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) CommitRow(p playback.Playback, cs *ChannelState[TMemory, TChannelData], semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error {
 	return nil
 }
 
-func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) CommitPostRow(p intf.Playback, cs *ChannelState[TMemory, TChannelData], semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error {
+func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) CommitPostRow(p playback.Playback, cs *ChannelState[TMemory, TChannelData], semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error {
 	return nil
 }
 
-func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) CommitPreTick(p intf.Playback, cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error {
+func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) CommitPreTick(p playback.Playback, cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error {
 	// pre-effect
 	if err := d.ProcessVolOps(p, cs); err != nil {
 		return err
@@ -86,15 +86,15 @@ func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) Com
 	return nil
 }
 
-func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) CommitTick(p intf.Playback, cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error {
-	if err := intf.DoEffect[TMemory, TChannelData](cs.ActiveEffect, cs, p, currentTick, lastTick); err != nil {
+func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) CommitTick(p playback.Playback, cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error {
+	if err := playback.DoEffect[TMemory, TChannelData](cs.ActiveEffect, cs, p, currentTick, lastTick); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) CommitPostTick(p intf.Playback, cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error {
+func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) CommitPostTick(p playback.Playback, cs *ChannelState[TMemory, TChannelData], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]) error {
 	// post-effect
 	if err := d.ProcessVolOps(p, cs); err != nil {
 		return err
@@ -110,7 +110,7 @@ func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) Add
 	d.VolOps = append(d.VolOps, op)
 }
 
-func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) ProcessVolOps(p intf.Playback, cs *ChannelState[TMemory, TChannelData]) error {
+func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) ProcessVolOps(p playback.Playback, cs *ChannelState[TMemory, TChannelData]) error {
 	for _, op := range d.VolOps {
 		if op == nil {
 			continue
@@ -128,7 +128,7 @@ func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) Add
 	d.NoteOps = append(d.NoteOps, op)
 }
 
-func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) ProcessNoteOps(p intf.Playback, cs *ChannelState[TMemory, TChannelData]) error {
+func (d *ChannelDataTxnHelper[TMemory, TChannelData, TChannelDataConverter]) ProcessNoteOps(p playback.Playback, cs *ChannelState[TMemory, TChannelData]) error {
 	for _, op := range d.NoteOps {
 		if op == nil {
 			continue

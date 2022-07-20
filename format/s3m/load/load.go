@@ -1,20 +1,18 @@
 package load
 
 import (
-	formatutil "github.com/gotracker/playback/format/internal/util"
+	"io"
+
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/common"
 	"github.com/gotracker/playback/format/s3m/layout"
 	"github.com/gotracker/playback/format/s3m/load/modconv"
-	"github.com/gotracker/playback/format/settings"
-	"github.com/gotracker/playback/player/intf"
+	s3mPlayback "github.com/gotracker/playback/format/s3m/playback"
+	"github.com/gotracker/playback/settings"
 )
 
-func readMOD(filename string, s *settings.Settings) (*layout.Song, error) {
-	buffer, err := formatutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	f, err := modconv.Read(buffer)
+func readMOD(r io.Reader, s *settings.Settings) (*layout.Song, error) {
+	f, err := modconv.Read(r)
 	if err != nil {
 		return nil, err
 	}
@@ -25,11 +23,11 @@ func readMOD(filename string, s *settings.Settings) (*layout.Song, error) {
 }
 
 // MOD loads a MOD file and upgrades it into an S3M file internally
-func MOD(filename string, s *settings.Settings) (intf.Playback, error) {
-	return load(filename, readMOD, s)
+func MOD(r io.Reader, s *settings.Settings) (playback.Playback, error) {
+	return common.Load(r, readMOD, s3mPlayback.NewManager, s)
 }
 
 // S3M loads an S3M file into a new Playback object
-func S3M(filename string, s *settings.Settings) (intf.Playback, error) {
-	return load(filename, readS3M, s)
+func S3M(r io.Reader, s *settings.Settings) (playback.Playback, error) {
+	return common.Load(r, readS3M, s3mPlayback.NewManager, s)
 }

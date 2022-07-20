@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"io"
 
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/panning"
@@ -12,16 +13,15 @@ import (
 	"github.com/gotracker/voice/loop"
 	"github.com/gotracker/voice/pcm"
 
-	formatutil "github.com/gotracker/playback/format/internal/util"
-	s3mPanning "github.com/gotracker/playback/format/s3m/conversion/panning"
-	s3mVolume "github.com/gotracker/playback/format/s3m/conversion/volume"
+	"github.com/gotracker/playback/format/s3m/channel"
 	"github.com/gotracker/playback/format/s3m/layout"
-	"github.com/gotracker/playback/format/s3m/layout/channel"
-	"github.com/gotracker/playback/format/settings"
-	"github.com/gotracker/playback/song/index"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
-	"github.com/gotracker/playback/song/pattern"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/pattern"
+	"github.com/gotracker/playback/settings"
 )
 
 func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*layout.Header, error) {
@@ -295,7 +295,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		if sample == nil {
 			continue
 		}
-		sample.Static.ID = channel.S3MInstrumentID(uint8(instNum + 1))
+		sample.Static.ID = channel.InstID(uint8(instNum + 1))
 		song.Instruments[instNum] = sample
 	}
 
@@ -365,13 +365,8 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	return &song, nil
 }
 
-func readS3M(filename string, s *settings.Settings) (*layout.Song, error) {
-	buffer, err := formatutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	f, err := s3mfile.Read(buffer)
+func readS3M(r io.Reader, s *settings.Settings) (*layout.Song, error) {
+	f, err := s3mfile.Read(r)
 	if err != nil {
 		return nil, err
 	}

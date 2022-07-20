@@ -3,15 +3,15 @@ package effect
 import (
 	"fmt"
 
-	"github.com/gotracker/playback/format/it/layout/channel"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/it/channel"
 )
 
 // PanningEnvelopeOn defines a panning envelope: on effect
 type PanningEnvelopeOn channel.DataEffect // 'S7A'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PanningEnvelopeOn) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e PanningEnvelopeOn) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	cs.SetPanningEnvelopeEnable(true)

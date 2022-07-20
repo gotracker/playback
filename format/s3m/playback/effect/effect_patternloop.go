@@ -3,21 +3,21 @@ package effect
 import (
 	"fmt"
 
-	"github.com/gotracker/playback/format/s3m/layout/channel"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/s3m/channel"
 )
 
 // PatternLoop defines a pattern loop effect
 type PatternLoop ChannelCommand // 'SBx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PatternLoop) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e PatternLoop) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e PatternLoop) Stop(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, lastTick int) error {
+func (e PatternLoop) Stop(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, lastTick int) error {
 	x := channel.DataEffect(e) & 0xF
 
 	mem := cs.GetMemory()

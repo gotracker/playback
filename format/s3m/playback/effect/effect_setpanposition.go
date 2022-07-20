@@ -3,16 +3,16 @@ package effect
 import (
 	"fmt"
 
-	s3mPanning "github.com/gotracker/playback/format/s3m/conversion/panning"
-	"github.com/gotracker/playback/format/s3m/layout/channel"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/s3m/channel"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 )
 
 // SetPanPosition defines a set pan position effect
 type SetPanPosition ChannelCommand // 'S8x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetPanPosition) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e SetPanPosition) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xf

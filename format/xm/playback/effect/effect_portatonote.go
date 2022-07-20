@@ -3,9 +3,9 @@ package effect
 import (
 	"fmt"
 
-	"github.com/gotracker/playback/format/xm/layout/channel"
-	"github.com/gotracker/playback/player/intf"
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/xm/channel"
+	"github.com/gotracker/playback/note"
 	"github.com/heucuva/comparison"
 )
 
@@ -13,7 +13,7 @@ import (
 type PortaToNote channel.DataEffect // '3'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PortaToNote) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e PortaToNote) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 	if cmd := cs.GetData(); cmd != nil && cmd.HasNote() {
@@ -24,7 +24,7 @@ func (e PortaToNote) Start(cs intf.Channel[channel.Memory, channel.Data], p intf
 }
 
 // Tick is called on every tick
-func (e PortaToNote) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
+func (e PortaToNote) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
 	if currentTick == 0 {
 		return nil
 	}

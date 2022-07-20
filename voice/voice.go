@@ -4,8 +4,8 @@ import (
 	"github.com/gotracker/voice"
 
 	"github.com/gotracker/playback/filter"
+	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/player/output"
-	"github.com/gotracker/playback/song/instrument"
 )
 
 // New returns a new Voice from the instrument and output channel provided

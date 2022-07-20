@@ -3,16 +3,16 @@ package effect
 import (
 	"fmt"
 
-	xmPanning "github.com/gotracker/playback/format/xm/conversion/panning"
-	"github.com/gotracker/playback/format/xm/layout/channel"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/xm/channel"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
 )
 
 // SetPanPosition defines a set pan position effect
 type SetPanPosition channel.DataEffect // '8xx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetPanPosition) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e SetPanPosition) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xx := uint8(e)

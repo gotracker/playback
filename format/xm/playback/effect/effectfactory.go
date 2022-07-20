@@ -3,17 +3,17 @@ package effect
 import (
 	"fmt"
 
-	"github.com/gotracker/playback/format/xm/layout/channel"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/xm/channel"
 )
 
 type EffectXM interface {
-	intf.Effect
+	playback.Effect
 }
 
 // VolEff is a combined effect that includes a volume effect and a standard effect
 type VolEff struct {
-	intf.CombinedEffect[channel.Memory, channel.Data]
+	playback.CombinedEffect[channel.Memory, channel.Data]
 	eff EffectXM
 }
 

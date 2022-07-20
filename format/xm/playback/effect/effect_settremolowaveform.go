@@ -5,15 +5,15 @@ import (
 
 	"github.com/gotracker/voice/oscillator"
 
-	"github.com/gotracker/playback/format/xm/layout/channel"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/xm/channel"
 )
 
 // SetTremoloWaveform defines a set tremolo waveform effect
 type SetTremoloWaveform channel.DataEffect // 'E7x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetTremoloWaveform) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e SetTremoloWaveform) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := channel.DataEffect(e) & 0xf

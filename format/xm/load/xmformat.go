@@ -2,6 +2,7 @@ package load
 
 import (
 	"errors"
+	"io"
 	"math"
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
@@ -13,18 +14,17 @@ import (
 	"github.com/gotracker/voice/loop"
 	"github.com/gotracker/voice/pcm"
 
-	formatutil "github.com/gotracker/playback/format/internal/util"
-	"github.com/gotracker/playback/format/settings"
-	xmPanning "github.com/gotracker/playback/format/xm/conversion/panning"
-	xmPeriod "github.com/gotracker/playback/format/xm/conversion/period"
-	xmVolume "github.com/gotracker/playback/format/xm/conversion/volume"
+	"github.com/gotracker/playback/format/xm/channel"
 	"github.com/gotracker/playback/format/xm/layout"
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmPeriod "github.com/gotracker/playback/format/xm/period"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/oscillator"
-	"github.com/gotracker/playback/song/index"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
-	"github.com/gotracker/playback/song/pattern"
+	"github.com/gotracker/playback/pattern"
+	"github.com/gotracker/playback/settings"
 )
 
 func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {
@@ -370,13 +370,8 @@ func convertXmFileToSong(f *xmfile.File, s *settings.Settings) (*layout.Song, er
 	return &song, nil
 }
 
-func readXM(filename string, s *settings.Settings) (*layout.Song, error) {
-	buffer, err := formatutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	f, err := xmfile.Read(buffer)
+func readXM(r io.Reader, s *settings.Settings) (*layout.Song, error) {
+	f, err := xmfile.Read(r)
 	if err != nil {
 		return nil, err
 	}

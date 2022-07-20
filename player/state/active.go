@@ -8,7 +8,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice"
 
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/note"
 )
 
 // Active is the active state of a channel

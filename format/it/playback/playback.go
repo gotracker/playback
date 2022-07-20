@@ -4,19 +4,19 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
 
-	itPeriod "github.com/gotracker/playback/format/it/conversion/period"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/format/it/layout"
-	"github.com/gotracker/playback/format/it/layout/channel"
+	itPeriod "github.com/gotracker/playback/format/it/period"
 	"github.com/gotracker/playback/format/it/playback/state/pattern"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/note"
+	playpattern "github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/player"
 	"github.com/gotracker/playback/player/feature"
-	"github.com/gotracker/playback/player/intf"
 	"github.com/gotracker/playback/player/output"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
-	"github.com/gotracker/playback/song/index"
-	"github.com/gotracker/playback/song/note"
-	playpattern "github.com/gotracker/playback/song/pattern"
 )
 
 // Manager is a playback manager for IT music
@@ -34,7 +34,7 @@ type Manager struct {
 	premix        *device.PremixData
 
 	rowRenderState       *rowRenderState
-	OnEffect             func(intf.Effect)
+	OnEffect             func(playback.Effect)
 	longChannelOutput    bool
 	enableNewNoteActions bool
 }
@@ -336,11 +336,11 @@ func (m *Manager) GetName() string {
 }
 
 // SetOnEffect sets the callback for an effect being generated for a channel
-func (m *Manager) SetOnEffect(fn func(intf.Effect)) {
+func (m *Manager) SetOnEffect(fn func(playback.Effect)) {
 	m.OnEffect = fn
 }
 
-func (m Manager) GetOnEffect() func(intf.Effect) {
+func (m Manager) GetOnEffect() func(playback.Effect) {
 	return m.OnEffect
 }
 

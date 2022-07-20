@@ -19,12 +19,12 @@ import (
 	"github.com/gotracker/voice/period"
 
 	"github.com/gotracker/playback/filter"
-	itNote "github.com/gotracker/playback/format/it/conversion/note"
+	itNote "github.com/gotracker/playback/format/it/note"
 	itfilter "github.com/gotracker/playback/format/it/playback/filter"
-	"github.com/gotracker/playback/format/settings"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 	oscillatorImpl "github.com/gotracker/playback/oscillator"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/settings"
 )
 
 type convInst struct {

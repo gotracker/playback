@@ -5,15 +5,15 @@ import (
 
 	"github.com/gotracker/voice/oscillator"
 
-	"github.com/gotracker/playback/format/s3m/layout/channel"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/s3m/channel"
 )
 
 // SetVibratoWaveform defines a set vibrato waveform effect
 type SetVibratoWaveform ChannelCommand // 'S3x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetVibratoWaveform) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e SetVibratoWaveform) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := channel.DataEffect(e) & 0xf

@@ -3,15 +3,15 @@ package effect
 import (
 	"fmt"
 
-	"github.com/gotracker/playback/format/xm/layout/channel"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/xm/channel"
 )
 
 // FinePortaUp defines an fine portamento up effect
 type FinePortaUp channel.DataEffect // 'E1x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FinePortaUp) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e FinePortaUp) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 

@@ -7,11 +7,11 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice"
 
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/output"
 	"github.com/gotracker/playback/song"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
 	voiceImpl "github.com/gotracker/playback/voice"
 	"github.com/heucuva/optional"
 )
@@ -22,11 +22,11 @@ type NoteTrigger struct {
 }
 
 type VolOp[TMemory, TChannelData any] interface {
-	Process(p intf.Playback, cs *ChannelState[TMemory, TChannelData]) error
+	Process(p playback.Playback, cs *ChannelState[TMemory, TChannelData]) error
 }
 
 type NoteOp[TMemory, TChannelData any] interface {
-	Process(p intf.Playback, cs *ChannelState[TMemory, TChannelData]) error
+	Process(p playback.Playback, cs *ChannelState[TMemory, TChannelData]) error
 }
 
 type PeriodUpdateFunc func(note.Period)
@@ -39,7 +39,7 @@ type ChannelState[TMemory, TChannelData any] struct {
 	targetState Playback
 	prevState   Active
 
-	ActiveEffect intf.Effect
+	ActiveEffect playback.Effect
 
 	s       song.Data
 	txn     ChannelDataTransaction[TMemory, TChannelData]
@@ -105,11 +105,11 @@ func (cs *ChannelState[TMemory, TChannelData]) ResetStates() {
 	cs.prevState.Reset()
 }
 
-func (cs *ChannelState[TMemory, TChannelData]) GetActiveEffect() intf.Effect {
+func (cs *ChannelState[TMemory, TChannelData]) GetActiveEffect() playback.Effect {
 	return cs.ActiveEffect
 }
 
-func (cs *ChannelState[TMemory, TChannelData]) SetActiveEffect(e intf.Effect) {
+func (cs *ChannelState[TMemory, TChannelData]) SetActiveEffect(e playback.Effect) {
 	cs.ActiveEffect = e
 }
 

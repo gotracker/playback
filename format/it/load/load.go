@@ -1,11 +1,15 @@
 package load
 
 import (
-	"github.com/gotracker/playback/format/settings"
-	"github.com/gotracker/playback/player/intf"
+	"io"
+
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/common"
+	itPlayback "github.com/gotracker/playback/format/it/playback"
+	"github.com/gotracker/playback/settings"
 )
 
-// IT loads an IT file
-func IT(filename string, s *settings.Settings) (intf.Playback, error) {
-	return load(filename, readIT, s)
+// IT loads an IT file from a reader
+func IT(r io.Reader, s *settings.Settings) (playback.Playback, error) {
+	return common.Load(r, readIT, itPlayback.NewManager, s)
 }

@@ -1,12 +1,12 @@
 package effect
 
 import (
-	"github.com/gotracker/playback/format/s3m/layout/channel"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/s3m/channel"
 )
 
 type EffectS3M interface {
-	intf.Effect
+	playback.Effect
 }
 
 type ChannelCommand channel.DataEffect

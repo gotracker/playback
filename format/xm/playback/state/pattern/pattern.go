@@ -3,12 +3,12 @@ package pattern
 import (
 	"errors"
 
-	formatutil "github.com/gotracker/playback/format/internal/util"
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback/format/xm/channel"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/song"
-	"github.com/gotracker/playback/song/index"
-	"github.com/gotracker/playback/song/pattern"
+	formatutil "github.com/gotracker/playback/util"
 	"github.com/heucuva/optional"
 )
 

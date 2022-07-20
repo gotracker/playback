@@ -6,15 +6,15 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/volume"
 
-	"github.com/gotracker/playback/format/it/layout/channel"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/it/channel"
 )
 
 // SetChannelVolume defines a set channel volume effect
 type SetChannelVolume channel.DataEffect // 'Mxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetChannelVolume) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e SetChannelVolume) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xx := channel.DataEffect(e)

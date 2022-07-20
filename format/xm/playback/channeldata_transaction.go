@@ -3,13 +3,13 @@ package playback
 import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/xm/channel"
 	"github.com/gotracker/playback/format/xm/playback/effect"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
 )
 
 type channelDataConverter struct{}
@@ -85,14 +85,14 @@ type channelDataTransaction struct {
 	state.ChannelDataTxnHelper[channel.Memory, channel.Data, channelDataConverter]
 }
 
-func (d *channelDataTransaction) CommitPreRow(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
+func (d *channelDataTransaction) CommitPreRow(p playback.Playback, cs *state.ChannelState[channel.Memory, channel.Data], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
 	e := effect.Factory(cs.GetMemory(), d.Data)
 	cs.SetActiveEffect(e)
 	if e != nil {
 		if onEff := p.GetOnEffect(); onEff != nil {
 			onEff(e)
 		}
-		if err := intf.EffectPreStart[channel.Memory, channel.Data](e, cs, p); err != nil {
+		if err := playback.EffectPreStart[channel.Memory, channel.Data](e, cs, p); err != nil {
 			return err
 		}
 	}
@@ -100,7 +100,7 @@ func (d *channelDataTransaction) CommitPreRow(p intf.Playback, cs *state.Channel
 	return nil
 }
 
-func (d *channelDataTransaction) CommitRow(p intf.Playback, cs *state.ChannelState[channel.Memory, channel.Data], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
+func (d *channelDataTransaction) CommitRow(p playback.Playback, cs *state.ChannelState[channel.Memory, channel.Data], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
 	if pos, ok := d.TargetPos.Get(); ok {
 		cs.SetTargetPos(pos)
 	}

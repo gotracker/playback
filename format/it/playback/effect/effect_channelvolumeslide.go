@@ -5,15 +5,15 @@ import (
 
 	"github.com/gotracker/gomixing/volume"
 
-	"github.com/gotracker/playback/format/it/layout/channel"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/it/channel"
 )
 
 // ChannelVolumeSlide defines a set channel volume effect
 type ChannelVolumeSlide channel.DataEffect // 'Nxy'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e ChannelVolumeSlide) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e ChannelVolumeSlide) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	mem := cs.GetMemory()
@@ -39,7 +39,7 @@ func (e ChannelVolumeSlide) Start(cs intf.Channel[channel.Memory, channel.Data],
 }
 
 // Tick is called on every tick
-func (e ChannelVolumeSlide) Tick(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, currentTick int) error {
+func (e ChannelVolumeSlide) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, y := mem.ChannelVolumeSlide(channel.DataEffect(e))
 

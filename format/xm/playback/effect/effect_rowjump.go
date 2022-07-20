@@ -3,22 +3,22 @@ package effect
 import (
 	"fmt"
 
-	"github.com/gotracker/playback/format/xm/layout/channel"
-	"github.com/gotracker/playback/player/intf"
-	"github.com/gotracker/playback/song/index"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/xm/channel"
+	"github.com/gotracker/playback/index"
 )
 
 // RowJump defines a row jump effect
 type RowJump channel.DataEffect // 'D'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e RowJump) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e RowJump) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e RowJump) Stop(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback, lastTick int) error {
+func (e RowJump) Stop(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, lastTick int) error {
 	xy := channel.DataEffect(e)
 	x := xy >> 4
 	y := xy & 0x0f

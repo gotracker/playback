@@ -2,7 +2,7 @@ package intf
 
 import (
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/playback/song/index"
+	"github.com/gotracker/playback/index"
 )
 
 // S3M is an interface to S3M effect operations

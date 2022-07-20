@@ -12,9 +12,9 @@ import (
 	"github.com/gotracker/voice/period"
 
 	"github.com/gotracker/playback/filter"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/pan"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
 )
 
 // PCM is a PCM voice interface

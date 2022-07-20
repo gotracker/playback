@@ -5,15 +5,15 @@ import (
 
 	"github.com/gotracker/gomixing/volume"
 
-	"github.com/gotracker/playback/format/it/layout/channel"
-	"github.com/gotracker/playback/player/intf"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/it/channel"
 )
 
 // SetGlobalVolume defines a set global volume effect
 type SetGlobalVolume channel.DataEffect // 'V'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e SetGlobalVolume) PreStart(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e SetGlobalVolume) PreStart(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	v := volume.Volume(channel.DataEffect(e)) / 0x80
 	if v > 1 {
 		v = 1
@@ -23,7 +23,7 @@ func (e SetGlobalVolume) PreStart(cs intf.Channel[channel.Memory, channel.Data],
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetGlobalVolume) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e SetGlobalVolume) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }

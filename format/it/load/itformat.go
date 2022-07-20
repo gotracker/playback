@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
@@ -12,16 +13,14 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/playback/filter"
-	fmtfilter "github.com/gotracker/playback/format/internal/filter"
-	formatutil "github.com/gotracker/playback/format/internal/util"
-	itPanning "github.com/gotracker/playback/format/it/conversion/panning"
+	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/format/it/layout"
-	"github.com/gotracker/playback/format/it/layout/channel"
-	"github.com/gotracker/playback/format/settings"
-	"github.com/gotracker/playback/song/index"
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
-	"github.com/gotracker/playback/song/pattern"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/pattern"
+	"github.com/gotracker/playback/settings"
 )
 
 func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
@@ -204,7 +203,7 @@ func decodeFilter(f *itblock.FX) (filter.Factory, error) {
 	switch {
 	case lib == "Echo" && name == "Echo":
 		r := bytes.NewReader(f.Data)
-		e := fmtfilter.EchoFilterFactory{}
+		e := filter.EchoFilterFactory{}
 		if err := binary.Read(r, binary.LittleEndian, &e); err != nil {
 			return nil, err
 		}
@@ -246,13 +245,8 @@ func addSampleWithNoteMapToSong(song *layout.Song, sample *instrument.Instrument
 	}
 }
 
-func readIT(filename string, s *settings.Settings) (*layout.Song, error) {
-	buffer, err := formatutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	f, err := itfile.Read(buffer)
+func readIT(r io.Reader, s *settings.Settings) (*layout.Song, error) {
+	f, err := itfile.Read(r)
 	if err != nil {
 		return nil, err
 	}

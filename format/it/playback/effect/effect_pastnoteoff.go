@@ -3,16 +3,16 @@ package effect
 import (
 	"fmt"
 
-	"github.com/gotracker/playback/format/it/layout/channel"
-	"github.com/gotracker/playback/player/intf"
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/it/channel"
+	"github.com/gotracker/playback/note"
 )
 
 // PastNoteOff defines a past note off effect
 type PastNoteOff channel.DataEffect // 'S71'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PastNoteOff) Start(cs intf.Channel[channel.Memory, channel.Data], p intf.Playback) error {
+func (e PastNoteOff) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	cs.DoPastNoteEffect(note.ActionRelease)
 	return nil
 }

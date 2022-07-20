@@ -11,8 +11,8 @@ import (
 	"github.com/gotracker/voice/period"
 	"github.com/gotracker/voice/render"
 
-	"github.com/gotracker/playback/song/instrument"
-	"github.com/gotracker/playback/song/note"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 )
 
 // OPL2 is an OPL2 voice interface

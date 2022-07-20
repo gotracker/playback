@@ -3,7 +3,7 @@ package song
 import (
 	"errors"
 
-	"github.com/gotracker/playback/song/index"
+	"github.com/gotracker/playback/index"
 )
 
 var (
