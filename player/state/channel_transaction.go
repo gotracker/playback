@@ -6,6 +6,7 @@ import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/song"
 	"github.com/heucuva/optional"
 )
@@ -32,7 +33,7 @@ type ChannelDataActions struct {
 
 	TargetPos            optional.Value[sampling.Pos]
 	TargetInst           optional.Value[*instrument.Instrument]
-	TargetPeriod         optional.Value[note.Period]
+	TargetPeriod         optional.Value[period.Period]
 	TargetStoredSemitone optional.Value[note.Semitone]
 	TargetNewNoteAction  optional.Value[note.Action]
 	TargetVolume         optional.Value[volume.Volume]

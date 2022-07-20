@@ -10,13 +10,13 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/voice"
-	"github.com/gotracker/voice/envelope"
-	"github.com/gotracker/voice/fadeout"
-	"github.com/gotracker/voice/loop"
-	"github.com/gotracker/voice/oscillator"
-	"github.com/gotracker/voice/pcm"
-	"github.com/gotracker/voice/period"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice"
+	"github.com/gotracker/playback/voice/envelope"
+	"github.com/gotracker/playback/voice/fadeout"
+	"github.com/gotracker/playback/voice/loop"
+	"github.com/gotracker/playback/voice/oscillator"
+	"github.com/gotracker/playback/voice/pcm"
 
 	"github.com/gotracker/playback/filter"
 	itNote "github.com/gotracker/playback/format/it/note"
@@ -442,7 +442,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 
 	ii.Static.Filename = si.Header.GetFilename()
 	ii.Static.Name = si.Header.GetName()
-	ii.C2Spd = note.C2SPD(si.Header.C5Speed)
+	ii.C2Spd = period.Frequency(si.Header.C5Speed)
 	ii.Static.AutoVibrato = voice.AutoVibrato{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
 		Sweep:             255,

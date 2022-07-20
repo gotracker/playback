@@ -9,8 +9,8 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
-	"github.com/gotracker/voice/period"
-	"github.com/gotracker/voice/render"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice/render"
 
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/player/output"

@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/gotracker/playback/note"
 	"github.com/heucuva/comparison"
 
-	"github.com/gotracker/voice/period"
+	"github.com/gotracker/playback/period"
 )
 
 // testPeriod defines a sampler period that follows the Amiga-style approach of note
@@ -23,17 +22,16 @@ func (p testPeriod) AddInteger(delta int) testPeriod {
 
 // Add adds the current period to a delta value then returns the resulting period
 func (p testPeriod) AddDelta(delta period.Delta) period.Period {
-	period := p
-	d := note.ToPeriodDelta(delta)
-	period += testPeriod(d)
-	return period
+	d := period.ToPeriodDelta(delta)
+	p += testPeriod(d)
+	return p
 }
 
 // Compare returns:
 //  -1 if the current period is higher frequency than the `rhs` period
 //  0 if the current period is equal in frequency to the `rhs` period
 //  1 if the current period is lower frequency than the `rhs` period
-func (p testPeriod) Compare(rhs note.Period) comparison.Spaceship {
+func (p testPeriod) Compare(rhs period.Period) comparison.Spaceship {
 	lf := p.GetFrequency()
 	rf := rhs.GetFrequency()
 
@@ -48,16 +46,15 @@ func (p testPeriod) Compare(rhs note.Period) comparison.Spaceship {
 }
 
 // Lerp linear-interpolates the current period with the `rhs` period
-func (p testPeriod) Lerp(t float64, rhs note.Period) note.Period {
+func (p testPeriod) Lerp(t float64, rhs period.Period) period.Period {
 	right := testPeriod(0)
 	if r, ok := rhs.(*testPeriod); ok {
 		right = *r
 	}
 
-	period := p
-	delta := note.PeriodDelta(t * (float64(right) - float64(period)))
-	period.AddDelta(delta)
-	return period
+	delta := period.PeriodDelta(t * (float64(right) - float64(p)))
+	p.AddDelta(delta)
+	return p
 }
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period
@@ -78,10 +75,10 @@ func (p *testPeriod) String() string {
 	return fmt.Sprintf("%f", *p)
 }
 
-func periodCompareTest(t *testing.T, lhs note.Period, rhs note.Period, expected comparison.Spaceship) {
+func periodCompareTest(t *testing.T, lhs period.Period, rhs period.Period, expected comparison.Spaceship) {
 	t.Helper()
 
-	if note.ComparePeriods(lhs, rhs) != expected {
+	if period.ComparePeriods(lhs, rhs) != expected {
 		t.Fatalf("%v <=> %v was not %v", lhs, rhs, expected)
 	}
 }

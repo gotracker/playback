@@ -8,11 +8,12 @@ import (
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/voice"
-	"github.com/gotracker/voice/envelope"
-	"github.com/gotracker/voice/fadeout"
-	"github.com/gotracker/voice/loop"
-	"github.com/gotracker/voice/pcm"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice"
+	"github.com/gotracker/playback/voice/envelope"
+	"github.com/gotracker/playback/voice/fadeout"
+	"github.com/gotracker/playback/voice/loop"
+	"github.com/gotracker/playback/voice/pcm"
 
 	"github.com/gotracker/playback/format/xm/channel"
 	"github.com/gotracker/playback/format/xm/layout"
@@ -83,7 +84,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 					Factory:           oscillator.NewProtrackerOscillator,
 				},
 			},
-			C2Spd: note.C2SPD(0), // uses si.Finetune, below
+			C2Spd: period.Frequency(0), // uses si.Finetune, below
 		}
 
 		if !linearFrequencySlides {
@@ -189,7 +190,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			sample.C2Spd = xmPeriod.CalcFinetuneC2Spd(xmPeriod.DefaultC2Spd, note.Finetune(si.Finetune), linearFrequencySlides)
 		}
 		if sample.C2Spd == 0 {
-			sample.C2Spd = note.C2SPD(xmPeriod.DefaultC2Spd)
+			sample.C2Spd = period.Frequency(xmPeriod.DefaultC2Spd)
 		}
 		if si.Flags.IsStereo() {
 			numChannels = 2

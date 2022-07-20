@@ -2,7 +2,7 @@ package period
 
 import (
 	"github.com/gotracker/playback/note"
-	"github.com/gotracker/voice/period"
+	"github.com/gotracker/playback/period"
 )
 
 const (
@@ -23,7 +23,7 @@ const (
 var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
 
 // CalcSemitonePeriod calculates the semitone period for it notes
-func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd note.C2SPD, linearFreqSlides bool) note.Period {
+func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd period.Frequency, linearFreqSlides bool) period.Period {
 	if semi == note.UnchangedSemitone {
 		panic("how?")
 	}
@@ -43,7 +43,7 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd note.C2SPD, 
 	}
 
 	if c2spd == 0 {
-		c2spd = note.C2SPD(DefaultC2Spd)
+		c2spd = period.Frequency(DefaultC2Spd)
 	}
 
 	if ft != 0 {
@@ -56,18 +56,18 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd note.C2SPD, 
 }
 
 // CalcFinetuneC2Spd calculates a new C2SPD after a finetune adjustment
-func CalcFinetuneC2Spd(c2spd note.C2SPD, finetune note.Finetune, linearFreqSlides bool) note.C2SPD {
+func CalcFinetuneC2Spd(c2spd period.Frequency, finetune note.Finetune, linearFreqSlides bool) period.Frequency {
 	if finetune == 0 {
 		return c2spd
 	}
 
 	nft := 5*semitonesPerOctave + int(finetune)
-	period := CalcSemitonePeriod(note.Semitone(nft/semitonesPerNote), note.Finetune(nft%semitonesPerNote), c2spd, linearFreqSlides)
-	return note.C2SPD(period.GetFrequency())
+	p := CalcSemitonePeriod(note.Semitone(nft/semitonesPerNote), note.Finetune(nft%semitonesPerNote), c2spd, linearFreqSlides)
+	return period.Frequency(p.GetFrequency())
 }
 
 // FrequencyFromSemitone returns the frequency from the semitone (and c2spd)
-func FrequencyFromSemitone(semitone note.Semitone, c2spd note.C2SPD, linearFreqSlides bool) float32 {
+func FrequencyFromSemitone(semitone note.Semitone, c2spd period.Frequency, linearFreqSlides bool) float32 {
 	period := CalcSemitonePeriod(semitone, 0, c2spd, linearFreqSlides)
 	return float32(period.GetFrequency())
 }

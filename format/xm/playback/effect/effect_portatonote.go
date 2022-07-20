@@ -6,6 +6,7 @@ import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/channel"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
 	"github.com/heucuva/comparison"
 )
 
@@ -34,7 +35,7 @@ func (e PortaToNote) Tick(cs playback.Channel[channel.Memory, channel.Data], p p
 
 	current := cs.GetPeriod()
 	target := cs.GetPortaTargetPeriod()
-	if note.ComparePeriods(current, target) == comparison.SpaceshipRightGreater {
+	if period.ComparePeriods(current, target) == comparison.SpaceshipRightGreater {
 		return doPortaUpToNote(cs, float32(xx), 4, target, mem.Shared.LinearFreqSlides) // subtracts
 	} else {
 		return doPortaDownToNote(cs, float32(xx), 4, target, mem.Shared.LinearFreqSlides) // adds

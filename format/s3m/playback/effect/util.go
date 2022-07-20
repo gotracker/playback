@@ -2,7 +2,8 @@ package effect
 
 import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
-	"github.com/gotracker/voice/oscillator"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice/oscillator"
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/s3m/channel"
@@ -28,67 +29,67 @@ func doVolSlide(cs playback.Channel[channel.Memory, channel.Data], delta float32
 }
 
 func doPortaUp(cs playback.Channel[channel.Memory, channel.Data], amount float32, multiplier float32) error {
-	period := cs.GetPeriod()
-	if period == nil {
+	cur := cs.GetPeriod()
+	if cur == nil {
 		return nil
 	}
 
 	delta := int(amount * multiplier)
-	d := note.PeriodDelta(-delta)
-	period = period.AddDelta(d).(note.Period)
-	cs.SetPeriod(period)
+	d := period.PeriodDelta(-delta)
+	cur = cur.AddDelta(d)
+	cs.SetPeriod(cur)
 	return nil
 }
 
-func doPortaUpToNote(cs playback.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, target note.Period) error {
-	period := cs.GetPeriod()
-	if period == nil {
+func doPortaUpToNote(cs playback.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, target period.Period) error {
+	cur := cs.GetPeriod()
+	if cur == nil {
 		return nil
 	}
 
 	delta := int(amount * multiplier)
-	d := note.PeriodDelta(-delta)
-	period = period.AddDelta(d).(note.Period)
-	if note.ComparePeriods(period, target) == comparison.SpaceshipLeftGreater {
-		period = target
+	d := period.PeriodDelta(-delta)
+	cur = cur.AddDelta(d)
+	if period.ComparePeriods(cur, target) == comparison.SpaceshipLeftGreater {
+		cur = target
 	}
-	cs.SetPeriod(period)
+	cs.SetPeriod(cur)
 	return nil
 }
 
 func doPortaDown(cs playback.Channel[channel.Memory, channel.Data], amount float32, multiplier float32) error {
-	period := cs.GetPeriod()
-	if period == nil {
+	cur := cs.GetPeriod()
+	if cur == nil {
 		return nil
 	}
 
 	delta := int(amount * multiplier)
-	d := note.PeriodDelta(delta)
-	period = period.AddDelta(d).(note.Period)
-	cs.SetPeriod(period)
+	d := period.PeriodDelta(delta)
+	cur = cur.AddDelta(d)
+	cs.SetPeriod(cur)
 	return nil
 }
 
-func doPortaDownToNote(cs playback.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, target note.Period) error {
-	period := cs.GetPeriod()
-	if period == nil {
+func doPortaDownToNote(cs playback.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, target period.Period) error {
+	cur := cs.GetPeriod()
+	if cur == nil {
 		return nil
 	}
 
 	delta := int(amount * multiplier)
-	d := note.PeriodDelta(delta)
-	period = period.AddDelta(d).(note.Period)
-	if note.ComparePeriods(period, target) == comparison.SpaceshipRightGreater {
-		period = target
+	d := period.PeriodDelta(delta)
+	cur = cur.AddDelta(d)
+	if period.ComparePeriods(cur, target) == comparison.SpaceshipRightGreater {
+		cur = target
 	}
-	cs.SetPeriod(period)
+	cs.SetPeriod(cur)
 	return nil
 }
 
 func doVibrato(cs playback.Channel[channel.Memory, channel.Data], currentTick int, speed channel.DataEffect, depth channel.DataEffect, multiplier float32) error {
 	mem := cs.GetMemory()
 	delta := calculateWaveTable(cs, currentTick, channel.DataEffect(speed), channel.DataEffect(depth), multiplier, mem.VibratoOscillator())
-	cs.SetPeriodDelta(note.PeriodDelta(delta))
+	cs.SetPeriodDelta(period.PeriodDelta(delta))
 	return nil
 }
 

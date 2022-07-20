@@ -2,7 +2,7 @@ package filter
 
 import (
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/voice/period"
+	"github.com/gotracker/playback/period"
 )
 
 // Filter is an interface to a filter

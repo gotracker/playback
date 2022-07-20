@@ -2,7 +2,7 @@ package render
 
 import (
 	"github.com/gotracker/opl2"
-	"github.com/gotracker/voice/render"
+	"github.com/gotracker/playback/voice/render"
 )
 
 // NewOPL2Chip generates a new OPL2 chip

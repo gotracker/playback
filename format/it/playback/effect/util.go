@@ -2,7 +2,8 @@ package effect
 
 import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
-	"github.com/gotracker/voice/oscillator"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice/oscillator"
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
@@ -45,26 +46,26 @@ func doGlobalVolSlide(m effectIntf.IT, delta float32, multiplier float32) error 
 }
 
 func doPortaByDeltaAmiga(cs playback.Channel[channel.Memory, channel.Data], delta int) error {
-	period := cs.GetPeriod()
-	if period == nil {
+	cur := cs.GetPeriod()
+	if cur == nil {
 		return nil
 	}
 
-	d := note.PeriodDelta(delta)
-	period = period.AddDelta(d).(note.Period)
-	cs.SetPeriod(period)
+	d := period.PeriodDelta(delta)
+	cur = cur.AddDelta(d)
+	cs.SetPeriod(cur)
 	return nil
 }
 
 func doPortaByDeltaLinear(cs playback.Channel[channel.Memory, channel.Data], delta int) error {
-	period := cs.GetPeriod()
-	if period == nil {
+	cur := cs.GetPeriod()
+	if cur == nil {
 		return nil
 	}
 
-	finetune := note.PeriodDelta(delta)
-	period = period.AddDelta(finetune).(note.Period)
-	cs.SetPeriod(period)
+	finetune := period.PeriodDelta(delta)
+	cur = cur.AddDelta(finetune)
+	cs.SetPeriod(cur)
 	return nil
 }
 
@@ -76,11 +77,11 @@ func doPortaUp(cs playback.Channel[channel.Memory, channel.Data], amount float32
 	return doPortaByDeltaAmiga(cs, -delta)
 }
 
-func doPortaUpToNote(cs playback.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, target note.Period, linearFreqSlides bool) error {
+func doPortaUpToNote(cs playback.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, target period.Period, linearFreqSlides bool) error {
 	if err := doPortaUp(cs, amount, multiplier, linearFreqSlides); err != nil {
 		return err
 	}
-	if period := cs.GetPeriod(); note.ComparePeriods(period, target) == comparison.SpaceshipLeftGreater {
+	if cur := cs.GetPeriod(); period.ComparePeriods(cur, target) == comparison.SpaceshipLeftGreater {
 		cs.SetPeriod(target)
 	}
 	return nil
@@ -94,11 +95,11 @@ func doPortaDown(cs playback.Channel[channel.Memory, channel.Data], amount float
 	return doPortaByDeltaAmiga(cs, delta)
 }
 
-func doPortaDownToNote(cs playback.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, target note.Period, linearFreqSlides bool) error {
+func doPortaDownToNote(cs playback.Channel[channel.Memory, channel.Data], amount float32, multiplier float32, target period.Period, linearFreqSlides bool) error {
 	if err := doPortaDown(cs, amount, multiplier, linearFreqSlides); err != nil {
 		return err
 	}
-	if period := cs.GetPeriod(); note.ComparePeriods(period, target) == comparison.SpaceshipRightGreater {
+	if cur := cs.GetPeriod(); period.ComparePeriods(cur, target) == comparison.SpaceshipRightGreater {
 		cs.SetPeriod(target)
 	}
 	return nil
@@ -107,7 +108,7 @@ func doPortaDownToNote(cs playback.Channel[channel.Memory, channel.Data], amount
 func doVibrato(cs playback.Channel[channel.Memory, channel.Data], currentTick int, speed channel.DataEffect, depth channel.DataEffect, multiplier float32) error {
 	mem := cs.GetMemory()
 	vib := calculateWaveTable(cs, currentTick, speed, depth, multiplier, mem.VibratoOscillator())
-	delta := note.PeriodDelta(vib)
+	delta := period.PeriodDelta(vib)
 	cs.SetPeriodDelta(delta)
 	return nil
 }

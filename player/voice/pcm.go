@@ -6,14 +6,13 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/voice"
-	"github.com/gotracker/voice/component"
-	"github.com/gotracker/voice/fadeout"
-	"github.com/gotracker/voice/period"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice"
+	"github.com/gotracker/playback/voice/component"
+	"github.com/gotracker/playback/voice/fadeout"
 
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/instrument"
-	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/pan"
 )
 
@@ -32,7 +31,7 @@ type PCM interface {
 
 // PCMConfiguration is the information needed to configure an PCM2 voice
 type PCMConfiguration struct {
-	C2SPD         note.C2SPD
+	C2SPD         period.Frequency
 	InitialVolume volume.Volume
 	InitialPeriod period.Period
 	AutoVibrato   voice.AutoVibrato
@@ -45,7 +44,7 @@ type PCMConfiguration struct {
 // == the actual pcm voice ==
 
 type pcmVoice struct {
-	c2spd         note.C2SPD
+	c2spd         period.Frequency
 	initialVolume volume.Volume
 	outputFilter  voice.FilterApplier
 	voiceFilter   filter.Filter

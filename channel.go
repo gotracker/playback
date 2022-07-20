@@ -4,7 +4,8 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/voice"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice"
 
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
@@ -21,15 +22,15 @@ type Channel[TMemory, TChannelData any] interface {
 	FreezePlayback()
 	UnfreezePlayback()
 	GetData() *TChannelData
-	GetPortaTargetPeriod() note.Period
-	SetPortaTargetPeriod(note.Period)
-	GetTargetPeriod() note.Period
-	SetTargetPeriod(note.Period)
-	SetPeriodOverride(note.Period)
-	GetPeriod() note.Period
-	SetPeriod(note.Period)
-	SetPeriodDelta(note.PeriodDelta)
-	GetPeriodDelta() note.PeriodDelta
+	GetPortaTargetPeriod() period.Period
+	SetPortaTargetPeriod(period.Period)
+	GetTargetPeriod() period.Period
+	SetTargetPeriod(period.Period)
+	SetPeriodOverride(period.Period)
+	GetPeriod() period.Period
+	SetPeriod(period.Period)
+	SetPeriodDelta(period.PeriodDelta)
+	GetPeriodDelta() period.PeriodDelta
 	SetInstrument(*instrument.Instrument)
 	GetInstrument() *instrument.Instrument
 	GetVoice() voice.Voice

@@ -1,18 +1,16 @@
-package note
+package period
 
 import (
-	"github.com/gotracker/voice/period"
-
 	"github.com/heucuva/comparison"
 )
 
 // Period is an interface that defines a sampler period
 type Period interface {
-	AddDelta(period.Delta) period.Period
+	AddDelta(Delta) Period
 	Compare(Period) comparison.Spaceship // <=>
 	Lerp(float64, Period) Period
 	GetSamplerAdd(float64) float64
-	GetFrequency() period.Frequency
+	GetFrequency() Frequency
 }
 
 // PeriodDelta is an amount of delta specific to the period type it modifies
@@ -21,14 +19,14 @@ type Period interface {
 type PeriodDelta float64
 
 // ToPeriodDelta works as a conversion system for different types of 'delta' values to a single common one
-func ToPeriodDelta(delta period.Delta) PeriodDelta {
+func ToPeriodDelta(delta Delta) PeriodDelta {
 	switch d := delta.(type) {
 	case PeriodDelta:
 		return d
 	case float32:
 		return PeriodDelta(d)
 	default:
-		panic("unknown type conversion for period.Delta")
+		panic("unknown type conversion for Delta")
 	}
 }
 

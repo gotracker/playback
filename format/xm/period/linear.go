@@ -7,34 +7,33 @@ import (
 	"github.com/gotracker/playback/note"
 	"github.com/heucuva/comparison"
 
-	"github.com/gotracker/voice/period"
+	"github.com/gotracker/playback/period"
 )
 
 // Linear is a linear period, based on semitone and finetune values
 type Linear struct {
 	Finetune note.Finetune
-	C2Spd    note.C2SPD
+	C2Spd    period.Frequency
 }
 
 // Add adds the current period to a delta value then returns the resulting period
 func (p Linear) AddDelta(delta period.Delta) period.Period {
-	period := p
 	// 0 means "not playing", so keep it that way
-	if period.Finetune > 0 {
-		d := note.ToPeriodDelta(delta)
-		period.Finetune += note.Finetune(d)
-		if period.Finetune < 1 {
-			period.Finetune = 1
+	if p.Finetune > 0 {
+		d := period.ToPeriodDelta(delta)
+		p.Finetune += note.Finetune(d)
+		if p.Finetune < 1 {
+			p.Finetune = 1
 		}
 	}
-	return period
+	return p
 }
 
 // Compare returns:
 //  -1 if the current period is higher frequency than the `rhs` period
 //  0 if the current period is equal in frequency to the `rhs` period
 //  1 if the current period is lower frequency than the `rhs` period
-func (p Linear) Compare(rhs note.Period) comparison.Spaceship {
+func (p Linear) Compare(rhs period.Period) comparison.Spaceship {
 	lf := p.GetFrequency()
 	rf := rhs.GetFrequency()
 
@@ -49,17 +48,14 @@ func (p Linear) Compare(rhs note.Period) comparison.Spaceship {
 }
 
 // Lerp linear-interpolates the current period with the `rhs` period
-func (p Linear) Lerp(t float64, rhs note.Period) note.Period {
+func (p Linear) Lerp(t float64, rhs period.Period) period.Period {
 	right := ToLinearPeriod(rhs)
 
-	period := p
-
-	lnft := float64(period.Finetune)
+	lnft := float64(p.Finetune)
 	rnft := float64(right.Finetune)
 
-	delta := note.PeriodDelta(t * (rnft - lnft))
-	period.AddDelta(delta)
-	return period
+	delta := period.PeriodDelta(t * (rnft - lnft))
+	return p.AddDelta(delta)
 }
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period
@@ -82,7 +78,7 @@ func (p Linear) String() string {
 }
 
 // ToLinearPeriod returns the linear frequency period for a given period
-func ToLinearPeriod(p note.Period) Linear {
+func ToLinearPeriod(p period.Period) Linear {
 	switch pp := p.(type) {
 	case Linear:
 		return pp

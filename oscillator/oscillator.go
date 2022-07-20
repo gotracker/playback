@@ -1,7 +1,7 @@
 package oscillator
 
 import (
-	"github.com/gotracker/voice/oscillator"
+	"github.com/gotracker/playback/voice/oscillator"
 )
 
 const (

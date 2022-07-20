@@ -3,7 +3,7 @@ package filter
 import (
 	"math"
 
-	"github.com/gotracker/voice/period"
+	"github.com/gotracker/playback/period"
 
 	"github.com/gotracker/gomixing/volume"
 )
