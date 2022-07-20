@@ -9,13 +9,6 @@ import (
 	formatutil "github.com/gotracker/playback/util"
 )
 
-type SharedMemory struct {
-	// LinearFreqSlides is true if linear frequency slides are enabled (false = amiga-style period-based slides)
-	LinearFreqSlides bool
-	// ResetMemoryAtStartOfOrder0 if true will reset the memory registers when the first tick of the first row of the first order pattern plays
-	ResetMemoryAtStartOfOrder0 bool
-}
-
 // Memory is the storage object for custom effect/effect values
 type Memory struct {
 	portaToNote         memory.Value[DataEffect]
