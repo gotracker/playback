@@ -3,10 +3,10 @@ package channel
 import (
 	"github.com/gotracker/voice/oscillator"
 
-	"github.com/gotracker/playback/format/internal/effect"
 	"github.com/gotracker/playback/format/internal/memory"
 	formatutil "github.com/gotracker/playback/format/internal/util"
 	oscillatorImpl "github.com/gotracker/playback/oscillator"
+	"github.com/gotracker/playback/tremor"
 )
 
 type SharedMemory struct {
@@ -37,7 +37,7 @@ type Memory struct {
 	extraFinePortaUp    memory.Value[DataEffect]
 	extraFinePortaDown  memory.Value[DataEffect]
 
-	tremorMem         effect.Tremor
+	tremorMem         tremor.Tremor
 	vibratoOscillator oscillator.Oscillator
 	tremoloOscillator oscillator.Oscillator
 	patternLoop       formatutil.PatternLoop
@@ -142,7 +142,7 @@ func (m *Memory) ExtraFinePortaDown(input DataEffect) DataEffect {
 }
 
 // TremorMem returns the Tremor object
-func (m *Memory) TremorMem() *effect.Tremor {
+func (m *Memory) TremorMem() *tremor.Tremor {
 	return &m.tremorMem
 }
 
