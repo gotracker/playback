@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"io"
 	"strconv"
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
@@ -20,7 +21,6 @@ import (
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/settings"
-	formatutil "github.com/gotracker/playback/util"
 )
 
 func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
@@ -245,13 +245,8 @@ func addSampleWithNoteMapToSong(song *layout.Song, sample *instrument.Instrument
 	}
 }
 
-func readIT(filename string, s *settings.Settings) (*layout.Song, error) {
-	buffer, err := formatutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	f, err := itfile.Read(buffer)
+func readIT(r io.Reader, s *settings.Settings) (*layout.Song, error) {
+	f, err := itfile.Read(r)
 	if err != nil {
 		return nil, err
 	}

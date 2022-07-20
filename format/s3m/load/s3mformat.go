@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"io"
 
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/panning"
@@ -21,7 +22,6 @@ import (
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/settings"
-	formatutil "github.com/gotracker/playback/util"
 )
 
 func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*layout.Header, error) {
@@ -365,13 +365,8 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	return &song, nil
 }
 
-func readS3M(filename string, s *settings.Settings) (*layout.Song, error) {
-	buffer, err := formatutil.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	f, err := s3mfile.Read(buffer)
+func readS3M(r io.Reader, s *settings.Settings) (*layout.Song, error) {
+	f, err := s3mfile.Read(r)
 	if err != nil {
 		return nil, err
 	}
