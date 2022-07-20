@@ -1,8 +1,8 @@
 package output
 
 import (
-	"github.com/gotracker/voice/period"
-	"github.com/gotracker/voice/render"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice/render"
 
 	"github.com/gotracker/gomixing/volume"
 )

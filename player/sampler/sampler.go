@@ -2,7 +2,7 @@ package sampler
 
 import (
 	"github.com/gotracker/gomixing/mixing"
-	"github.com/gotracker/voice/period"
+	"github.com/gotracker/playback/period"
 )
 
 // Sampler is a container of sampler/mixer settings

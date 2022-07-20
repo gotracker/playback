@@ -3,7 +3,7 @@ package oscillator
 import (
 	"math/rand"
 
-	"github.com/gotracker/voice/oscillator"
+	"github.com/gotracker/playback/voice/oscillator"
 )
 
 var (

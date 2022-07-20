@@ -5,14 +5,15 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/voice"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice"
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/output"
+	voiceImpl "github.com/gotracker/playback/player/voice"
 	"github.com/gotracker/playback/song"
-	voiceImpl "github.com/gotracker/playback/voice"
 	"github.com/heucuva/optional"
 )
 
@@ -29,7 +30,7 @@ type NoteOp[TMemory, TChannelData any] interface {
 	Process(p playback.Playback, cs *ChannelState[TMemory, TChannelData]) error
 }
 
-type PeriodUpdateFunc func(note.Period)
+type PeriodUpdateFunc func(period.Period)
 
 type SemitoneSetterFactory[TMemory, TChannelData any] func(note.Semitone, PeriodUpdateFunc) NoteOp[TMemory, TChannelData]
 
@@ -48,14 +49,14 @@ type ChannelState[TMemory, TChannelData any] struct {
 	SemitoneSetterFactory SemitoneSetterFactory[TMemory, TChannelData]
 
 	StoredSemitone    note.Semitone // from pattern, unmodified, current note
-	PortaTargetPeriod optional.Value[note.Period]
+	PortaTargetPeriod optional.Value[period.Period]
 	Trigger           optional.Value[NoteTrigger]
 	RetriggerCount    uint8
 	Memory            *TMemory
 	freezePlayback    bool
 	Semitone          note.Semitone // from TargetSemitone, modified further, used in period calculations
 	UseTargetPeriod   bool
-	periodOverride    note.Period
+	periodOverride    period.Period
 	UsePeriodOverride bool
 	volumeActive      bool
 	PanEnabled        bool
@@ -181,7 +182,7 @@ func (cs *ChannelState[TMemory, TChannelData]) GetTxn() ChannelDataTransaction[T
 }
 
 // GetPortaTargetPeriod returns the current target portamento (to note) sampler period
-func (cs *ChannelState[TMemory, TChannelData]) GetPortaTargetPeriod() note.Period {
+func (cs *ChannelState[TMemory, TChannelData]) GetPortaTargetPeriod() period.Period {
 	if p, ok := cs.PortaTargetPeriod.Get(); ok {
 		return p
 	}
@@ -189,7 +190,7 @@ func (cs *ChannelState[TMemory, TChannelData]) GetPortaTargetPeriod() note.Perio
 }
 
 // SetPortaTargetPeriod sets the current target portamento (to note) sampler period
-func (cs *ChannelState[TMemory, TChannelData]) SetPortaTargetPeriod(period note.Period) {
+func (cs *ChannelState[TMemory, TChannelData]) SetPortaTargetPeriod(period period.Period) {
 	if period != nil {
 		cs.PortaTargetPeriod.Set(period)
 	} else {
@@ -198,33 +199,33 @@ func (cs *ChannelState[TMemory, TChannelData]) SetPortaTargetPeriod(period note.
 }
 
 // GetTargetPeriod returns the soon-to-be-committed sampler period (when the note retriggers)
-func (cs *ChannelState[TMemory, TChannelData]) GetTargetPeriod() note.Period {
+func (cs *ChannelState[TMemory, TChannelData]) GetTargetPeriod() period.Period {
 	return cs.targetState.Period
 }
 
 // SetTargetPeriod sets the soon-to-be-committed sampler period (when the note retriggers)
-func (cs *ChannelState[TMemory, TChannelData]) SetTargetPeriod(period note.Period) {
+func (cs *ChannelState[TMemory, TChannelData]) SetTargetPeriod(period period.Period) {
 	cs.targetState.Period = period
 }
 
 // GetTargetPeriod returns the soon-to-be-committed sampler period (when the note retriggers)
-func (cs *ChannelState[TMemory, TChannelData]) GetPeriodOverride() note.Period {
+func (cs *ChannelState[TMemory, TChannelData]) GetPeriodOverride() period.Period {
 	return cs.periodOverride
 }
 
 // SetTargetPeriod sets the soon-to-be-committed sampler period (when the note retriggers)
-func (cs *ChannelState[TMemory, TChannelData]) SetPeriodOverride(period note.Period) {
+func (cs *ChannelState[TMemory, TChannelData]) SetPeriodOverride(period period.Period) {
 	cs.periodOverride = period
 	cs.UsePeriodOverride = true
 }
 
 // SetPeriodDelta sets the vibrato (ephemeral) delta sampler period
-func (cs *ChannelState[TMemory, TChannelData]) SetPeriodDelta(delta note.PeriodDelta) {
+func (cs *ChannelState[TMemory, TChannelData]) SetPeriodDelta(delta period.PeriodDelta) {
 	cs.activeState.PeriodDelta = delta
 }
 
 // GetPeriodDelta gets the vibrato (ephemeral) delta sampler period
-func (cs *ChannelState[TMemory, TChannelData]) GetPeriodDelta() note.PeriodDelta {
+func (cs *ChannelState[TMemory, TChannelData]) GetPeriodDelta() period.PeriodDelta {
 	return cs.activeState.PeriodDelta
 }
 
@@ -291,12 +292,12 @@ func (cs *ChannelState[TMemory, TChannelData]) SetTargetPos(pos sampling.Pos) {
 }
 
 // GetPeriod returns the current sampler period of the active instrument
-func (cs *ChannelState[TMemory, TChannelData]) GetPeriod() note.Period {
+func (cs *ChannelState[TMemory, TChannelData]) GetPeriod() period.Period {
 	return cs.activeState.Period
 }
 
 // SetPeriod sets the current sampler period of the active instrument
-func (cs *ChannelState[TMemory, TChannelData]) SetPeriod(period note.Period) {
+func (cs *ChannelState[TMemory, TChannelData]) SetPeriod(period period.Period) {
 	cs.activeState.Period = period
 }
 

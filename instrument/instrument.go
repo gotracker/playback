@@ -5,7 +5,8 @@ import (
 
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/voice"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice"
 
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/note"
@@ -30,7 +31,7 @@ type StaticValues struct {
 type Instrument struct {
 	Static   StaticValues
 	Inst     DataIntf
-	C2Spd    note.C2SPD
+	C2Spd    period.Frequency
 	Finetune optional.Value[note.Finetune]
 }
 
@@ -41,12 +42,12 @@ func (inst *Instrument) IsInvalid() bool {
 
 // GetC2Spd returns the C2SPD value for the instrument
 // This may get mutated if a finetune effect is processed
-func (inst *Instrument) GetC2Spd() note.C2SPD {
+func (inst *Instrument) GetC2Spd() period.Frequency {
 	return inst.C2Spd
 }
 
 // SetC2Spd sets the C2SPD value for the instrument
-func (inst *Instrument) SetC2Spd(c2spd note.C2SPD) {
+func (inst *Instrument) SetC2Spd(c2spd period.Frequency) {
 	inst.C2Spd = c2spd
 }
 

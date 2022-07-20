@@ -2,14 +2,14 @@ package playback
 
 import (
 	"github.com/gotracker/playback"
-	"github.com/gotracker/voice"
+	"github.com/gotracker/playback/voice"
 
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/format/xm/channel"
 	xmPeriod "github.com/gotracker/playback/format/xm/period"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/state"
-	"github.com/gotracker/voice/period"
 )
 
 type doNoteCalc struct {

@@ -2,7 +2,7 @@ package instrument
 
 import (
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/voice/pcm"
+	"github.com/gotracker/playback/voice/pcm"
 
 	"github.com/gotracker/playback/settings"
 )

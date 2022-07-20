@@ -6,16 +6,15 @@ import (
 	"github.com/gotracker/gomixing/mixing"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/voice"
-
-	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice"
 )
 
 // Active is the active state of a channel
 type Active struct {
 	Playback
 	Voice       voice.Voice
-	PeriodDelta note.PeriodDelta
+	PeriodDelta period.PeriodDelta
 }
 
 // Reset sets the active state to defaults

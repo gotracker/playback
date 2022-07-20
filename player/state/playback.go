@@ -6,13 +6,13 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/playback/instrument"
-	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
 )
 
 // Playback is the information needed to make an instrument play
 type Playback struct {
 	Instrument *instrument.Instrument
-	Period     note.Period
+	Period     period.Period
 	Volume     volume.Volume
 	Pos        sampling.Pos
 	Pan        panning.Position

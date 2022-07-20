@@ -6,6 +6,7 @@ import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/s3m/channel"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
 	"github.com/heucuva/comparison"
 )
 
@@ -29,14 +30,14 @@ func (e PortaToNote) Tick(cs playback.Channel[channel.Memory, channel.Data], p p
 	xx := mem.PortaToNote(channel.DataEffect(e))
 
 	// vibrato modifies current period for portamento
-	period := cs.GetPeriod()
-	if period == nil {
+	cur := cs.GetPeriod()
+	if cur == nil {
 		return nil
 	}
-	period = period.AddDelta(cs.GetPeriodDelta()).(note.Period)
+	cur = cur.AddDelta(cs.GetPeriodDelta())
 	ptp := cs.GetPortaTargetPeriod()
 	if currentTick != 0 {
-		if note.ComparePeriods(period, ptp) == comparison.SpaceshipRightGreater {
+		if period.ComparePeriods(cur, ptp) == comparison.SpaceshipRightGreater {
 			return doPortaUpToNote(cs, float32(xx), 4, ptp) // subtracts
 		} else {
 			return doPortaDownToNote(cs, float32(xx), 4, ptp) // adds

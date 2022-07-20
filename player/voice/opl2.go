@@ -5,14 +5,13 @@ import (
 
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/voice"
-	"github.com/gotracker/voice/component"
-	"github.com/gotracker/voice/fadeout"
-	"github.com/gotracker/voice/period"
-	"github.com/gotracker/voice/render"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice"
+	"github.com/gotracker/playback/voice/component"
+	"github.com/gotracker/playback/voice/fadeout"
+	"github.com/gotracker/playback/voice/render"
 
 	"github.com/gotracker/playback/instrument"
-	"github.com/gotracker/playback/note"
 )
 
 // OPL2 is an OPL2 voice interface
@@ -31,7 +30,7 @@ type OPL2Registers component.OPL2Registers
 type OPLConfiguration struct {
 	Chip          render.OPL2Chip
 	Channel       int
-	C2SPD         note.C2SPD
+	C2SPD         period.Frequency
 	InitialVolume volume.Volume
 	InitialPeriod period.Period
 	AutoVibrato   voice.AutoVibrato
@@ -41,7 +40,7 @@ type OPLConfiguration struct {
 // == the actual opl2 voice ==
 
 type opl2Voice struct {
-	c2spd         note.C2SPD
+	c2spd         period.Frequency
 	initialVolume volume.Volume
 
 	active    bool
@@ -91,7 +90,7 @@ func NewOPL2(config OPLConfiguration) voice.Voice {
 		_ = d
 	}
 
-	v.o.Setup(config.Chip, config.Channel, regs, config.C2SPD.ToFrequency())
+	v.o.Setup(config.Chip, config.Channel, regs, config.C2SPD)
 	v.amp.SetVolume(config.InitialVolume)
 	v.freq.SetPeriod(config.InitialPeriod)
 	v.freq.SetAutoVibratoEnabled(config.AutoVibrato.Enabled)

@@ -4,7 +4,7 @@ import (
 	"math"
 
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/voice/period"
+	"github.com/gotracker/playback/period"
 
 	"github.com/gotracker/playback/filter"
 	"github.com/heucuva/optional"

@@ -5,7 +5,7 @@ import (
 
 	"github.com/heucuva/optional"
 
-	"github.com/gotracker/voice/pcm"
+	"github.com/gotracker/playback/voice/pcm"
 )
 
 const (

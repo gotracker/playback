@@ -7,7 +7,6 @@ require (
 	github.com/gotracker/gomixing v1.1.2
 	github.com/gotracker/gosound v1.1.1
 	github.com/gotracker/opl2 v1.0.1
-	github.com/gotracker/voice v1.1.4
 	github.com/heucuva/comparison v1.0.0
 	github.com/heucuva/optional v0.0.1
 	golang.org/x/exp v0.0.0-20220713135740-79cabaa25d75

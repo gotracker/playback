@@ -1,7 +1,7 @@
 package channel
 
 import (
-	"github.com/gotracker/voice/oscillator"
+	"github.com/gotracker/playback/voice/oscillator"
 
 	"github.com/gotracker/playback/memory"
 	oscillatorImpl "github.com/gotracker/playback/oscillator"

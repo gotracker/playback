@@ -6,8 +6,8 @@ import (
 	"github.com/gotracker/playback/format/it/channel"
 	itPeriod "github.com/gotracker/playback/format/it/period"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/state"
-	"github.com/gotracker/voice/period"
 )
 
 type doNoteCalc struct {

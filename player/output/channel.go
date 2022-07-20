@@ -2,7 +2,7 @@ package output
 
 import (
 	"github.com/gotracker/playback/filter"
-	"github.com/gotracker/voice/period"
+	"github.com/gotracker/playback/period"
 
 	"github.com/gotracker/gomixing/volume"
 )
