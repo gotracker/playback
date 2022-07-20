@@ -3,7 +3,7 @@ package mod
 import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/s3m"
-	"github.com/gotracker/playback/format/settings"
+	"github.com/gotracker/playback/settings"
 )
 
 type format struct{}

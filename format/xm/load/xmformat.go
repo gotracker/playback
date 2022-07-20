@@ -13,7 +13,6 @@ import (
 	"github.com/gotracker/voice/loop"
 	"github.com/gotracker/voice/pcm"
 
-	"github.com/gotracker/playback/format/settings"
 	xmPanning "github.com/gotracker/playback/format/xm/conversion/panning"
 	xmPeriod "github.com/gotracker/playback/format/xm/conversion/period"
 	xmVolume "github.com/gotracker/playback/format/xm/conversion/volume"
@@ -24,6 +23,7 @@ import (
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/pattern"
+	"github.com/gotracker/playback/settings"
 	formatutil "github.com/gotracker/playback/util"
 )
 

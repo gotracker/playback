@@ -1,9 +1,9 @@
 package load
 
 import (
-	"github.com/gotracker/playback/format/settings"
 	"github.com/gotracker/playback/format/xm/layout"
 	"github.com/gotracker/playback/format/xm/playback"
+	"github.com/gotracker/playback/settings"
 )
 
 type readerFunc func(filename string, s *settings.Settings) (*layout.Song, error)

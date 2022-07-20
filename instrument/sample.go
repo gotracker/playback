@@ -4,7 +4,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/voice/pcm"
 
-	"github.com/gotracker/playback/format/settings"
+	"github.com/gotracker/playback/settings"
 )
 
 func NewSample(data []byte, length int, channels int, format pcm.SampleDataFormat, s *settings.Settings) (pcm.Sample, error) {

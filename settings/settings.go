@@ -20,7 +20,7 @@ type Settings struct {
 }
 
 // GetOption returns the current option by name
-func (s *Settings) GetOption(name string) *optional.Value[any] {
+func (s Settings) GetOption(name string) *optional.Value[any] {
 	if s.Values == nil {
 		return nil
 	}
@@ -31,7 +31,7 @@ func (s *Settings) GetOption(name string) *optional.Value[any] {
 }
 
 // Get returns the current value by name
-func (s *Settings) Get(name string) (any, bool) {
+func (s Settings) Get(name string) (any, bool) {
 	if v := s.GetOption(name); v != nil {
 		return v.Get()
 	}

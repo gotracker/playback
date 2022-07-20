@@ -2,7 +2,7 @@ package load
 
 import (
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/settings"
+	"github.com/gotracker/playback/settings"
 )
 
 // XM loads an XM file and upgrades it into an XM file internally

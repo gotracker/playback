@@ -15,11 +15,11 @@ import (
 	itPanning "github.com/gotracker/playback/format/it/conversion/panning"
 	"github.com/gotracker/playback/format/it/layout"
 	"github.com/gotracker/playback/format/it/layout/channel"
-	"github.com/gotracker/playback/format/settings"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/pattern"
+	"github.com/gotracker/playback/settings"
 	formatutil "github.com/gotracker/playback/util"
 )
 

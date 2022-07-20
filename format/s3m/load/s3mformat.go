@@ -16,11 +16,11 @@ import (
 	s3mVolume "github.com/gotracker/playback/format/s3m/conversion/volume"
 	"github.com/gotracker/playback/format/s3m/layout"
 	"github.com/gotracker/playback/format/s3m/layout/channel"
-	"github.com/gotracker/playback/format/settings"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/pattern"
+	"github.com/gotracker/playback/settings"
 	formatutil "github.com/gotracker/playback/util"
 )
 

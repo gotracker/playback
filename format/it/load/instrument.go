@@ -21,10 +21,10 @@ import (
 	"github.com/gotracker/playback/filter"
 	itNote "github.com/gotracker/playback/format/it/conversion/note"
 	itfilter "github.com/gotracker/playback/format/it/playback/filter"
-	"github.com/gotracker/playback/format/settings"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	oscillatorImpl "github.com/gotracker/playback/oscillator"
+	"github.com/gotracker/playback/settings"
 )
 
 type convInst struct {

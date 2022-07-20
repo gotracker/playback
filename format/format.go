@@ -8,8 +8,8 @@ import (
 	"github.com/gotracker/playback/format/it"
 	"github.com/gotracker/playback/format/mod"
 	"github.com/gotracker/playback/format/s3m"
-	"github.com/gotracker/playback/format/settings"
 	"github.com/gotracker/playback/format/xm"
+	"github.com/gotracker/playback/settings"
 	"github.com/gotracker/playback/song"
 )
 

@@ -1,6 +1,6 @@
 package playback
 
-import "github.com/gotracker/playback/format/settings"
+import "github.com/gotracker/playback/settings"
 
 // Format is an interface to a music file format loader
 type Format[TChannelData any] interface {

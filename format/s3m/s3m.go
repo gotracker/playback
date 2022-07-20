@@ -4,7 +4,7 @@ package s3m
 import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/s3m/load"
-	"github.com/gotracker/playback/format/settings"
+	"github.com/gotracker/playback/settings"
 )
 
 type format struct{}

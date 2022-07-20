@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/gotracker/playback/format/s3m"
-	"github.com/gotracker/playback/format/settings"
 	"github.com/gotracker/playback/player/feature"
+	"github.com/gotracker/playback/settings"
 	"github.com/gotracker/playback/song"
 )
 
