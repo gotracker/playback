@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback/format/xm/channel"
 )
 
 // PortaVolumeSlide defines a portamento-to-note combined with a volume slide effect

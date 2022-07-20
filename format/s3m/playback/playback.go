@@ -7,9 +7,9 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"github.com/gotracker/playback"
-	s3mPeriod "github.com/gotracker/playback/format/s3m/conversion/period"
+	"github.com/gotracker/playback/format/s3m/channel"
 	"github.com/gotracker/playback/format/s3m/layout"
-	"github.com/gotracker/playback/format/s3m/layout/channel"
+	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
 	"github.com/gotracker/playback/format/s3m/playback/state/pattern"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"

@@ -6,7 +6,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/it/layout/channel"
+	"github.com/gotracker/playback/format/it/channel"
 )
 
 // SetGlobalVolume defines a set global volume effect

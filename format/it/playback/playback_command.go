@@ -3,8 +3,8 @@ package playback
 import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/filter"
-	itPeriod "github.com/gotracker/playback/format/it/conversion/period"
-	"github.com/gotracker/playback/format/it/layout/channel"
+	"github.com/gotracker/playback/format/it/channel"
+	itPeriod "github.com/gotracker/playback/format/it/period"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/voice/period"

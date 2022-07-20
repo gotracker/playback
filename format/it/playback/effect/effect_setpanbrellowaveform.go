@@ -6,7 +6,7 @@ import (
 	"github.com/gotracker/voice/oscillator"
 
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/it/layout/channel"
+	"github.com/gotracker/playback/format/it/channel"
 )
 
 // SetPanbrelloWaveform defines a set panbrello waveform effect

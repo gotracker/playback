@@ -4,41 +4,24 @@ import (
 	"fmt"
 	"strings"
 
-	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
+	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/volume"
 
-	itNote "github.com/gotracker/playback/format/it/conversion/note"
-	itVolume "github.com/gotracker/playback/format/it/conversion/volume"
+	xmNote "github.com/gotracker/playback/format/xm/note"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 )
 
-const MaxTotalChannels = 64
-
 // DataEffect is the type of a channel's EffectParameter value
 type DataEffect uint8
 
-// SampleID is an InstrumentID that is a combination of InstID and SampID
-type SampleID struct {
-	InstID   uint8
-	Semitone note.Semitone
-}
-
-// IsEmpty returns true if the sample ID is empty
-func (s SampleID) IsEmpty() bool {
-	return s.InstID == 0
-}
-
-func (s SampleID) String() string {
-	return fmt.Sprint(s.InstID)
-}
-
 // Data is the data for the channel
 type Data struct {
-	What            itfile.ChannelDataFlags
-	Note            itfile.Note
+	What            xmfile.ChannelFlags
+	Note            uint8
 	Instrument      uint8
-	VolPan          uint8
+	Volume          xmVolume.VolEffect
 	Effect          uint8
 	EffectParameter DataEffect
 }
@@ -50,7 +33,7 @@ func (d Data) HasNote() bool {
 
 // GetNote returns the note for the channel
 func (d Data) GetNote() note.Note {
-	return itNote.FromItNote(d.Note)
+	return xmNote.FromXmNote(d.Note)
 }
 
 // HasInstrument returns true if there exists an instrument on the channel
@@ -75,27 +58,26 @@ func (d Data) GetInstrument(stmem note.Semitone) instrument.ID {
 
 // HasVolume returns true if there exists a volume on the channel
 func (d Data) HasVolume() bool {
-	if !d.What.HasVolPan() {
+	if !d.What.HasVolume() {
 		return false
 	}
 
-	v := d.VolPan
-	return v <= 64
+	return d.Volume.IsVolume()
 }
 
 // GetVolume returns the volume for the channel
 func (d Data) GetVolume() volume.Volume {
-	return itVolume.FromVolPan(d.VolPan)
+	return d.Volume.Volume()
 }
 
-// HasCommand returns true if there exists a effect on the channel
+// HasCommand returns true if there exists a command on the channel
 func (d Data) HasCommand() bool {
-	if d.What.HasCommand() {
+	if d.What.HasEffect() || d.What.HasEffectParameter() {
 		return true
 	}
 
-	if d.What.HasVolPan() {
-		return d.VolPan > 64
+	if d.What.HasVolume() {
+		return !d.Volume.IsVolume()
 	}
 
 	return false
@@ -109,9 +91,7 @@ func (d Data) Channel() uint8 {
 func (Data) getNoteString(n note.Note) string {
 	switch note.Type(n) {
 	case note.SpecialTypeRelease:
-		return "==="
-	case note.SpecialTypeStop:
-		return "^^^"
+		return "== "
 	case note.SpecialTypeNormal:
 		return n.String()
 	default:
@@ -121,8 +101,10 @@ func (Data) getNoteString(n note.Note) string {
 
 func (Data) getCommandString(cmd uint8) rune {
 	switch {
-	case cmd > 0 && cmd <= 26:
-		return '@' + rune(cmd)
+	case cmd <= 9:
+		return '0' + rune(cmd)
+	case cmd >= 10 && cmd < 36:
+		return 'A' + rune(cmd-10)
 	default:
 		panic("effect out of range")
 	}
@@ -131,20 +113,21 @@ func (Data) getCommandString(cmd uint8) rune {
 func (d Data) String() string {
 	pieces := []string{
 		"...", // note
-		"..",  // inst
+		"  ",  // inst
 		"..",  // vol
 		"...", // eff
 	}
+
 	if d.HasNote() {
 		pieces[0] = d.getNoteString(d.GetNote())
 	}
 	if d.HasInstrument() {
-		pieces[1] = fmt.Sprintf("%02X", d.Instrument)
+		pieces[1] = fmt.Sprintf("%2X", d.Instrument)
 	}
 	if d.HasVolume() {
-		pieces[2] = fmt.Sprintf("%02X", d.VolPan)
+		pieces[2] = fmt.Sprintf("%02X", d.Volume)
 	}
-	if d.HasCommand() && d.Effect != 0 {
+	if d.HasCommand() {
 		pieces[3] = fmt.Sprintf("%c%02X", d.getCommandString(d.Effect), d.EffectParameter)
 	}
 	return strings.Join(pieces, " ")
@@ -152,7 +135,7 @@ func (d Data) String() string {
 
 func (d Data) ShortString() string {
 	if d.HasNote() {
-		return d.GetNote().String()
+		return d.getNoteString(d.GetNote())
 	}
 	return "..."
 }

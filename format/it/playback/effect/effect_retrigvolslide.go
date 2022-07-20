@@ -6,7 +6,7 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/it/layout/channel"
+	"github.com/gotracker/playback/format/it/channel"
 )
 
 // RetrigVolumeSlide defines a retriggering volume slide effect

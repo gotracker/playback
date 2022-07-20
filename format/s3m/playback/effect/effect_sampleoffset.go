@@ -6,7 +6,7 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/s3m/layout/channel"
+	"github.com/gotracker/playback/format/s3m/channel"
 )
 
 // SampleOffset defines a sample offset effect

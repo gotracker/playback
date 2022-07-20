@@ -13,9 +13,9 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/playback/filter"
-	itPanning "github.com/gotracker/playback/format/it/conversion/panning"
+	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/format/it/layout"
-	"github.com/gotracker/playback/format/it/layout/channel"
+	itPanning "github.com/gotracker/playback/format/it/panning"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"

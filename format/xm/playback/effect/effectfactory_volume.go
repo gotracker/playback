@@ -1,8 +1,8 @@
 package effect
 
 import (
-	xmVolume "github.com/gotracker/playback/format/xm/conversion/volume"
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback/format/xm/channel"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
 )
 
 func volumeEffectFactory(mem *channel.Memory, v xmVolume.VolEffect) EffectXM {

@@ -2,7 +2,7 @@ package effect
 
 import (
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/s3m/layout/channel"
+	"github.com/gotracker/playback/format/s3m/channel"
 )
 
 type EffectS3M interface {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/it/layout/channel"
+	"github.com/gotracker/playback/format/it/channel"
 )
 
 // FineVibrato defines an fine vibrato effect

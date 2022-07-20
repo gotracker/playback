@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/gotracker/playback/format/it/layout/channel"
+	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
 )

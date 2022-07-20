@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/s3m/layout/channel"
+	"github.com/gotracker/playback/format/s3m/channel"
 )
 
 // PatternLoop defines a pattern loop effect

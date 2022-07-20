@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
-	s3mPanning "github.com/gotracker/playback/format/s3m/conversion/panning"
-	"github.com/gotracker/playback/format/s3m/layout/channel"
+	"github.com/gotracker/playback/format/s3m/channel"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 )
 
 // StereoControl defines a set stereo control effect

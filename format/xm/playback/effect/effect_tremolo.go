@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback/format/xm/channel"
 )
 
 // Tremolo defines a tremolo effect

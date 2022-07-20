@@ -4,9 +4,9 @@ import (
 	"github.com/gotracker/voice/oscillator"
 
 	"github.com/gotracker/playback"
-	xmVolume "github.com/gotracker/playback/format/xm/conversion/volume"
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback/format/xm/channel"
 	effectIntf "github.com/gotracker/playback/format/xm/playback/effect/intf"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
 	"github.com/gotracker/playback/note"
 	"github.com/heucuva/comparison"
 )

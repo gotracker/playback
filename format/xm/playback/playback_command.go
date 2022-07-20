@@ -5,8 +5,8 @@ import (
 	"github.com/gotracker/voice"
 
 	"github.com/gotracker/playback/filter"
-	xmPeriod "github.com/gotracker/playback/format/xm/conversion/period"
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback/format/xm/channel"
+	xmPeriod "github.com/gotracker/playback/format/xm/period"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/voice/period"

@@ -3,7 +3,7 @@ package pattern
 import (
 	"errors"
 
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback/format/xm/channel"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/player/feature"

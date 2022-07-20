@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
-	xmVolume "github.com/gotracker/playback/format/xm/conversion/volume"
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback/format/xm/channel"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
 )
 
 // SetGlobalVolume defines a set global volume effect

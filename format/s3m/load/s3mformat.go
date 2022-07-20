@@ -13,10 +13,10 @@ import (
 	"github.com/gotracker/voice/loop"
 	"github.com/gotracker/voice/pcm"
 
-	s3mPanning "github.com/gotracker/playback/format/s3m/conversion/panning"
-	s3mVolume "github.com/gotracker/playback/format/s3m/conversion/volume"
+	"github.com/gotracker/playback/format/s3m/channel"
 	"github.com/gotracker/playback/format/s3m/layout"
-	"github.com/gotracker/playback/format/s3m/layout/channel"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
@@ -295,7 +295,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		if sample == nil {
 			continue
 		}
-		sample.Static.ID = channel.S3MInstrumentID(uint8(instNum + 1))
+		sample.Static.ID = channel.InstID(uint8(instNum + 1))
 		song.Instruments[instNum] = sample
 	}
 

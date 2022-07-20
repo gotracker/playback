@@ -6,8 +6,8 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 
 	"github.com/gotracker/playback"
-	itPanning "github.com/gotracker/playback/format/it/conversion/panning"
-	"github.com/gotracker/playback/format/it/layout/channel"
+	"github.com/gotracker/playback/format/it/channel"
+	itPanning "github.com/gotracker/playback/format/it/panning"
 )
 
 // SetPanPosition defines a set pan position effect

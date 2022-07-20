@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
-	xmVolume "github.com/gotracker/playback/format/xm/conversion/volume"
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback/format/xm/channel"
 	effectIntf "github.com/gotracker/playback/format/xm/playback/effect/intf"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
 )
 
 // UnhandledCommand is an unhandled command

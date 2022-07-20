@@ -6,8 +6,8 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 
 	"github.com/gotracker/playback"
-	s3mVolume "github.com/gotracker/playback/format/s3m/conversion/volume"
-	"github.com/gotracker/playback/format/s3m/layout/channel"
+	"github.com/gotracker/playback/format/s3m/channel"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 )
 
 // SetGlobalVolume defines a set global volume effect

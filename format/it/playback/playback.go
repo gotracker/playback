@@ -5,9 +5,9 @@ import (
 	device "github.com/gotracker/gosound"
 
 	"github.com/gotracker/playback"
-	itPeriod "github.com/gotracker/playback/format/it/conversion/period"
+	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/format/it/layout"
-	"github.com/gotracker/playback/format/it/layout/channel"
+	itPeriod "github.com/gotracker/playback/format/it/period"
 	"github.com/gotracker/playback/format/it/playback/state/pattern"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"

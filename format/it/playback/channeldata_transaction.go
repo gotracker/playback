@@ -4,7 +4,7 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/it/layout/channel"
+	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/format/it/playback/effect"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/state"

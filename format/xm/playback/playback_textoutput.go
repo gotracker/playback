@@ -1,7 +1,7 @@
 package playback
 
 import (
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback/format/xm/channel"
 	"github.com/gotracker/playback/player/render"
 )
 

@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
-	xmVolume "github.com/gotracker/playback/format/xm/conversion/volume"
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback/format/xm/channel"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
 )
 
 // SetVolume defines a volume slide effect

@@ -1,7 +1,7 @@
 package effect
 
 import (
-	"github.com/gotracker/playback/format/it/layout/channel"
+	"github.com/gotracker/playback/format/it/channel"
 )
 
 func volPanEffectFactory(mem *channel.Memory, v uint8) EffectIT {

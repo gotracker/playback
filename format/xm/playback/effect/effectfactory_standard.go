@@ -1,7 +1,7 @@
 package effect
 
 import (
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback/format/xm/channel"
 )
 
 func standardEffectFactory(mem *channel.Memory, cd *channel.Data) EffectXM {

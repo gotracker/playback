@@ -7,7 +7,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/it/layout/channel"
+	"github.com/gotracker/playback/format/it/channel"
 )
 
 // SetChannelVolume defines a set channel volume effect

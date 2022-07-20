@@ -5,8 +5,8 @@ import (
 	"github.com/gotracker/voice/oscillator"
 
 	"github.com/gotracker/playback"
-	s3mVolume "github.com/gotracker/playback/format/s3m/conversion/volume"
-	"github.com/gotracker/playback/format/s3m/layout/channel"
+	"github.com/gotracker/playback/format/s3m/channel"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/note"
 	"github.com/heucuva/comparison"
 )

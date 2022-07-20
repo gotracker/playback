@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
-	xmPanning "github.com/gotracker/playback/format/xm/conversion/panning"
-	"github.com/gotracker/playback/format/xm/layout/channel"
+	"github.com/gotracker/playback/format/xm/channel"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
 )
 
 // SetCoarsePanPosition defines a set pan position effect

@@ -7,23 +7,11 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/volume"
 
-	s3mNote "github.com/gotracker/playback/format/s3m/conversion/note"
-	s3mVolume "github.com/gotracker/playback/format/s3m/conversion/volume"
+	s3mNote "github.com/gotracker/playback/format/s3m/note"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 )
-
-// S3MInstrumentID is an instrument ID in S3M world
-type S3MInstrumentID uint8
-
-// IsEmpty returns true if the instrument ID is 'nothing'
-func (s S3MInstrumentID) IsEmpty() bool {
-	return s == 0
-}
-
-func (s S3MInstrumentID) String() string {
-	return fmt.Sprint(uint8(s))
-}
 
 // DataEffect is the type of a channel's EffectParameter value
 type DataEffect uint8
@@ -32,7 +20,7 @@ type DataEffect uint8
 type Data struct {
 	What       s3mfile.PatternFlags
 	Note       s3mfile.Note
-	Instrument S3MInstrumentID
+	Instrument InstID
 	Volume     s3mfile.Volume
 	Command    uint8
 	Info       DataEffect
