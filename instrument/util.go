@@ -1,6 +1,10 @@
 package instrument
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/gotracker/gomixing/sampling"
+)
 
 // ID is an identifier for an instrument/sample that means something to the format
 type ID interface {
@@ -8,8 +12,11 @@ type ID interface {
 	fmt.Stringer
 }
 
-// DataIntf is the interface to implementation-specific functions on an instrument
-type DataIntf any
+// Data is the interface to implementation-specific functions on an instrument
+type Data interface {
+	GetKind() Kind
+	GetLength() sampling.Pos
+}
 
 // Kind defines the kind of instrument
 type Kind int

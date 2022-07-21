@@ -2,6 +2,7 @@ package instrument
 
 import (
 	"github.com/gotracker/gomixing/panning"
+	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/voice/envelope"
 	"github.com/gotracker/playback/voice/fadeout"
@@ -21,4 +22,12 @@ type PCM struct {
 	PanEnv        envelope.Envelope[panning.Position]
 	PitchFiltMode bool                    // true = filter, false = pitch
 	PitchFiltEnv  envelope.Envelope[int8] // this is either pitch or filter
+}
+
+func (PCM) GetKind() Kind {
+	return KindPCM
+}
+
+func (p PCM) GetLength() sampling.Pos {
+	return sampling.Pos{Pos: p.Sample.Length()}
 }

@@ -26,7 +26,7 @@ func New(inst *instrument.Instrument, output *output.Channel) voice.Voice {
 			C2SPD:         inst.GetC2Spd(),
 			InitialVolume: inst.GetDefaultVolume(),
 			AutoVibrato:   inst.GetAutoVibrato(),
-			DataIntf:      data,
+			Data:          data,
 			OutputFilter:  output,
 			VoiceFilter:   voiceFilter,
 			PluginFilter:  pluginFilter,
@@ -38,7 +38,7 @@ func New(inst *instrument.Instrument, output *output.Channel) voice.Voice {
 			C2SPD:         inst.GetC2Spd(),
 			InitialVolume: inst.GetDefaultVolume(),
 			AutoVibrato:   inst.GetAutoVibrato(),
-			DataIntf:      data,
+			Data:          data,
 		})
 	}
 	return nil

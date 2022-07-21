@@ -108,7 +108,7 @@ func (tt TracingTable) Fprintln(w io.Writer, colSep string, withRowNums bool) er
 	return nil
 }
 
-type TraceableIntf interface {
+type Traceable interface {
 	OutputTraces(out chan<- func(w io.Writer))
 }
 

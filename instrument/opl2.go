@@ -1,5 +1,11 @@
 package instrument
 
+import (
+	"math"
+
+	"github.com/gotracker/gomixing/sampling"
+)
+
 // OPL2OperatorData is the operator data for an OPL2/Adlib instrument
 type OPL2OperatorData struct {
 	// KeyScaleRateSelect returns true if the modulator's envelope scales with keys
@@ -70,8 +76,16 @@ type OPL2 struct {
 	AdditiveSynthesis bool
 }
 
+func (OPL2) GetKind() Kind {
+	return KindOPL2
+}
+
+func (OPL2) GetLength() sampling.Pos {
+	return sampling.Pos{Pos: math.MaxInt64}
+}
+
 // GetReg20 calculates the Register 0x20 value
-func (o *OPL2OperatorData) GetReg20() uint8 {
+func (o OPL2OperatorData) GetReg20() uint8 {
 	reg20 := uint8(0x00)
 	if o.Tremolo {
 		reg20 |= 0x80
@@ -91,7 +105,7 @@ func (o *OPL2OperatorData) GetReg20() uint8 {
 }
 
 // GetReg40 calculates the Register 0x40 value
-func (o *OPL2OperatorData) GetReg40() uint8 {
+func (o OPL2OperatorData) GetReg40() uint8 {
 	oVol := uint8(o.Volume)
 	if oVol > 63 {
 		oVol = 63
@@ -105,7 +119,7 @@ func (o *OPL2OperatorData) GetReg40() uint8 {
 }
 
 // GetReg60 calculates the Register 0x60 value
-func (o *OPL2OperatorData) GetReg60() uint8 {
+func (o OPL2OperatorData) GetReg60() uint8 {
 	reg60 := uint8(0x00)
 	reg60 |= (o.AttackRate & 0x0f) << 4
 	reg60 |= o.DecayRate & 0x0f
@@ -113,7 +127,7 @@ func (o *OPL2OperatorData) GetReg60() uint8 {
 }
 
 // GetReg80 calculates the Register 0x80 value
-func (o *OPL2OperatorData) GetReg80() uint8 {
+func (o OPL2OperatorData) GetReg80() uint8 {
 	reg80 := uint8(0x00)
 	reg80 |= (15 - (o.SustainLevel & 0x0f)) << 4
 	reg80 |= o.ReleaseRate & 0x0f
@@ -121,7 +135,7 @@ func (o *OPL2OperatorData) GetReg80() uint8 {
 }
 
 // GetRegC0 calculates the Register 0xC0 value
-func (inst *OPL2) GetRegC0() uint8 {
+func (inst OPL2) GetRegC0() uint8 {
 	regC0 := uint8(0x00)
 	regC0 |= 0x20 | 0x10 // right and left enable [OPL3 only]
 	regC0 |= uint8(inst.ModulationFeedback&0x7) << 1
@@ -132,7 +146,7 @@ func (inst *OPL2) GetRegC0() uint8 {
 }
 
 // GetRegE0 calculates the Register 0xE0 value
-func (o *OPL2OperatorData) GetRegE0() uint8 {
+func (o OPL2OperatorData) GetRegE0() uint8 {
 	regE0 := uint8(0x00)
 	regE0 |= uint8(o.WaveformSelection & 0x07)
 	return regE0
