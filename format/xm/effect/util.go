@@ -6,7 +6,7 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/channel"
-	effectIntf "github.com/gotracker/playback/format/xm/playback/effect/intf"
+	effectIntf "github.com/gotracker/playback/format/xm/effect/intf"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
 	"github.com/gotracker/playback/note"
 	"github.com/heucuva/comparison"

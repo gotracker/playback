@@ -5,7 +5,7 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/s3m/channel"
-	effectIntf "github.com/gotracker/playback/format/s3m/playback/effect/intf"
+	effectIntf "github.com/gotracker/playback/format/s3m/effect/intf"
 )
 
 // EnableFilter defines a set filter enable effect

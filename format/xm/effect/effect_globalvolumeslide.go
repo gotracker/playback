@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/it/channel"
-	effectIntf "github.com/gotracker/playback/format/it/playback/effect/intf"
+	"github.com/gotracker/playback/format/xm/channel"
+	effectIntf "github.com/gotracker/playback/format/xm/effect/intf"
 )
 
 // GlobalVolumeSlide defines a global volume slide effect
-type GlobalVolumeSlide channel.DataEffect // 'W'
+type GlobalVolumeSlide channel.DataEffect // 'H'
 
 // Start triggers on the first tick, but before the Tick() function is called
 func (e GlobalVolumeSlide) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
@@ -26,7 +26,7 @@ func (e GlobalVolumeSlide) Tick(cs playback.Channel[channel.Memory, channel.Data
 		return nil
 	}
 
-	m := p.(effectIntf.IT)
+	m := p.(effectIntf.XM)
 
 	if x == 0 {
 		// global vol slide down
@@ -39,5 +39,5 @@ func (e GlobalVolumeSlide) Tick(cs playback.Channel[channel.Memory, channel.Data
 }
 
 func (e GlobalVolumeSlide) String() string {
-	return fmt.Sprintf("W%0.2x", channel.DataEffect(e))
+	return fmt.Sprintf("H%0.2x", channel.DataEffect(e))
 }

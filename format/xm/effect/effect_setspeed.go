@@ -4,17 +4,17 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/it/channel"
-	effectIntf "github.com/gotracker/playback/format/it/playback/effect/intf"
+	"github.com/gotracker/playback/format/xm/channel"
+	effectIntf "github.com/gotracker/playback/format/xm/effect/intf"
 )
 
 // SetSpeed defines a set speed effect
-type SetSpeed channel.DataEffect // 'A'
+type SetSpeed channel.DataEffect // 'F'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e SetSpeed) PreStart(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	if e != 0 {
-		m := p.(effectIntf.IT)
+		m := p.(effectIntf.XM)
 		if err := m.SetTicks(int(e)); err != nil {
 			return err
 		}
@@ -29,5 +29,5 @@ func (e SetSpeed) Start(cs playback.Channel[channel.Memory, channel.Data], p pla
 }
 
 func (e SetSpeed) String() string {
-	return fmt.Sprintf("A%0.2x", channel.DataEffect(e))
+	return fmt.Sprintf("F%0.2x", channel.DataEffect(e))
 }

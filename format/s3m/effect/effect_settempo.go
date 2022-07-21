@@ -4,17 +4,17 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/it/channel"
-	effectIntf "github.com/gotracker/playback/format/it/playback/effect/intf"
+	"github.com/gotracker/playback/format/s3m/channel"
+	effectIntf "github.com/gotracker/playback/format/s3m/effect/intf"
 )
 
 // SetTempo defines a set tempo effect
-type SetTempo channel.DataEffect // 'T'
+type SetTempo ChannelCommand // 'T'
 
 // PreStart triggers when the effect enters onto the channel state
 func (e SetTempo) PreStart(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
 	if e > 0x20 {
-		m := p.(effectIntf.IT)
+		m := p.(effectIntf.S3M)
 		if err := m.SetTempo(int(e)); err != nil {
 			return err
 		}
@@ -30,7 +30,7 @@ func (e SetTempo) Start(cs playback.Channel[channel.Memory, channel.Data], p pla
 
 // Tick is called on every tick
 func (e SetTempo) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
-	m := p.(effectIntf.IT)
+	m := p.(effectIntf.S3M)
 	switch channel.DataEffect(e >> 4) {
 	case 0: // decrease tempo
 		if currentTick != 0 {

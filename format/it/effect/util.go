@@ -7,7 +7,7 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
-	effectIntf "github.com/gotracker/playback/format/it/playback/effect/intf"
+	effectIntf "github.com/gotracker/playback/format/it/effect/intf"
 	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/note"
 	"github.com/heucuva/comparison"

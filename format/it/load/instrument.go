@@ -20,8 +20,8 @@ import (
 	"github.com/gotracker/playback/voice/pcm"
 
 	"github.com/gotracker/playback/filter"
+	itfilter "github.com/gotracker/playback/format/it/filter"
 	itNote "github.com/gotracker/playback/format/it/note"
-	itfilter "github.com/gotracker/playback/format/it/playback/filter"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	oscillatorImpl "github.com/gotracker/playback/oscillator"

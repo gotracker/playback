@@ -5,7 +5,7 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/channel"
-	effectIntf "github.com/gotracker/playback/format/xm/playback/effect/intf"
+	effectIntf "github.com/gotracker/playback/format/xm/effect/intf"
 )
 
 // SetTempo defines a set tempo effect

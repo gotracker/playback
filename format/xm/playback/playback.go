@@ -7,8 +7,8 @@ import (
 
 	"github.com/gotracker/playback/format/xm/channel"
 	"github.com/gotracker/playback/format/xm/layout"
+	"github.com/gotracker/playback/format/xm/pattern"
 	xmPeriod "github.com/gotracker/playback/format/xm/period"
-	"github.com/gotracker/playback/format/xm/playback/state/pattern"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	playpattern "github.com/gotracker/playback/pattern"
