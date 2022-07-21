@@ -126,7 +126,7 @@ func (m *Manager) processVoiceUpdates(ch int, cs *state.ChannelState[channel.Mem
 func (m *Manager) SetFilterEnable(on bool) {
 	for i := range m.song.ChannelSettings {
 		c := m.GetChannel(i)
-		if o := c.GetOutputChannel(); o != nil {
+		if o := c.GetRenderChannel(); o != nil {
 			if on {
 				if o.Filter == nil {
 					o.Filter = filter.NewAmigaLPF(period.Frequency(xmPeriod.DefaultC2Spd), m.GetSampleRate())

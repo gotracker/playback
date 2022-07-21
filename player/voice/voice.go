@@ -5,11 +5,11 @@ import (
 
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/instrument"
-	"github.com/gotracker/playback/player/output"
+	"github.com/gotracker/playback/player/render"
 )
 
 // New returns a new Voice from the instrument and output channel provided
-func New(inst *instrument.Instrument, output *output.Channel) voice.Voice {
+func New(inst *instrument.Instrument, output *render.Channel) voice.Voice {
 	switch data := inst.GetData().(type) {
 	case *instrument.PCM:
 		var (

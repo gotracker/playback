@@ -8,18 +8,17 @@ import (
 	"github.com/gotracker/gomixing/mixing"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
-	device "github.com/gotracker/gosound"
+	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/voice/render"
-
 	"github.com/gotracker/playback/player/feature"
-	"github.com/gotracker/playback/player/output"
+	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/player/sampler"
+	voiceRender "github.com/gotracker/playback/voice/render"
 )
 
 // Premixable is an interface to getting the premix data from the tracker
 type Premixable interface {
-	GetPremixData() (*device.PremixData, error)
+	GetPremixData() (*output.PremixData, error)
 }
 
 // Tracker is an extensible music tracker
@@ -30,7 +29,7 @@ type Tracker struct {
 	Traceable     Traceable
 
 	s    *sampler.Sampler
-	opl2 render.OPL2Chip
+	opl2 voiceRender.OPL2Chip
 
 	globalVolume volume.Volume
 	mixerVolume  volume.Volume
@@ -38,7 +37,7 @@ type Tracker struct {
 	ignoreUnknownEffect feature.IgnoreUnknownEffect
 	tracingFile         *os.File
 	tracingState        tracingState
-	outputChannels      map[int]*output.Channel
+	outputChannels      map[int]*render.Channel
 }
 
 func (t *Tracker) Close() {
@@ -52,7 +51,7 @@ func (t *Tracker) Close() {
 }
 
 // Update runs processing on the tracker, producing premixed sound data
-func (t *Tracker) Update(deltaTime time.Duration, out chan<- *device.PremixData) error {
+func (t *Tracker) Update(deltaTime time.Duration, out chan<- *output.PremixData) error {
 	premix, err := t.Generate(deltaTime)
 	if err != nil {
 		return err
@@ -68,7 +67,7 @@ func (t *Tracker) Update(deltaTime time.Duration, out chan<- *device.PremixData)
 }
 
 // Generate runs processing on the tracker, then returns the premixed sound data (if possible)
-func (t *Tracker) Generate(deltaTime time.Duration) (*device.PremixData, error) {
+func (t *Tracker) Generate(deltaTime time.Duration) (*output.PremixData, error) {
 	premix, err := t.renderTick()
 	if err != nil {
 		return nil, err
@@ -92,10 +91,10 @@ func (t *Tracker) Generate(deltaTime time.Duration) (*device.PremixData, error) 
 	return nil, nil
 }
 
-// GetOutputChannel returns the output channel for the provided index `ch`
-func (t *Tracker) GetOutputChannel(ch int, init func(ch int) *output.Channel) *output.Channel {
+// GetRenderChannel returns the output channel for the provided index `ch`
+func (t *Tracker) GetRenderChannel(ch int, init func(ch int) *render.Channel) *render.Channel {
 	if t.outputChannels == nil {
-		t.outputChannels = make(map[int]*output.Channel)
+		t.outputChannels = make(map[int]*render.Channel)
 	}
 
 	if oc, ok := t.outputChannels[ch]; ok {
@@ -111,7 +110,7 @@ func (t *Tracker) GetSampleRate() period.Frequency {
 	return period.Frequency(t.GetSampler().SampleRate)
 }
 
-func (t *Tracker) renderTick() (*device.PremixData, error) {
+func (t *Tracker) renderTick() (*output.PremixData, error) {
 	if err := DoTick(t.Tickable); err != nil {
 		return nil, err
 	}
@@ -165,12 +164,12 @@ func (t *Tracker) renderOPL2Tick(mixerData *mixing.Data, mix *mixing.Mixer, tick
 }
 
 // GetOPL2Chip returns the current song's OPL2 chip, if it's needed
-func (t *Tracker) GetOPL2Chip() render.OPL2Chip {
+func (t *Tracker) GetOPL2Chip() voiceRender.OPL2Chip {
 	return t.opl2
 }
 
 // SetOPL2Chip sets the current song's OPL2 chip
-func (t *Tracker) SetOPL2Chip(opl2 render.OPL2Chip) {
+func (t *Tracker) SetOPL2Chip(opl2 voiceRender.OPL2Chip) {
 	t.opl2 = opl2
 }
 

@@ -10,7 +10,7 @@ import (
 type Data interface {
 	GetOrderList() []index.Pattern
 	IsChannelEnabled(int) bool
-	GetOutputChannel(int) int
+	GetRenderChannel(int) int
 	NumInstruments() int
 	IsValidInstrumentID(instrument.ID) bool
 	GetInstrument(instrument.ID) (*instrument.Instrument, note.Semitone)

@@ -4,9 +4,9 @@ import (
 	"time"
 
 	"github.com/gotracker/gomixing/volume"
-	device "github.com/gotracker/gosound"
 
 	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
@@ -22,8 +22,8 @@ type Playback interface {
 	GetGlobalVolume() volume.Volume
 	SetGlobalVolume(volume.Volume)
 
-	Update(time.Duration, chan<- *device.PremixData) error
-	Generate(time.Duration) (*device.PremixData, error)
+	Update(time.Duration, chan<- *output.PremixData) error
+	Generate(time.Duration) (*output.PremixData, error)
 
 	GetSongData() song.Data
 

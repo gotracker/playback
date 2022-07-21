@@ -5,11 +5,11 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/voice"
 
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
-	"github.com/gotracker/playback/player/output"
 )
 
 // Channel is an interface for channel state
@@ -52,8 +52,8 @@ type Channel[TMemory, TChannelData any] interface {
 	SetPanEnabled(bool)
 	GetPan() panning.Position
 	SetPan(panning.Position)
-	SetOutputChannel(*output.Channel)
-	GetOutputChannel() *output.Channel
+	SetRenderChannel(*render.Channel)
+	GetRenderChannel() *render.Channel
 	SetVolumeActive(bool)
 	SetGlobalVolume(volume.Volume)
 	SetChannelVolume(volume.Volume)
