@@ -10,7 +10,7 @@ import (
 
 // UnhandledCommand is an unhandled command
 type UnhandledCommand struct {
-	Command uint8
+	Command channel.Command
 	Info    channel.DataEffect
 }
 
@@ -23,14 +23,7 @@ func (e UnhandledCommand) PreStart(cs playback.Channel[channel.Memory, channel.D
 }
 
 func (e UnhandledCommand) String() string {
-	switch {
-	case e.Command <= 0x09:
-		return fmt.Sprintf("%c%0.2x", e.Command+'0', e.Info)
-	case e.Command >= 0x0A && e.Command <= 0x23:
-		return fmt.Sprintf("%c%0.2x", e.Command+'A', e.Info)
-	default:
-		return fmt.Sprintf("?%0.2x%0.2x?", e.Command, e.Info)
-	}
+	return fmt.Sprintf("%c%0.2x", e.Command.ToRune(), e.Info)
 }
 
 // UnhandledVolCommand is an unhandled volume command

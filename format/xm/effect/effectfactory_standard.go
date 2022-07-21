@@ -68,7 +68,7 @@ func standardEffectFactory(mem *channel.Memory, cd *channel.Data) EffectXM {
 	return UnhandledCommand{Command: cd.Effect, Info: cd.EffectParameter}
 }
 
-func extraFinePortaEffectFactory(mem *channel.Memory, ce uint8, cp channel.DataEffect) EffectXM {
+func extraFinePortaEffectFactory(mem *channel.Memory, ce channel.Command, cp channel.DataEffect) EffectXM {
 	switch cp >> 4 {
 	case 0x0: // none
 		return nil
@@ -80,7 +80,7 @@ func extraFinePortaEffectFactory(mem *channel.Memory, ce uint8, cp channel.DataE
 	return UnhandledCommand{Command: ce, Info: cp}
 }
 
-func specialEffectFactory(mem *channel.Memory, ce uint8, cp channel.DataEffect) EffectXM {
+func specialEffectFactory(mem *channel.Memory, ce channel.Command, cp channel.DataEffect) EffectXM {
 	switch cp >> 4 {
 	case 0x1: // Fine porta up
 		return FinePortaUp(cp)

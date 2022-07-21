@@ -205,7 +205,7 @@ func specialNoteEffects(data *channel.Data) EffectIT {
 	return UnhandledCommand{Command: data.Effect, Info: data.EffectParameter}
 }
 
-func volumeSlideFactory(mem *channel.Memory, cd uint8, ce channel.DataEffect) EffectIT {
+func volumeSlideFactory(mem *channel.Memory, cd channel.Command, ce channel.DataEffect) EffectIT {
 	x, y := mem.VolumeSlide(channel.DataEffect(ce))
 	switch {
 	case x == 0:

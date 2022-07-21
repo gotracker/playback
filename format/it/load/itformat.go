@@ -72,7 +72,7 @@ func convertItPattern(pkt itfile.PackedPattern, channels int) (*pattern.Pattern[
 				Note:            chn.Note,
 				Instrument:      chn.Instrument,
 				VolPan:          chn.VolPan,
-				Effect:          chn.Command,
+				Effect:          channel.Command(chn.Command),
 				EffectParameter: channel.DataEffect(chn.CommandData),
 			}
 

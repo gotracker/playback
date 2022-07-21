@@ -13,7 +13,7 @@ type VibratoVolumeSlide struct { // 'K'
 }
 
 // NewVibratoVolumeSlide creates a new VibratoVolumeSlide object
-func NewVibratoVolumeSlide(mem *channel.Memory, cd uint8, val channel.DataEffect) VibratoVolumeSlide {
+func NewVibratoVolumeSlide(mem *channel.Memory, cd channel.Command, val channel.DataEffect) VibratoVolumeSlide {
 	vvs := VibratoVolumeSlide{}
 	vs := volumeSlideFactory(mem, cd, val)
 	vvs.Effects = append(vvs.Effects, vs, Vibrato(0x00))

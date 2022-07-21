@@ -267,7 +267,7 @@ func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern[channel.Data], int) 
 				Note:            chn.Note,
 				Instrument:      chn.Instrument,
 				Volume:          xmVolume.VolEffect(chn.Volume),
-				Effect:          chn.Effect,
+				Effect:          channel.Command(chn.Effect),
 				EffectParameter: channel.DataEffect(chn.EffectParameter),
 			}
 			row.Channels[channelNum] = cd
