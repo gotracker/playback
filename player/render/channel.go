@@ -1,4 +1,4 @@
-package output
+package render
 
 import (
 	"github.com/gotracker/playback/filter"

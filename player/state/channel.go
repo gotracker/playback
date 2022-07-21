@@ -11,7 +11,7 @@ import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
-	"github.com/gotracker/playback/player/output"
+	"github.com/gotracker/playback/player/render"
 	voiceImpl "github.com/gotracker/playback/player/voice"
 	"github.com/gotracker/playback/song"
 	"github.com/heucuva/optional"
@@ -62,8 +62,8 @@ type ChannelState[TMemory, TChannelData any] struct {
 	PanEnabled        bool
 	NewNoteAction     note.Action
 
-	PastNotes *PastNotesProcessor
-	Output    *output.Channel
+	PastNotes     *PastNotesProcessor
+	RenderChannel *render.Channel
 }
 
 // WillTriggerOn returns true if a note will trigger on the tick specified
@@ -246,7 +246,7 @@ func (cs *ChannelState[TMemory, TChannelData]) SetInstrument(inst *instrument.In
 		if inst == cs.prevState.Instrument {
 			cs.activeState.Voice = cs.prevState.Voice
 		} else {
-			cs.activeState.Voice = voiceImpl.New(inst, cs.Output)
+			cs.activeState.Voice = voiceImpl.New(inst, cs.RenderChannel)
 		}
 	}
 }
@@ -368,30 +368,30 @@ func (cs *ChannelState[TMemory, TChannelData]) SetStoredSemitone(st note.Semiton
 	cs.StoredSemitone = st
 }
 
-// SetOutputChannel sets the output channel for the channel
-func (cs *ChannelState[TMemory, TChannelData]) SetOutputChannel(outputCh *output.Channel) {
-	cs.Output = outputCh
+// SetRenderChannel sets the output channel for the channel
+func (cs *ChannelState[TMemory, TChannelData]) SetRenderChannel(outputCh *render.Channel) {
+	cs.RenderChannel = outputCh
 }
 
-// GetOutputChannel returns the output channel for the channel
-func (cs *ChannelState[TMemory, TChannelData]) GetOutputChannel() *output.Channel {
-	return cs.Output
+// GetRenderChannel returns the output channel for the channel
+func (cs *ChannelState[TMemory, TChannelData]) GetRenderChannel() *render.Channel {
+	return cs.RenderChannel
 }
 
 // SetGlobalVolume sets the last-known global volume on the channel
 func (cs *ChannelState[TMemory, TChannelData]) SetGlobalVolume(gv volume.Volume) {
-	cs.Output.LastGlobalVolume = gv
-	cs.Output.SetGlobalVolume(gv)
+	cs.RenderChannel.LastGlobalVolume = gv
+	cs.RenderChannel.SetGlobalVolume(gv)
 }
 
 // SetChannelVolume sets the channel volume on the channel
 func (cs *ChannelState[TMemory, TChannelData]) SetChannelVolume(cv volume.Volume) {
-	cs.Output.ChannelVolume = cv
+	cs.RenderChannel.ChannelVolume = cv
 }
 
 // GetChannelVolume gets the channel volume on the channel
 func (cs *ChannelState[TMemory, TChannelData]) GetChannelVolume() volume.Volume {
-	return cs.Output.ChannelVolume
+	return cs.RenderChannel.ChannelVolume
 }
 
 // SetEnvelopePosition sets the envelope position for the active instrument
@@ -416,14 +416,14 @@ func (cs *ChannelState[TMemory, TChannelData]) TransitionActiveToPastState() {
 			// nothing
 			pn := cs.activeState.Clone()
 			if nc := pn.Voice; nc != nil {
-				cs.PastNotes.Add(cs.Output.ChannelNum, pn)
+				cs.PastNotes.Add(cs.RenderChannel.ChannelNum, pn)
 			}
 
 		case note.ActionRelease:
 			pn := cs.activeState.Clone()
 			if nc := pn.Voice; nc != nil {
 				nc.Release()
-				cs.PastNotes.Add(cs.Output.ChannelNum, pn)
+				cs.PastNotes.Add(cs.RenderChannel.ChannelNum, pn)
 			}
 
 		case note.ActionFadeout:
@@ -431,7 +431,7 @@ func (cs *ChannelState[TMemory, TChannelData]) TransitionActiveToPastState() {
 			if nc := pn.Voice; nc != nil {
 				nc.Release()
 				nc.Fadeout()
-				cs.PastNotes.Add(cs.Output.ChannelNum, pn)
+				cs.PastNotes.Add(cs.RenderChannel.ChannelNum, pn)
 			}
 		}
 	}
@@ -440,7 +440,7 @@ func (cs *ChannelState[TMemory, TChannelData]) TransitionActiveToPastState() {
 
 // DoPastNoteEffect performs an action on all past-note playbacks associated with the channel
 func (cs *ChannelState[TMemory, TChannelData]) DoPastNoteEffect(action note.Action) {
-	cs.PastNotes.Do(cs.Output.ChannelNum, action)
+	cs.PastNotes.Do(cs.RenderChannel.ChannelNum, action)
 }
 
 // SetNewNoteAction sets the New-Note Action on the channel

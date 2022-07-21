@@ -36,8 +36,8 @@ func (s Song) IsChannelEnabled(channelNum int) bool {
 	return s.ChannelSettings[channelNum].Enabled
 }
 
-// GetOutputChannel returns the output channel for the channel at index `channelNum`
-func (s Song) GetOutputChannel(channelNum int) int {
+// GetRenderChannel returns the output channel for the channel at index `channelNum`
+func (s Song) GetRenderChannel(channelNum int) int {
 	return s.ChannelSettings[channelNum].OutputChannelNum
 }
 

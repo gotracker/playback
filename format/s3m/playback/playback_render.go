@@ -1,8 +1,7 @@
 package playback
 
 import (
-	device "github.com/gotracker/gosound"
-
+	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/player/state"
 )
@@ -20,12 +19,12 @@ func (m *Manager) OnTick() error {
 }
 
 // GetPremixData gets the current premix data from the manager
-func (m *Manager) GetPremixData() (*device.PremixData, error) {
+func (m *Manager) GetPremixData() (*output.PremixData, error) {
 	return m.premix, nil
 }
 
 // RenderOneRow renders the next single row from the song pattern data into a RowRender object
-func (m *Manager) renderTick() (*device.PremixData, error) {
+func (m *Manager) renderTick() (*output.PremixData, error) {
 	postMixRowTxn := m.pattern.StartTransaction()
 	defer func() {
 		postMixRowTxn.Cancel()
@@ -40,7 +39,7 @@ func (m *Manager) renderTick() (*device.PremixData, error) {
 	}
 
 	var finalData render.RowRender
-	premix := &device.PremixData{
+	premix := &output.PremixData{
 		Userdata:   &finalData,
 		SamplesLen: m.rowRenderState.Samples,
 	}
@@ -74,7 +73,7 @@ type rowRenderState struct {
 	currentTick  int
 }
 
-func (m *Manager) soundRenderTick(premix *device.PremixData) error {
+func (m *Manager) soundRenderTick(premix *output.PremixData) error {
 	tick := m.rowRenderState.currentTick
 	var lastTick = (tick+1 == m.rowRenderState.ticksThisRow)
 

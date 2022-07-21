@@ -2,7 +2,6 @@ package playback
 
 import (
 	"github.com/gotracker/gomixing/volume"
-	device "github.com/gotracker/gosound"
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
@@ -12,10 +11,11 @@ import (
 	itPeriod "github.com/gotracker/playback/format/it/period"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/output"
 	playpattern "github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/player"
 	"github.com/gotracker/playback/player/feature"
-	"github.com/gotracker/playback/player/output"
+	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
 )
@@ -32,7 +32,7 @@ type Manager struct {
 
 	preMixRowTxn  *playpattern.RowUpdateTransaction
 	postMixRowTxn *playpattern.RowUpdateTransaction
-	premix        *device.PremixData
+	premix        *output.PremixData
 
 	rowRenderState       *rowRenderState
 	OnEffect             func(playback.Effect)
@@ -64,11 +64,11 @@ func NewManager(song *layout.Song) (*Manager, error) {
 
 	m.SetNumChannels(len(song.ChannelSettings))
 	for i, ch := range song.ChannelSettings {
-		oc := m.GetOutputChannel(ch.OutputChannelNum, m.channelInit)
+		oc := m.GetRenderChannel(ch.OutputChannelNum, m.channelInit)
 
 		cs := m.GetChannel(i)
 		cs.SetSongDataInterface(song)
-		cs.SetOutputChannel(oc)
+		cs.SetRenderChannel(oc)
 		cs.SetGlobalVolume(m.GetGlobalVolume())
 		cs.SetActiveVolume(ch.InitialVolume)
 		cs.SetChannelVolume(ch.ChannelVolume)
@@ -121,8 +121,8 @@ func (m *Manager) SetNumChannels(num int) {
 		cs.Trigger.Reset()
 		cs.RetriggerCount = 0
 		_ = cs.SetData(nil)
-		ocNum := m.song.GetOutputChannel(ch)
-		cs.Output = m.GetOutputChannel(ocNum, m.channelInit)
+		ocNum := m.song.GetRenderChannel(ch)
+		cs.RenderChannel = m.GetRenderChannel(ocNum, m.channelInit)
 
 		if m.enableNewNoteActions {
 			cs.PastNotes = &m.PastNotes
@@ -130,8 +130,8 @@ func (m *Manager) SetNumChannels(num int) {
 	}
 }
 
-func (m *Manager) channelInit(ch int) *output.Channel {
-	return &output.Channel{
+func (m *Manager) channelInit(ch int) *render.Channel {
+	return &render.Channel{
 		ChannelNum:      ch,
 		Filter:          nil,
 		GetSampleRate:   m.GetSampleRate,
