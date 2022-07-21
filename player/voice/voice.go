@@ -26,19 +26,19 @@ func New(inst *instrument.Instrument, output *output.Channel) voice.Voice {
 			C2SPD:         inst.GetC2Spd(),
 			InitialVolume: inst.GetDefaultVolume(),
 			AutoVibrato:   inst.GetAutoVibrato(),
-			DataIntf:      data,
+			Data:          data,
 			OutputFilter:  output,
 			VoiceFilter:   voiceFilter,
 			PluginFilter:  pluginFilter,
 		})
 	case *instrument.OPL2:
 		return NewOPL2(OPLConfiguration{
-			Chip:          output.Config.GetOPL2Chip(),
+			Chip:          output.GetOPL2Chip(),
 			Channel:       output.ChannelNum,
 			C2SPD:         inst.GetC2Spd(),
 			InitialVolume: inst.GetDefaultVolume(),
 			AutoVibrato:   inst.GetAutoVibrato(),
-			DataIntf:      data,
+			Data:          data,
 		})
 	}
 	return nil

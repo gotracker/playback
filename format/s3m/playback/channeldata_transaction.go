@@ -5,7 +5,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/s3m/channel"
-	"github.com/gotracker/playback/format/s3m/playback/effect"
+	"github.com/gotracker/playback/format/s3m/effect"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/state"

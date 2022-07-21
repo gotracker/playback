@@ -17,17 +17,17 @@ import (
 	"github.com/gotracker/playback/player/sampler"
 )
 
-// GetPremixDataIntf is an interface to getting the premix data from the tracker
-type GetPremixDataIntf interface {
+// Premixable is an interface to getting the premix data from the tracker
+type Premixable interface {
 	GetPremixData() (*device.PremixData, error)
 }
 
 // Tracker is an extensible music tracker
 type Tracker struct {
 	BaseClockRate period.Frequency
-	Tickable      TickableIntf
-	Premixable    GetPremixDataIntf
-	Traceable     TraceableIntf
+	Tickable      Tickable
+	Premixable    Premixable
+	Traceable     Traceable
 
 	s    *sampler.Sampler
 	opl2 render.OPL2Chip

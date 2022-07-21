@@ -9,6 +9,7 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/envelope"
 	"github.com/gotracker/playback/voice/fadeout"
@@ -25,7 +26,6 @@ import (
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/pattern"
-	"github.com/gotracker/playback/settings"
 )
 
 func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {
@@ -59,7 +59,7 @@ func xmAutoVibratoWSToProtrackerWS(vibtype uint8) uint8 {
 	}
 }
 
-func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlides bool, s *settings.Settings) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
+func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlides bool, features []feature.Feature) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
 	noteMap := make(map[int][]note.Semitone)
 
 	var instruments []*instrument.Instrument
@@ -210,7 +210,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 		ii.PanEnv.Loop = loop.NewLoop(panEnvLoopMode, panEnvLoopSettings)
 		ii.PanEnv.Sustain = loop.NewLoop(panEnvSustainMode, panEnvSustainSettings)
 
-		samp, err := instrument.NewSample(si.SampleData, instLen, numChannels, format, s)
+		samp, err := instrument.NewSample(si.SampleData, instLen, numChannels, format, features)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -243,12 +243,12 @@ func xmLoopModeToLoopMode(mode xmfile.SampleLoopMode) loop.Mode {
 	}
 }
 
-func convertXMInstrumentToInstrument(ih *xmfile.InstrumentHeader, linearFrequencySlides bool, s *settings.Settings) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
+func convertXMInstrumentToInstrument(ih *xmfile.InstrumentHeader, linearFrequencySlides bool, features []feature.Feature) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
 	if ih == nil {
 		return nil, nil, errors.New("instrument is nil")
 	}
 
-	return xmInstrumentToInstrument(ih, linearFrequencySlides, s)
+	return xmInstrumentToInstrument(ih, linearFrequencySlides, features)
 }
 
 func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern[channel.Data], int) {
@@ -267,7 +267,7 @@ func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern[channel.Data], int) 
 				Note:            chn.Note,
 				Instrument:      chn.Instrument,
 				Volume:          xmVolume.VolEffect(chn.Volume),
-				Effect:          chn.Effect,
+				Effect:          channel.Command(chn.Effect),
 				EffectParameter: channel.DataEffect(chn.EffectParameter),
 			}
 			row.Channels[channelNum] = cd
@@ -280,7 +280,7 @@ func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern[channel.Data], int) 
 	return pat, int(maxCh)
 }
 
-func convertXmFileToSong(f *xmfile.File, s *settings.Settings) (*layout.Song, error) {
+func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.Song, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -301,7 +301,7 @@ func convertXmFileToSong(f *xmfile.File, s *settings.Settings) (*layout.Song, er
 	}
 
 	for instNum, ih := range f.Instruments {
-		samples, noteMap, err := convertXMInstrumentToInstrument(&ih, linearFrequencySlides, s)
+		samples, noteMap, err := convertXMInstrumentToInstrument(&ih, linearFrequencySlides, features)
 		if err != nil {
 			return nil, err
 		}
@@ -371,11 +371,11 @@ func convertXmFileToSong(f *xmfile.File, s *settings.Settings) (*layout.Song, er
 	return &song, nil
 }
 
-func readXM(r io.Reader, s *settings.Settings) (*layout.Song, error) {
+func readXM(r io.Reader, features []feature.Feature) (*layout.Song, error) {
 	f, err := xmfile.Read(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return convertXmFileToSong(f, s)
+	return convertXmFileToSong(f, features)
 }

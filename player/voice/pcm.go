@@ -35,7 +35,7 @@ type PCMConfiguration struct {
 	InitialVolume volume.Volume
 	InitialPeriod period.Period
 	AutoVibrato   voice.AutoVibrato
-	DataIntf      instrument.DataIntf
+	Data          instrument.Data
 	OutputFilter  voice.FilterApplier
 	VoiceFilter   filter.Filter
 	PluginFilter  filter.Filter
@@ -82,7 +82,7 @@ func NewPCM(config PCMConfiguration) voice.Voice {
 		active:        true,
 	}
 
-	switch d := config.DataIntf.(type) {
+	switch d := config.Data.(type) {
 	case *instrument.PCM:
 		v.pitchAndFilterEnvShared = true
 		v.filterEnvActive = d.PitchFiltMode

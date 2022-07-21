@@ -13,6 +13,19 @@ import (
 	"github.com/gotracker/playback/note"
 )
 
+type Command uint8
+
+func (c Command) ToRune() rune {
+	switch {
+	case c <= 9:
+		return '0' + rune(c)
+	case c >= 10 && c < 36:
+		return 'A' + rune(c-10)
+	default:
+		panic("effect out of range")
+	}
+}
+
 // DataEffect is the type of a channel's EffectParameter value
 type DataEffect uint8
 
@@ -22,7 +35,7 @@ type Data struct {
 	Note            uint8
 	Instrument      uint8
 	Volume          xmVolume.VolEffect
-	Effect          uint8
+	Effect          Command
 	EffectParameter DataEffect
 }
 
@@ -99,17 +112,6 @@ func (Data) getNoteString(n note.Note) string {
 	}
 }
 
-func (Data) getCommandString(cmd uint8) rune {
-	switch {
-	case cmd <= 9:
-		return '0' + rune(cmd)
-	case cmd >= 10 && cmd < 36:
-		return 'A' + rune(cmd-10)
-	default:
-		panic("effect out of range")
-	}
-}
-
 func (d Data) String() string {
 	pieces := []string{
 		"...", // note
@@ -128,7 +130,7 @@ func (d Data) String() string {
 		pieces[2] = fmt.Sprintf("%02X", d.Volume)
 	}
 	if d.HasCommand() {
-		pieces[3] = fmt.Sprintf("%c%02X", d.getCommandString(d.Effect), d.EffectParameter)
+		pieces[3] = fmt.Sprintf("%c%02X", d.Effect.ToRune(), d.EffectParameter)
 	}
 	return strings.Join(pieces, " ")
 }

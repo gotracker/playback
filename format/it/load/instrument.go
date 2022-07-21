@@ -11,6 +11,7 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/envelope"
 	"github.com/gotracker/playback/voice/fadeout"
@@ -19,12 +20,11 @@ import (
 	"github.com/gotracker/playback/voice/pcm"
 
 	"github.com/gotracker/playback/filter"
+	itfilter "github.com/gotracker/playback/format/it/filter"
 	itNote "github.com/gotracker/playback/format/it/note"
-	itfilter "github.com/gotracker/playback/format/it/playback/filter"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	oscillatorImpl "github.com/gotracker/playback/oscillator"
-	"github.com/gotracker/playback/settings"
 )
 
 type convInst struct {
@@ -38,7 +38,7 @@ type convertITInstrumentSettings struct {
 	useHighPassFilter     bool
 }
 
-func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, s *settings.Settings) (map[int]*convInst, error) {
+func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, features []feature.Feature) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
@@ -87,7 +87,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 		}
 
 		ci.Inst = &ii
-		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], volume.Volume(1), convSettings, s); err != nil {
+		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], volume.Volume(1), convSettings, features); err != nil {
 			return nil, err
 		}
 
@@ -132,7 +132,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 	return outInsts, nil
 }
 
-func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, pluginFilters map[int]filter.Factory, s *settings.Settings) (map[int]*convInst, error) {
+func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, pluginFilters map[int]filter.Factory, features []feature.Feature) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
@@ -188,7 +188,7 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		mixVol := volume.Volume(inst.GlobalVolume.Value())
 
 		ci.Inst = &ii
-		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], mixVol, convSettings, s); err != nil {
+		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], mixVol, convSettings, features); err != nil {
 			return nil, err
 		}
 
@@ -337,7 +337,7 @@ func itAutoVibratoWSToProtrackerWS(vibtype uint8) uint8 {
 	}
 }
 
-func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, convSettings convertITInstrumentSettings, s *settings.Settings) error {
+func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, convSettings convertITInstrumentSettings, features []feature.Feature) error {
 	instLen := int(si.Header.Length)
 	numChannels := 1
 
@@ -434,7 +434,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		data = buf.Bytes()
 	}
 
-	samp, err := instrument.NewSample(data, instLen, numChannels, format, s)
+	samp, err := instrument.NewSample(data, instLen, numChannels, format, features)
 	if err != nil {
 		return err
 	}

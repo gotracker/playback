@@ -10,7 +10,7 @@ import (
 	"github.com/gotracker/playback/format/mod"
 	"github.com/gotracker/playback/format/s3m"
 	"github.com/gotracker/playback/format/xm"
-	"github.com/gotracker/playback/settings"
+	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/song"
 )
 
@@ -19,16 +19,9 @@ var (
 )
 
 // Load loads the a file into a playback manager
-func Load(filename string, options ...settings.OptionFunc) (playback.Playback, playback.Format[song.ChannelData], error) {
-	s := &settings.Settings{}
-	for _, opt := range options {
-		if err := opt(s); err != nil {
-			return nil, nil, err
-		}
-	}
-
+func Load(filename string, features ...feature.Feature) (playback.Playback, playback.Format[song.ChannelData], error) {
 	for _, f := range supportedFormats {
-		if pb, err := f.Load(filename, s); err == nil {
+		if pb, err := f.Load(filename, features); err == nil {
 			return pb, f, nil
 		} else if os.IsNotExist(err) {
 			return nil, nil, err
@@ -38,21 +31,14 @@ func Load(filename string, options ...settings.OptionFunc) (playback.Playback, p
 }
 
 // LoadFromReader loads a song file on a reader into a playback manager
-func LoadFromReader(format string, r io.Reader, options ...settings.OptionFunc) (playback.Playback, playback.Format[song.ChannelData], error) {
-	s := &settings.Settings{}
-	for _, opt := range options {
-		if err := opt(s); err != nil {
-			return nil, nil, err
-		}
-	}
-
+func LoadFromReader(format string, r io.Reader, features ...feature.Feature) (playback.Playback, playback.Format[song.ChannelData], error) {
 	if format != "" {
 		f, ok := supportedFormats[format]
 		if !ok {
 			return nil, nil, errors.New("unsupported format")
 		}
 
-		if pb, err := f.LoadFromReader(r, s); err == nil {
+		if pb, err := f.LoadFromReader(r, features); err == nil {
 			return pb, f, nil
 		} else {
 			return nil, nil, err
@@ -60,7 +46,7 @@ func LoadFromReader(format string, r io.Reader, options ...settings.OptionFunc) 
 	}
 
 	for _, f := range supportedFormats {
-		if pb, err := f.LoadFromReader(r, s); err == nil {
+		if pb, err := f.LoadFromReader(r, features); err == nil {
 			return pb, f, nil
 		} else if os.IsNotExist(err) {
 			return nil, nil, err

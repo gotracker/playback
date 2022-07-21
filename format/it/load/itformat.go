@@ -20,7 +20,7 @@ import (
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/pattern"
-	"github.com/gotracker/playback/settings"
+	"github.com/gotracker/playback/player/feature"
 )
 
 func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
@@ -72,7 +72,7 @@ func convertItPattern(pkt itfile.PackedPattern, channels int) (*pattern.Pattern[
 				Note:            chn.Note,
 				Instrument:      chn.Instrument,
 				VolPan:          chn.VolPan,
-				Effect:          chn.Command,
+				Effect:          channel.Command(chn.Command),
 				EffectParameter: channel.DataEffect(chn.CommandData),
 			}
 
@@ -86,7 +86,7 @@ func convertItPattern(pkt itfile.PackedPattern, channels int) (*pattern.Pattern[
 	return pat, int(maxCh), nil
 }
 
-func convertItFileToSong(f *itfile.File, s *settings.Settings) (*layout.Song, error) {
+func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.Song, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -129,7 +129,7 @@ func convertItFileToSong(f *itfile.File, s *settings.Settings) (*layout.Song, er
 			}
 			switch ii := inst.(type) {
 			case *itfile.IMPIInstrumentOld:
-				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, convSettings, s)
+				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, convSettings, features)
 				if err != nil {
 					return nil, err
 				}
@@ -139,7 +139,7 @@ func convertItFileToSong(f *itfile.File, s *settings.Settings) (*layout.Song, er
 				}
 
 			case *itfile.IMPIInstrument:
-				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, convSettings, song.FilterPlugins, s)
+				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, convSettings, song.FilterPlugins, features)
 				if err != nil {
 					return nil, err
 				}
@@ -245,11 +245,11 @@ func addSampleWithNoteMapToSong(song *layout.Song, sample *instrument.Instrument
 	}
 }
 
-func readIT(r io.Reader, s *settings.Settings) (*layout.Song, error) {
+func readIT(r io.Reader, features []feature.Feature) (*layout.Song, error) {
 	f, err := itfile.Read(r)
 	if err != nil {
 		return nil, err
 	}
 
-	return convertItFileToSong(f, s)
+	return convertItFileToSong(f, features)
 }

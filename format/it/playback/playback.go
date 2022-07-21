@@ -6,9 +6,10 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
+	itFeature "github.com/gotracker/playback/format/it/feature"
 	"github.com/gotracker/playback/format/it/layout"
+	"github.com/gotracker/playback/format/it/pattern"
 	itPeriod "github.com/gotracker/playback/format/it/period"
-	"github.com/gotracker/playback/format/it/playback/state/pattern"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	playpattern "github.com/gotracker/playback/pattern"
@@ -78,7 +79,6 @@ func NewManager(song *layout.Song) (*Manager, error) {
 	}
 
 	txn := m.pattern.StartTransaction()
-	defer txn.Cancel()
 
 	txn.Ticks.Set(song.Head.InitialSpeed)
 	txn.Tempo.Set(song.Head.InitialTempo)
@@ -132,10 +132,12 @@ func (m *Manager) SetNumChannels(num int) {
 
 func (m *Manager) channelInit(ch int) *output.Channel {
 	return &output.Channel{
-		ChannelNum:    ch,
-		Filter:        nil,
-		Config:        m,
-		ChannelVolume: volume.Volume(1),
+		ChannelNum:      ch,
+		Filter:          nil,
+		GetSampleRate:   m.GetSampleRate,
+		SetGlobalVolume: m.SetGlobalVolume,
+		GetOPL2Chip:     m.GetOPL2Chip,
+		ChannelVolume:   volume.Volume(1),
 	}
 }
 
@@ -269,9 +271,9 @@ func (m *Manager) Configure(features []feature.Feature) error {
 			m.pattern.SongLoop = f
 		case feature.PlayUntilOrderAndRow:
 			m.pattern.PlayUntilOrderAndRow = f
-		case feature.ITLongChannelOutput:
+		case itFeature.LongChannelOutput:
 			m.longChannelOutput = f.Enabled
-		case feature.ITNewNoteActions:
+		case itFeature.NewNoteActions:
 			m.enableNewNoteActions = f.Enabled
 			for ch := range m.channels {
 				cs := &m.channels[ch]
@@ -283,14 +285,12 @@ func (m *Manager) Configure(features []feature.Feature) error {
 			}
 		case feature.SetDefaultTempo:
 			txn := m.pattern.StartTransaction()
-			defer txn.Cancel()
 			txn.Ticks.Set(f.Tempo)
 			if err := txn.Commit(); err != nil {
 				return err
 			}
 		case feature.SetDefaultBPM:
 			txn := m.pattern.StartTransaction()
-			defer txn.Cancel()
 			txn.Tempo.Set(f.BPM)
 			if err := txn.Commit(); err != nil {
 				return err

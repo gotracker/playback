@@ -1,8 +1,6 @@
 package instrument
 
 import (
-	"math"
-
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/period"
@@ -30,19 +28,19 @@ type StaticValues struct {
 // Instrument is the mildly-decoded instrument/sample header
 type Instrument struct {
 	Static   StaticValues
-	Inst     DataIntf
+	Inst     Data
 	C2Spd    period.Frequency
 	Finetune optional.Value[note.Finetune]
 }
 
 // IsInvalid always returns false (valid)
-func (inst *Instrument) IsInvalid() bool {
+func (inst Instrument) IsInvalid() bool {
 	return false
 }
 
 // GetC2Spd returns the C2SPD value for the instrument
 // This may get mutated if a finetune effect is processed
-func (inst *Instrument) GetC2Spd() period.Frequency {
+func (inst Instrument) GetC2Spd() period.Frequency {
 	return inst.C2Spd
 }
 
@@ -52,20 +50,13 @@ func (inst *Instrument) SetC2Spd(c2spd period.Frequency) {
 }
 
 // GetDefaultVolume returns the default volume value for the instrument
-func (inst *Instrument) GetDefaultVolume() volume.Volume {
+func (inst Instrument) GetDefaultVolume() volume.Volume {
 	return inst.Static.Volume
 }
 
 // GetLength returns the length of the instrument
-func (inst *Instrument) GetLength() sampling.Pos {
-	switch si := inst.Inst.(type) {
-	case *OPL2:
-		return sampling.Pos{Pos: math.MaxInt64, Frac: 0}
-	case *PCM:
-		return sampling.Pos{Pos: si.Sample.Length()}
-	default:
-	}
-	return sampling.Pos{}
+func (inst Instrument) GetLength() sampling.Pos {
+	return inst.Inst.GetLength()
 }
 
 // SetFinetune sets the finetune value on the instrument
@@ -74,7 +65,7 @@ func (inst *Instrument) SetFinetune(ft note.Finetune) {
 }
 
 // GetFinetune returns the finetune value on the instrument
-func (inst *Instrument) GetFinetune() note.Finetune {
+func (inst Instrument) GetFinetune() note.Finetune {
 	if ft, ok := inst.Finetune.Get(); ok {
 		return ft
 	}
@@ -82,53 +73,47 @@ func (inst *Instrument) GetFinetune() note.Finetune {
 }
 
 // GetID returns the instrument number (1-based)
-func (inst *Instrument) GetID() ID {
+func (inst Instrument) GetID() ID {
 	return inst.Static.ID
 }
 
 // GetSemitoneShift returns the amount of semitones worth of shift to play the instrument at
-func (inst *Instrument) GetSemitoneShift() int8 {
+func (inst Instrument) GetSemitoneShift() int8 {
 	return inst.Static.RelativeNoteNumber
 }
 
 // GetKind returns the kind of the instrument
-func (inst *Instrument) GetKind() Kind {
-	switch inst.Inst.(type) {
-	case *PCM:
-		return KindPCM
-	case *OPL2:
-		return KindOPL2
-	}
-	return KindPCM
+func (inst Instrument) GetKind() Kind {
+	return inst.Inst.GetKind()
 }
 
 // GetNewNoteAction returns the NewNoteAction associated to the instrument
-func (inst *Instrument) GetNewNoteAction() note.Action {
+func (inst Instrument) GetNewNoteAction() note.Action {
 	return inst.Static.NewNoteAction
 }
 
 // GetData returns the instrument-specific data interface
-func (inst *Instrument) GetData() DataIntf {
+func (inst Instrument) GetData() Data {
 	return inst.Inst
 }
 
 // GetFilterFactory returns the factory for the channel filter
-func (inst *Instrument) GetFilterFactory() filter.Factory {
+func (inst Instrument) GetFilterFactory() filter.Factory {
 	return inst.Static.FilterFactory
 }
 
 // GetPluginFilterFactory returns the factory for the channel plugin filter
-func (inst *Instrument) GetPluginFilterFactory() filter.Factory {
+func (inst Instrument) GetPluginFilterFactory() filter.Factory {
 	return inst.Static.PluginFilter
 }
 
 // GetAutoVibrato returns the settings for the autovibrato system
-func (inst *Instrument) GetAutoVibrato() voice.AutoVibrato {
+func (inst Instrument) GetAutoVibrato() voice.AutoVibrato {
 	return inst.Static.AutoVibrato
 }
 
 // IsReleaseNote returns true if the note is a release (Note-Off)
-func (inst *Instrument) IsReleaseNote(n note.Note) bool {
+func (inst Instrument) IsReleaseNote(n note.Note) bool {
 	switch n.Type() {
 	case note.SpecialTypeStopOrRelease:
 		return inst.GetKind() == KindOPL2
@@ -137,7 +122,7 @@ func (inst *Instrument) IsReleaseNote(n note.Note) bool {
 }
 
 // IsStopNote returns true if the note is a stop (Note-Cut)
-func (inst *Instrument) IsStopNote(n note.Note) bool {
+func (inst Instrument) IsStopNote(n note.Note) bool {
 	switch n.Type() {
 	case note.SpecialTypeStopOrRelease:
 		return inst.GetKind() == KindPCM

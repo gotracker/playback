@@ -15,6 +15,17 @@ import (
 
 const MaxTotalChannels = 64
 
+type Command uint8
+
+func (c Command) ToRune() rune {
+	switch {
+	case c > 0 && c <= 26:
+		return '@' + rune(c)
+	default:
+		panic("effect out of range")
+	}
+}
+
 // DataEffect is the type of a channel's EffectParameter value
 type DataEffect uint8
 
@@ -24,7 +35,7 @@ type Data struct {
 	Note            itfile.Note
 	Instrument      uint8
 	VolPan          uint8
-	Effect          uint8
+	Effect          Command
 	EffectParameter DataEffect
 }
 
@@ -104,15 +115,6 @@ func (Data) getNoteString(n note.Note) string {
 	}
 }
 
-func (Data) getCommandString(cmd uint8) rune {
-	switch {
-	case cmd > 0 && cmd <= 26:
-		return '@' + rune(cmd)
-	default:
-		panic("effect out of range")
-	}
-}
-
 func (d Data) String() string {
 	pieces := []string{
 		"...", // note
@@ -130,7 +132,7 @@ func (d Data) String() string {
 		pieces[2] = fmt.Sprintf("%02X", d.VolPan)
 	}
 	if d.HasCommand() && d.Effect != 0 {
-		pieces[3] = fmt.Sprintf("%c%02X", d.getCommandString(d.Effect), d.EffectParameter)
+		pieces[3] = fmt.Sprintf("%c%02X", d.Effect.ToRune(), d.EffectParameter)
 	}
 	return strings.Join(pieces, " ")
 }

@@ -1,12 +1,12 @@
 package player
 
-// TickableIntf is an interface which exposes the OnTick call
-type TickableIntf interface {
+// Tickable is an interface which exposes the OnTick call
+type Tickable interface {
 	OnTick() error
 }
 
 // DoTick calls the OnTick() function on the interface, if possible
-func DoTick(t TickableIntf) error {
+func DoTick(t Tickable) error {
 	if t != nil {
 		return t.OnTick()
 	}

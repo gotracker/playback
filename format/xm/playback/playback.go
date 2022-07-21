@@ -7,8 +7,8 @@ import (
 
 	"github.com/gotracker/playback/format/xm/channel"
 	"github.com/gotracker/playback/format/xm/layout"
+	"github.com/gotracker/playback/format/xm/pattern"
 	xmPeriod "github.com/gotracker/playback/format/xm/period"
-	"github.com/gotracker/playback/format/xm/playback/state/pattern"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	playpattern "github.com/gotracker/playback/pattern"
@@ -71,7 +71,6 @@ func NewManager(song *layout.Song) (*Manager, error) {
 	}
 
 	txn := m.pattern.StartTransaction()
-	defer txn.Cancel()
 
 	txn.Ticks.Set(song.Head.InitialSpeed)
 	txn.Tempo.Set(song.Head.InitialTempo)
@@ -85,10 +84,12 @@ func NewManager(song *layout.Song) (*Manager, error) {
 
 func (m *Manager) channelInit(ch int) *output.Channel {
 	return &output.Channel{
-		ChannelNum:    ch,
-		Filter:        nil,
-		Config:        m,
-		ChannelVolume: volume.Volume(1),
+		ChannelNum:      ch,
+		Filter:          nil,
+		GetSampleRate:   m.GetSampleRate,
+		SetGlobalVolume: m.SetGlobalVolume,
+		GetOPL2Chip:     m.GetOPL2Chip,
+		ChannelVolume:   volume.Volume(1),
 	}
 }
 
@@ -259,14 +260,12 @@ func (m *Manager) Configure(features []feature.Feature) error {
 			m.pattern.PlayUntilOrderAndRow = f
 		case feature.SetDefaultTempo:
 			txn := m.pattern.StartTransaction()
-			defer txn.Cancel()
 			txn.Ticks.Set(f.Tempo)
 			if err := txn.Commit(); err != nil {
 				return err
 			}
 		case feature.SetDefaultBPM:
 			txn := m.pattern.StartTransaction()
-			defer txn.Cancel()
 			txn.Tempo.Set(f.BPM)
 			if err := txn.Commit(); err != nil {
 				return err

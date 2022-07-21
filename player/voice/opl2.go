@@ -34,7 +34,7 @@ type OPLConfiguration struct {
 	InitialVolume volume.Volume
 	InitialPeriod period.Period
 	AutoVibrato   voice.AutoVibrato
-	DataIntf      instrument.DataIntf
+	Data          instrument.Data
 }
 
 // == the actual opl2 voice ==
@@ -67,7 +67,7 @@ func NewOPL2(config OPLConfiguration) voice.Voice {
 
 	var regs component.OPL2Registers
 
-	switch d := config.DataIntf.(type) {
+	switch d := config.Data.(type) {
 	case *instrument.OPL2:
 		v.amp.Setup(1)
 		v.amp.ResetFadeoutValue(0)

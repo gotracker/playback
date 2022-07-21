@@ -1,5 +1,7 @@
 package pcm
 
+import "math"
+
 // SampleDataFormat is the format of the sample data
 type SampleDataFormat uint8
 
@@ -25,3 +27,5 @@ const (
 	// SampleDataFormat64BitBEFloat is for big-endian, 64-bit floating-point data
 	SampleDataFormat64BitBEFloat
 )
+
+const SampleDataFormatNative = math.MaxUint8
