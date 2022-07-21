@@ -114,10 +114,12 @@ func NewManager(song *layout.Song) (*Manager, error) {
 
 func (m *Manager) channelInit(ch int) *output.Channel {
 	return &output.Channel{
-		ChannelNum:    ch,
-		Filter:        nil,
-		Config:        m,
-		ChannelVolume: volume.Volume(1),
+		ChannelNum:      ch,
+		Filter:          nil,
+		GetSampleRate:   m.GetSampleRate,
+		SetGlobalVolume: m.SetGlobalVolume,
+		GetOPL2Chip:     m.GetOPL2Chip,
+		ChannelVolume:   volume.Volume(1),
 	}
 }
 

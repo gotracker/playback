@@ -6,6 +6,7 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
+	itFeature "github.com/gotracker/playback/format/it/feature"
 	"github.com/gotracker/playback/format/it/layout"
 	itPeriod "github.com/gotracker/playback/format/it/period"
 	"github.com/gotracker/playback/format/it/playback/state/pattern"
@@ -132,10 +133,12 @@ func (m *Manager) SetNumChannels(num int) {
 
 func (m *Manager) channelInit(ch int) *output.Channel {
 	return &output.Channel{
-		ChannelNum:    ch,
-		Filter:        nil,
-		Config:        m,
-		ChannelVolume: volume.Volume(1),
+		ChannelNum:      ch,
+		Filter:          nil,
+		GetSampleRate:   m.GetSampleRate,
+		SetGlobalVolume: m.SetGlobalVolume,
+		GetOPL2Chip:     m.GetOPL2Chip,
+		ChannelVolume:   volume.Volume(1),
 	}
 }
 
@@ -269,9 +272,9 @@ func (m *Manager) Configure(features []feature.Feature) error {
 			m.pattern.SongLoop = f
 		case feature.PlayUntilOrderAndRow:
 			m.pattern.PlayUntilOrderAndRow = f
-		case feature.ITLongChannelOutput:
+		case itFeature.LongChannelOutput:
 			m.longChannelOutput = f.Enabled
-		case feature.ITNewNoteActions:
+		case itFeature.NewNoteActions:
 			m.enableNewNoteActions = f.Enabled
 			for ch := range m.channels {
 				cs := &m.channels[ch]

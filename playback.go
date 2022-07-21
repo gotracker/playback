@@ -3,18 +3,24 @@ package playback
 import (
 	"time"
 
+	"github.com/gotracker/gomixing/volume"
 	device "github.com/gotracker/gosound"
 
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/pattern"
+	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
-	"github.com/gotracker/playback/player/output"
 	"github.com/gotracker/playback/song"
+	"github.com/gotracker/playback/voice/render"
 )
 
 // Playback is an interface for rendering a song to output data
 type Playback interface {
-	output.ConfigIntf
+	SetupSampler(int, int, int) error
+	GetSampleRate() period.Frequency
+	GetOPL2Chip() render.OPL2Chip
+	GetGlobalVolume() volume.Volume
+	SetGlobalVolume(volume.Volume)
 
 	Update(time.Duration, chan<- *device.PremixData) error
 	Generate(time.Duration) (*device.PremixData, error)

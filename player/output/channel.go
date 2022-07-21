@@ -3,6 +3,7 @@ package output
 import (
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice/render"
 
 	"github.com/gotracker/gomixing/volume"
 )
@@ -11,7 +12,9 @@ import (
 type Channel struct {
 	ChannelNum       int
 	Filter           filter.Filter
-	Config           ConfigIntf
+	GetSampleRate    func() period.Frequency
+	SetGlobalVolume  func(volume.Volume)
+	GetOPL2Chip      func() render.OPL2Chip
 	ChannelVolume    volume.Volume
 	LastGlobalVolume volume.Volume // this is the channel's version of the GlobalVolume
 }
@@ -39,8 +42,4 @@ func (oc *Channel) SetFilterEnvelopeValue(envVal int8) {
 	if oc.Filter != nil {
 		oc.Filter.UpdateEnv(envVal)
 	}
-}
-
-func (oc *Channel) GetSampleRate() period.Frequency {
-	return oc.Config.GetSampleRate()
 }

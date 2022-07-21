@@ -381,7 +381,7 @@ func (cs *ChannelState[TMemory, TChannelData]) GetOutputChannel() *output.Channe
 // SetGlobalVolume sets the last-known global volume on the channel
 func (cs *ChannelState[TMemory, TChannelData]) SetGlobalVolume(gv volume.Volume) {
 	cs.Output.LastGlobalVolume = gv
-	cs.Output.Config.SetGlobalVolume(gv)
+	cs.Output.SetGlobalVolume(gv)
 }
 
 // SetChannelVolume sets the channel volume on the channel
