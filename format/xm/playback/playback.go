@@ -71,7 +71,6 @@ func NewManager(song *layout.Song) (*Manager, error) {
 	}
 
 	txn := m.pattern.StartTransaction()
-	defer txn.Cancel()
 
 	txn.Ticks.Set(song.Head.InitialSpeed)
 	txn.Tempo.Set(song.Head.InitialTempo)
@@ -261,14 +260,12 @@ func (m *Manager) Configure(features []feature.Feature) error {
 			m.pattern.PlayUntilOrderAndRow = f
 		case feature.SetDefaultTempo:
 			txn := m.pattern.StartTransaction()
-			defer txn.Cancel()
 			txn.Ticks.Set(f.Tempo)
 			if err := txn.Commit(); err != nil {
 				return err
 			}
 		case feature.SetDefaultBPM:
 			txn := m.pattern.StartTransaction()
-			defer txn.Cancel()
 			txn.Tempo.Set(f.BPM)
 			if err := txn.Commit(); err != nil {
 				return err
