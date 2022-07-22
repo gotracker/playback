@@ -14,13 +14,12 @@ type Sampler struct {
 }
 
 // NewSampler returns a new sampler object based on the input settings
-func NewSampler(samplesPerSec int, channels int, bitsPerSample int, baseClockRate period.Frequency) *Sampler {
+func NewSampler(samplesPerSec, channels int, baseClockRate period.Frequency) *Sampler {
 	s := Sampler{
 		SampleRate:    samplesPerSec,
 		BaseClockRate: baseClockRate,
 		mixer: mixing.Mixer{
-			Channels:      channels,
-			BitsPerSample: bitsPerSample,
+			Channels: channels,
 		},
 	}
 	return &s

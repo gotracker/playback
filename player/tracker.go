@@ -174,8 +174,8 @@ func (t *Tracker) SetOPL2Chip(opl2 voiceRender.OPL2Chip) {
 }
 
 // SetupSampler configures the internal sampler
-func (t *Tracker) SetupSampler(samplesPerSecond int, channels int, bitsPerSample int) error {
-	t.s = sampler.NewSampler(samplesPerSecond, channels, bitsPerSample, t.BaseClockRate)
+func (t *Tracker) SetupSampler(samplesPerSecond int, channels int) error {
+	t.s = sampler.NewSampler(samplesPerSecond, channels, t.BaseClockRate)
 	if t.s == nil {
 		return errors.New("NewSampler() returned nil")
 	}

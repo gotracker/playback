@@ -27,6 +27,10 @@ Files from/of the following formats/trackers:
 
 Not well, but it's good enough to play some moderately complex stuff.
 
+## How do I use it?
+
+Take a look at a few examples provided in the [internal/examples](internal/examples) folder. They will be able to show a start-to-finish example of the player, final stage mixing, and format conversion code in action.
+
 ## Bugs
 
 ### Known bugs

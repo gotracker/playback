@@ -31,13 +31,15 @@ func Load(filename string, features ...feature.Feature) (playback.Playback, play
 }
 
 // LoadFromReader loads a song file on a reader into a playback manager
-func LoadFromReader(format string, r io.Reader, features ...feature.Feature) (playback.Playback, playback.Format[song.ChannelData], error) {
+func LoadFromReader(format string, r io.ReadSeeker, features ...feature.Feature) (playback.Playback, playback.Format[song.ChannelData], error) {
+	pos, _ := r.Seek(0, io.SeekCurrent)
 	if format != "" {
 		f, ok := supportedFormats[format]
 		if !ok {
 			return nil, nil, errors.New("unsupported format")
 		}
 
+		_, _ = r.Seek(pos, io.SeekStart)
 		if pb, err := f.LoadFromReader(r, features); err == nil {
 			return pb, f, nil
 		} else {
@@ -46,6 +48,7 @@ func LoadFromReader(format string, r io.Reader, features ...feature.Feature) (pl
 	}
 
 	for _, f := range supportedFormats {
+		_, _ = r.Seek(pos, io.SeekStart)
 		if pb, err := f.LoadFromReader(r, features); err == nil {
 			return pb, f, nil
 		} else if os.IsNotExist(err) {

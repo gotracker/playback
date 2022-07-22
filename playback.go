@@ -16,7 +16,7 @@ import (
 
 // Playback is an interface for rendering a song to output data
 type Playback interface {
-	SetupSampler(int, int, int) error
+	SetupSampler(samplesPerSecond int, channels int) error
 	GetSampleRate() period.Frequency
 	GetOPL2Chip() render.OPL2Chip
 	GetGlobalVolume() volume.Volume
