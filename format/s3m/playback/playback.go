@@ -352,8 +352,8 @@ func (m *Manager) SetEnvelopePosition(v int) {
 }
 
 // SetupSampler configures the internal sampler
-func (m *Manager) SetupSampler(samplesPerSecond int, channels int, bitsPerSample int) error {
-	if err := m.Tracker.SetupSampler(samplesPerSecond, channels, bitsPerSample); err != nil {
+func (m *Manager) SetupSampler(samplesPerSecond int, channels int) error {
+	if err := m.Tracker.SetupSampler(samplesPerSecond, channels); err != nil {
 		return err
 	}
 
