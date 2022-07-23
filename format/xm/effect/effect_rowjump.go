@@ -12,13 +12,13 @@ import (
 type RowJump channel.DataEffect // 'D'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e RowJump) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e RowJump) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e RowJump) Stop(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, lastTick int) error {
+func (e RowJump) Stop(cs *channel.State, p playback.Playback, lastTick int) error {
 	xy := channel.DataEffect(e)
 	x := xy >> 4
 	y := xy & 0x0f

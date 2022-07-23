@@ -12,7 +12,7 @@ import (
 type PastNoteFade channel.DataEffect // 'S72'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PastNoteFade) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e PastNoteFade) Start(cs *channel.State, p playback.Playback) error {
 	cs.DoPastNoteEffect(note.ActionFadeout)
 	return nil
 }

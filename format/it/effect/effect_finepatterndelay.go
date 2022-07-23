@@ -12,7 +12,7 @@ import (
 type FinePatternDelay channel.DataEffect // 'S6x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FinePatternDelay) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e FinePatternDelay) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := channel.DataEffect(e) & 0xf

@@ -11,7 +11,7 @@ import (
 type VolumeEnvelopeOff channel.DataEffect // 'S77'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e VolumeEnvelopeOff) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e VolumeEnvelopeOff) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	cs.SetVolumeEnvelopeEnable(false)

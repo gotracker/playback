@@ -11,13 +11,13 @@ import (
 type VolumeSlideDown channel.DataEffect // 'D'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e VolumeSlideDown) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e VolumeSlideDown) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e VolumeSlideDown) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
+func (e VolumeSlideDown) Tick(cs *channel.State, p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	_, y := mem.VolumeSlide(channel.DataEffect(e))
 
@@ -34,7 +34,7 @@ func (e VolumeSlideDown) String() string {
 type VolChanVolumeSlideDown channel.DataEffect // 'd'
 
 // Tick is called on every tick
-func (e VolChanVolumeSlideDown) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
+func (e VolChanVolumeSlideDown) Tick(cs *channel.State, p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	y := mem.VolChanVolumeSlide(channel.DataEffect(e))
 

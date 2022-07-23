@@ -12,13 +12,13 @@ import (
 type NoteDelay channel.DataEffect // 'EDx'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e NoteDelay) PreStart(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e NoteDelay) PreStart(cs *channel.State, p playback.Playback) error {
 	cs.SetNotePlayTick(true, note.ActionRetrigger, int(channel.DataEffect(e)&0x0F))
 	return nil
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e NoteDelay) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e NoteDelay) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }

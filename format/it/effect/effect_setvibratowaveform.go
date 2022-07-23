@@ -13,7 +13,7 @@ import (
 type SetVibratoWaveform channel.DataEffect // 'S3x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetVibratoWaveform) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e SetVibratoWaveform) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := channel.DataEffect(e) & 0xf

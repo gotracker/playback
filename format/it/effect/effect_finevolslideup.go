@@ -11,13 +11,13 @@ import (
 type FineVolumeSlideUp channel.DataEffect // 'D'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FineVolumeSlideUp) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e FineVolumeSlideUp) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e FineVolumeSlideUp) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
+func (e FineVolumeSlideUp) Tick(cs *channel.State, p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, _ := mem.VolumeSlide(channel.DataEffect(e))
 
@@ -37,7 +37,7 @@ func (e FineVolumeSlideUp) String() string {
 type VolChanFineVolumeSlideUp channel.DataEffect // 'd'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e VolChanFineVolumeSlideUp) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e VolChanFineVolumeSlideUp) Start(cs *channel.State, p playback.Playback) error {
 	mem := cs.GetMemory()
 	x := mem.VolChanVolumeSlide(channel.DataEffect(e))
 

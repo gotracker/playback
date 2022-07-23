@@ -11,7 +11,7 @@ import (
 type PanningEnvelopeOff channel.DataEffect // 'S79'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PanningEnvelopeOff) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e PanningEnvelopeOff) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	cs.SetPanningEnvelopeEnable(false)

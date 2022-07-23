@@ -14,7 +14,7 @@ type doNoteCalc struct {
 	UpdateFunc state.PeriodUpdateFunc
 }
 
-func (o doNoteCalc) Process(p playback.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+func (o doNoteCalc) Process(p playback.Playback, cs *channel.State) error {
 	if o.UpdateFunc == nil {
 		return nil
 	}
@@ -27,15 +27,15 @@ func (o doNoteCalc) Process(p playback.Playback, cs *state.ChannelState[channel.
 	return nil
 }
 
-func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
+func (m *Manager) processEffect(ch int, cs *channel.State, currentTick int, lastTick bool) error {
 	if txn := cs.GetTxn(); txn != nil {
-		if err := txn.CommitPreTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+		if err := txn.CommitPreTick(m, cs, currentTick, lastTick); err != nil {
 			return err
 		}
-		if err := txn.CommitTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+		if err := txn.CommitTick(m, cs, currentTick, lastTick); err != nil {
 			return err
 		}
-		if err := txn.CommitPostTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+		if err := txn.CommitPostTick(m, cs, currentTick, lastTick); err != nil {
 			return err
 		}
 	}
@@ -51,7 +51,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, c
 	return nil
 }
 
-func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
+func (m *Manager) processRowNote(ch int, cs *channel.State, currentTick int, lastTick bool) error {
 	triggerTick, noteAction := cs.WillTriggerOn(currentTick)
 	if !triggerTick {
 		return nil
@@ -106,7 +106,7 @@ func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, 
 	return nil
 }
 
-func (m *Manager) processVoiceUpdates(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
+func (m *Manager) processVoiceUpdates(ch int, cs *channel.State, currentTick int, lastTick bool) error {
 	if cs.UsePeriodOverride {
 		cs.UsePeriodOverride = false
 		arpeggioPeriod := cs.GetPeriodOverride()

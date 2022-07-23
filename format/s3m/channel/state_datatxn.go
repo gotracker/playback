@@ -1,37 +1,34 @@
-package playback
+package channel
 
 import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/format/it/channel"
-	"github.com/gotracker/playback/format/it/effect"
+	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/state"
-	"github.com/gotracker/playback/song"
 )
 
-type channelDataConverter struct{}
+type dataConverter struct{}
 
-func (c channelDataConverter) Process(out *state.ChannelDataActions, data *channel.Data, s song.Data, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+func (c dataConverter) Process(out *state.ChannelDataActions, data *Data, cs *State) error {
 	if data == nil {
 		return nil
 	}
 
-	var n note.Note = note.EmptyNote{}
-	inst := cs.GetInstrument()
-	prevInst := inst
+	var inst *instrument.Instrument
 
 	if data.HasNote() || data.HasInstrument() {
 		instID := data.GetInstrument(cs.StoredSemitone)
-		n = data.GetNote()
+		n := data.GetNote()
 		var (
 			wantRetrigger    bool
 			wantRetriggerVol bool
 		)
+		s := cs.GetSongDataInterface()
 		if instID.IsEmpty() {
 			// use current
-			inst = prevInst
+			inst = cs.GetInstrument()
 			wantRetrigger = true
 		} else if !s.IsValidInstrumentID(instID) {
 			out.TargetInst.Set(nil)
@@ -40,9 +37,6 @@ func (c channelDataConverter) Process(out *state.ChannelDataActions, data *chann
 			var str note.Semitone
 			inst, str = s.GetInstrument(instID)
 			n = note.CoalesceNoteSemitone(n, str)
-			if !note.IsEmpty(n) && inst == nil {
-				inst = prevInst
-			}
 			wantRetrigger = true
 			wantRetriggerVol = true
 		}
@@ -55,23 +49,20 @@ func (c channelDataConverter) Process(out *state.ChannelDataActions, data *chann
 					out.TargetVolume.Set(inst.GetDefaultVolume())
 				}
 				out.NoteAction.Set(note.ActionRetrigger)
-				out.TargetNewNoteAction.Set(inst.GetNewNoteAction())
 			}
 		}
-	}
 
-	if note.IsInvalid(n) {
-		out.TargetPeriod.Set(nil)
-		out.NoteAction.Set(note.ActionCut)
-	} else if note.IsRelease(n) {
-		out.NoteAction.Set(note.ActionRelease)
-	} else if !note.IsEmpty(n) {
-		if nn, ok := n.(note.Normal); ok {
-			st := note.Semitone(nn)
-			out.TargetStoredSemitone.Set(st)
-			out.NoteCalcST.Set(st)
-		} else {
+		if note.IsInvalid(n) {
+			out.TargetPeriod.Set(nil)
 			out.NoteAction.Set(note.ActionCut)
+		} else if note.IsRelease(n) {
+			out.NoteAction.Set(note.ActionRelease)
+		} else {
+			if nn, ok := n.(note.Normal); ok {
+				st := note.Semitone(nn)
+				out.TargetStoredSemitone.Set(st)
+				out.NoteCalcST.Set(st)
+			}
 		}
 	}
 
@@ -88,18 +79,19 @@ func (c channelDataConverter) Process(out *state.ChannelDataActions, data *chann
 	return nil
 }
 
-type channelDataTransaction struct {
-	state.ChannelDataTxnHelper[channel.Memory, channel.Data, channelDataConverter]
+type dataTxn struct {
+	state.ChannelDataTxnHelper[Data, State, dataConverter]
+	EffectFactory playback.EffectFactory[Data, State]
 }
 
-func (d *channelDataTransaction) CommitPreRow(p playback.Playback, cs *state.ChannelState[channel.Memory, channel.Data], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
-	e := effect.Factory(cs.GetMemory(), d.Data)
+func (d *dataTxn) CommitPreRow(p playback.Playback, cs *State) error {
+	e := d.EffectFactory(cs, d.Data)
 	cs.SetActiveEffect(e)
 	if e != nil {
 		if onEff := p.GetOnEffect(); onEff != nil {
 			onEff(e)
 		}
-		if err := playback.EffectPreStart[channel.Memory, channel.Data](e, cs, p); err != nil {
+		if err := playback.EffectPreStart(e, cs, p); err != nil {
 			return err
 		}
 	}
@@ -107,7 +99,7 @@ func (d *channelDataTransaction) CommitPreRow(p playback.Playback, cs *state.Cha
 	return nil
 }
 
-func (d *channelDataTransaction) CommitRow(p playback.Playback, cs *state.ChannelState[channel.Memory, channel.Data], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
+func (d *dataTxn) CommitRow(p playback.Playback, cs *State) error {
 	if pos, ok := d.TargetPos.Get(); ok {
 		cs.SetTargetPos(pos)
 	}
@@ -118,15 +110,10 @@ func (d *channelDataTransaction) CommitRow(p playback.Playback, cs *state.Channe
 
 	if period, ok := d.TargetPeriod.Get(); ok {
 		cs.SetTargetPeriod(period)
-		cs.SetPortaTargetPeriod(period)
 	}
 
 	if st, ok := d.TargetStoredSemitone.Get(); ok {
 		cs.SetStoredSemitone(st)
-	}
-
-	if nna, ok := d.TargetNewNoteAction.Get(); ok {
-		cs.SetNewNoteAction(nna)
 	}
 
 	if v, ok := d.TargetVolume.Get(); ok {
@@ -138,12 +125,12 @@ func (d *channelDataTransaction) CommitRow(p playback.Playback, cs *state.Channe
 	cs.SetNotePlayTick(targetTick, na, 0)
 
 	if st, ok := d.NoteCalcST.Get(); ok {
-		d.AddNoteOp(semitoneSetterFactory(st, cs.SetTargetPeriod))
+		d.AddNoteOp(cs.SemitoneSetterFactory(st, cs.SetTargetPeriod))
 	}
 
 	return nil
 }
 
 func init() {
-	var _ channelDataConverter
+	var _ dataConverter
 }

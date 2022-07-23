@@ -6,13 +6,13 @@ import (
 )
 
 type EffectS3M interface {
-	playback.Effect
+	playback.Effecter[channel.State]
 }
 
 type ChannelCommand channel.DataEffect
 
 // Factory produces an effect for the provided channel pattern data
-func Factory(mem *channel.Memory, data *channel.Data) EffectS3M {
+func Factory(cs *channel.State, data *channel.Data) playback.Effecter[channel.State] {
 	if data == nil {
 		return nil
 	}
@@ -20,6 +20,8 @@ func Factory(mem *channel.Memory, data *channel.Data) EffectS3M {
 	if !data.What.HasCommand() {
 		return nil
 	}
+
+	mem := cs.GetMemory()
 
 	mem.LastNonZero(data.Info)
 	switch data.Command + '@' {

@@ -12,7 +12,7 @@ import (
 type SetFinetune channel.DataEffect // 'S2x'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e SetFinetune) PreStart(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e SetFinetune) PreStart(cs *channel.State, p playback.Playback) error {
 	x := channel.DataEffect(e) & 0xf
 
 	inst := cs.GetTargetInst()
@@ -24,7 +24,7 @@ func (e SetFinetune) PreStart(cs playback.Channel[channel.Memory, channel.Data],
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetFinetune) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e SetFinetune) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }

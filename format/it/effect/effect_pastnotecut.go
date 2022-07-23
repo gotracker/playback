@@ -12,7 +12,7 @@ import (
 type PastNoteCut channel.DataEffect // 'S70'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PastNoteCut) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e PastNoteCut) Start(cs *channel.State, p playback.Playback) error {
 	cs.DoPastNoteEffect(note.ActionCut)
 	return nil
 }

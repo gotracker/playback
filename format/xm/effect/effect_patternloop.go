@@ -11,7 +11,7 @@ import (
 type PatternLoop channel.DataEffect // 'E6x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PatternLoop) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e PatternLoop) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := channel.DataEffect(e) & 0xF

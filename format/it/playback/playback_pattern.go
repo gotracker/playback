@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gotracker/playback/format/it/channel"
+	"github.com/gotracker/playback/format/it/effect"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
 )
@@ -88,7 +89,7 @@ func (m *Manager) processPatternRow() error {
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
-		cs.AdvanceRow(&channelDataTransaction{})
+		cs.AdvanceRow(effect.Factory)
 		if resetMemory {
 			mem := cs.GetMemory()
 			mem.StartOrder()
@@ -114,7 +115,7 @@ func (m *Manager) processPatternRow() error {
 		cs := &m.channels[ch]
 
 		if txn := cs.GetTxn(); txn != nil {
-			if err := txn.CommitPreRow(m, cs, cs.SemitoneSetterFactory); err != nil {
+			if err := txn.CommitPreRow(m, cs); err != nil {
 				return err
 			}
 		}
@@ -147,16 +148,16 @@ func (m *Manager) processPatternRow() error {
 	return nil
 }
 
-func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, channel.Data]) error {
+func (m *Manager) processRowForChannel(cs *channel.State) error {
 	mem := cs.GetMemory()
 	mem.TremorMem().Reset()
 
 	if txn := cs.GetTxn(); txn != nil {
-		if err := txn.CommitRow(m, cs, cs.SemitoneSetterFactory); err != nil {
+		if err := txn.CommitRow(m, cs); err != nil {
 			return err
 		}
 
-		if err := txn.CommitPostRow(m, cs, cs.SemitoneSetterFactory); err != nil {
+		if err := txn.CommitPostRow(m, cs); err != nil {
 			return err
 		}
 	}

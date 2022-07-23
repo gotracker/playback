@@ -12,7 +12,7 @@ import (
 type SetPanPosition channel.DataEffect // '8xx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetPanPosition) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e SetPanPosition) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xx := uint8(e)

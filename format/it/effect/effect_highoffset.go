@@ -11,7 +11,7 @@ import (
 type HighOffset channel.DataEffect // 'SAx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e HighOffset) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e HighOffset) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	mem := cs.GetMemory()
 

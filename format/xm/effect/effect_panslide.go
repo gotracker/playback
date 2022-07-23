@@ -12,7 +12,7 @@ import (
 type PanSlide channel.DataEffect // 'Pxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PanSlide) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e PanSlide) Start(cs *channel.State, p playback.Playback) error {
 	xx := channel.DataEffect(e)
 	x := xx >> 4
 	y := xx & 0x0F

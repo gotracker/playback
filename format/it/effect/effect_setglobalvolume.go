@@ -13,7 +13,7 @@ import (
 type SetGlobalVolume channel.DataEffect // 'V'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e SetGlobalVolume) PreStart(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e SetGlobalVolume) PreStart(cs *channel.State, p playback.Playback) error {
 	v := volume.Volume(channel.DataEffect(e)) / 0x80
 	if v > 1 {
 		v = 1
@@ -23,7 +23,7 @@ func (e SetGlobalVolume) PreStart(cs playback.Channel[channel.Memory, channel.Da
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetGlobalVolume) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e SetGlobalVolume) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }

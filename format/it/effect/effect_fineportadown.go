@@ -11,7 +11,7 @@ import (
 type FinePortaDown channel.DataEffect // 'EFx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FinePortaDown) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e FinePortaDown) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 

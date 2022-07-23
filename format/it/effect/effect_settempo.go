@@ -12,7 +12,7 @@ import (
 type SetTempo channel.DataEffect // 'T'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e SetTempo) PreStart(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e SetTempo) PreStart(cs *channel.State, p playback.Playback) error {
 	if e > 0x20 {
 		m := p.(effectIntf.IT)
 		if err := m.SetTempo(int(e)); err != nil {
@@ -23,13 +23,13 @@ func (e SetTempo) PreStart(cs playback.Channel[channel.Memory, channel.Data], p 
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetTempo) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e SetTempo) Start(cs *channel.State, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e SetTempo) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
+func (e SetTempo) Tick(cs *channel.State, p playback.Playback, currentTick int) error {
 	m := p.(effectIntf.IT)
 	switch channel.DataEffect(e >> 4) {
 	case 0: // decrease tempo
