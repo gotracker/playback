@@ -12,13 +12,12 @@ import (
 
 // Layout is the full definition of the song data of an IT file
 type Layout struct {
-	Head              Header
-	Instruments       map[uint8]*instrument.Instrument
-	InstrumentNoteMap map[uint8]map[note.Semitone]NoteInstrument
-	Patterns          []pattern.Pattern[channel.Data]
-	ChannelSettings   []ChannelSetting
-	OrderList         []index.Pattern
-	FilterPlugins     map[int]filter.Factory
+	Head            Header
+	Instruments     map[uint8]*instrument.Keyboard[note.Semitone]
+	Patterns        []pattern.Pattern[channel.Data]
+	ChannelSettings []ChannelSetting
+	OrderList       []index.Pattern
+	FilterPlugins   map[int]filter.Factory
 }
 
 // GetOrderList returns the list of all pattern orders for the song
@@ -56,8 +55,8 @@ func (s Layout) IsValidInstrumentID(instNum instrument.ID) bool {
 	}
 	switch id := instNum.(type) {
 	case channel.SampleID:
-		_, ok := s.Instruments[id.InstID]
-		return ok
+		keyboard, ok := s.Instruments[id.InstID]
+		return ok && keyboard.GetInstrument() != nil
 	}
 	return false
 }
@@ -69,11 +68,18 @@ func (s Layout) GetInstrument(instNum instrument.ID) (*instrument.Instrument, no
 	}
 	switch id := instNum.(type) {
 	case channel.SampleID:
-		if nm, ok1 := s.InstrumentNoteMap[id.InstID]; ok1 {
-			if sm, ok2 := nm[id.Semitone]; ok2 {
-				return sm.Inst, sm.NoteRemap
-			}
+		keyboard, ok := s.Instruments[id.InstID]
+		if !ok {
+			return nil, note.UnchangedSemitone
 		}
+
+		inst := keyboard.GetInstrument()
+
+		if remapSt, ok := keyboard.GetRemap(id.Semitone); ok {
+			return inst, remapSt
+		}
+
+		return inst, id.Semitone
 	}
 	return nil, note.UnchangedSemitone
 }

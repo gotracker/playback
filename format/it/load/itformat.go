@@ -96,12 +96,11 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.La
 	efgLinkMode := f.Head.Flags.IsEFGLinking()
 
 	song := layout.Layout{
-		Head:              *h,
-		Instruments:       make(map[uint8]*instrument.Instrument),
-		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument),
-		Patterns:          make([]pattern.Pattern[channel.Data], len(f.Patterns)),
-		OrderList:         make([]index.Pattern, int(f.Head.OrderCount)),
-		FilterPlugins:     make(map[int]filter.Factory),
+		Head:          *h,
+		Instruments:   make(map[uint8]*instrument.Keyboard[note.Semitone]),
+		Patterns:      make([]pattern.Pattern[channel.Data], len(f.Patterns)),
+		OrderList:     make([]index.Pattern, int(f.Head.OrderCount)),
+		FilterPlugins: make(map[int]filter.Factory),
 	}
 
 	for _, block := range f.Blocks {
@@ -225,23 +224,14 @@ func addSampleWithNoteMapToSong(song *layout.Layout, sample *instrument.Instrume
 		InstID: uint8(instNum + 1),
 	}
 	sample.Static.ID = id
-	song.Instruments[id.InstID] = sample
+	keyboard := instrument.Keyboard[note.Semitone]{
+		Inst: sample,
+	}
 
-	id, ok := sample.Static.ID.(channel.SampleID)
-	if !ok {
-		return
-	}
-	inm, ok := song.InstrumentNoteMap[id.InstID]
-	if !ok {
-		inm = make(map[note.Semitone]layout.NoteInstrument)
-		song.InstrumentNoteMap[id.InstID] = inm
-	}
 	for _, st := range sts {
-		inm[st.Orig] = layout.NoteInstrument{
-			NoteRemap: st.Remap,
-			Inst:      sample,
-		}
+		keyboard.SetRemap(st.Orig, st.Remap)
 	}
+	song.Instruments[id.InstID] = &keyboard
 }
 
 func readIT(r io.Reader, features []feature.Feature) (*layout.Layout, error) {

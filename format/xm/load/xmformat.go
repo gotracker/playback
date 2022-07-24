@@ -289,11 +289,10 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.La
 	linearFrequencySlides := f.Head.Flags.IsLinearSlides()
 
 	song := layout.Layout{
-		Head:              *h,
-		Instruments:       make(map[uint8]*instrument.Instrument),
-		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument),
-		Patterns:          make([]pattern.Pattern[channel.Data], len(f.Patterns)),
-		OrderList:         make([]index.Pattern, int(f.Head.SongLength)),
+		Head:        *h,
+		Instruments: make(map[uint8]*instrument.Keyboard[*instrument.Instrument]),
+		Patterns:    make([]pattern.Pattern[channel.Data], len(f.Patterns)),
+		OrderList:   make([]index.Pattern, int(f.Head.SongLength)),
 	}
 
 	for i := 0; i < int(f.Head.SongLength); i++ {
@@ -313,7 +312,9 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.La
 				InstID: uint8(instNum + 1),
 			}
 			sample.Static.ID = id
-			song.Instruments[id.InstID] = sample
+			song.Instruments[id.InstID] = &instrument.Keyboard[*instrument.Instrument]{
+				Inst: sample,
+			}
 		}
 		for i, sts := range noteMap {
 			sample := samples[i]
@@ -321,13 +322,13 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.La
 			if !ok {
 				continue
 			}
-			inm, ok := song.InstrumentNoteMap[id.InstID]
+			keyboard, ok := song.Instruments[id.InstID]
 			if !ok {
-				inm = make(map[note.Semitone]*instrument.Instrument)
-				song.InstrumentNoteMap[id.InstID] = inm
+				continue
 			}
+
 			for _, st := range sts {
-				inm[st] = samples[i]
+				keyboard.SetRemap(st, sample)
 			}
 		}
 	}
