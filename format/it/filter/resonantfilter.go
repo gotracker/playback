@@ -23,8 +23,8 @@ type ResonantFilter struct {
 	b1       volume.Volume
 
 	enabled             bool
-	resonance           optional.Value[uint8]
-	cutoff              optional.Value[uint8]
+	resonance           optional.Value[int8]
+	cutoff              optional.Value[int8]
 	playbackRate        period.Frequency
 	highpass            bool
 	extendedFilterRange bool
@@ -39,15 +39,15 @@ func NewResonantFilter(cutoff uint8, resonance uint8, playbackRate period.Freque
 	}
 
 	if resonance&0x80 != 0 {
-		rf.resonance.Set(uint8(resonance) & 0x7f)
+		rf.resonance.Set(int8(resonance) & 0x7f)
 	}
-	c := uint8(0x7F)
+	c := int8(0x7F)
 	if (cutoff & 0x80) != 0 {
-		c = cutoff & 0x7f
-		rf.cutoff.Set(uint8(c))
+		c = int8(cutoff) & 0x7f
+		rf.cutoff.Set(c)
 	}
 
-	rf.recalculate(int8(c))
+	rf.recalculate(c)
 	return rf
 }
 
@@ -99,17 +99,15 @@ func (f *ResonantFilter) recalculate(v int8) {
 	if !useCutoff {
 		cutoff = 127
 	} else {
-		cutoff = uint8(v)
+		cutoff = v
 		if cutoff < 0 {
 			cutoff = 0
-		} else if cutoff > 127 {
-			cutoff = 127
 		}
 
-		f.cutoff.Set(uint8(cutoff))
+		f.cutoff.Set(cutoff)
 	}
 
-	computedCutoff := int(cutoff) * 2
+	computedCutoff := int(cutoff)
 
 	useFilter := true
 	if computedCutoff >= 254 && resonance == 0 {
