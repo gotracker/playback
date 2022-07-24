@@ -23,7 +23,7 @@ func loadSong(r io.Reader, features []feature.Feature) (*Song, error) {
 	}
 
 	s := Song{
-		Layout: *l,
+		Layout: l,
 	}
 
 	return &s, nil

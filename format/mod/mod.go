@@ -24,7 +24,7 @@ func loadSong(r io.Reader, features []feature.Feature) (*s3m.Song, error) {
 	}
 
 	s := s3m.Song{
-		Layout: *l,
+		Layout: l,
 	}
 
 	return &s, nil

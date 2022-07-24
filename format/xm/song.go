@@ -7,9 +7,9 @@ import (
 )
 
 type Song struct {
-	layout.Layout
+	*layout.Layout
 }
 
 func (s Song) ConstructPlayer() (playback.Playback, error) {
-	return xmPlayback.NewManager(&s.Layout)
+	return xmPlayback.NewManager(s.Layout)
 }
