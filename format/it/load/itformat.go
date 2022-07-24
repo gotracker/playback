@@ -11,7 +11,6 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	itblock "github.com/gotracker/goaudiofile/music/tracked/it/block"
 	"github.com/gotracker/gomixing/volume"
-
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/format/it/layout"
@@ -86,7 +85,7 @@ func convertItPattern(pkt itfile.PackedPattern, channels int) (*pattern.Pattern[
 	return pat, int(maxCh), nil
 }
 
-func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.Song, error) {
+func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.Layout, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -96,7 +95,7 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.So
 	oldEffectMode := f.Head.Flags.IsOldEffects()
 	efgLinkMode := f.Head.Flags.IsEFGLinking()
 
-	song := layout.Song{
+	song := layout.Layout{
 		Head:              *h,
 		Instruments:       make(map[uint8]*instrument.Instrument),
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument),
@@ -218,7 +217,7 @@ type noteRemap struct {
 	Remap note.Semitone
 }
 
-func addSampleWithNoteMapToSong(song *layout.Song, sample *instrument.Instrument, sts []noteRemap, instNum int) {
+func addSampleWithNoteMapToSong(song *layout.Layout, sample *instrument.Instrument, sts []noteRemap, instNum int) {
 	if sample == nil {
 		return
 	}
@@ -245,7 +244,7 @@ func addSampleWithNoteMapToSong(song *layout.Song, sample *instrument.Instrument
 	}
 }
 
-func readIT(r io.Reader, features []feature.Feature) (*layout.Song, error) {
+func readIT(r io.Reader, features []feature.Feature) (*layout.Layout, error) {
 	f, err := itfile.Read(r)
 	if err != nil {
 		return nil, err

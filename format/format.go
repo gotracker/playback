@@ -18,43 +18,43 @@ var (
 )
 
 // Load loads the a file into a playback manager
-func Load(filename string, features ...feature.Feature) (playback.Playback, playback.Format, error) {
+func Load(filename string, features ...feature.Feature) (playback.Song, error) {
 	for _, f := range supportedFormats {
-		if pb, err := f.Load(filename, features); err == nil {
-			return pb, f, nil
+		if s, err := f.Load(filename, features); err == nil {
+			return s, nil
 		} else if os.IsNotExist(err) {
-			return nil, nil, err
+			return nil, err
 		}
 	}
-	return nil, nil, errors.New("unsupported format")
+	return nil, errors.New("unsupported format")
 }
 
 // LoadFromReader loads a song file on a reader into a playback manager
-func LoadFromReader(format string, r io.ReadSeeker, features ...feature.Feature) (playback.Playback, playback.Format, error) {
+func LoadFromReader(format string, r io.ReadSeeker, features ...feature.Feature) (playback.Song, error) {
 	pos, _ := r.Seek(0, io.SeekCurrent)
 	if format != "" {
 		f, ok := supportedFormats[format]
 		if !ok {
-			return nil, nil, errors.New("unsupported format")
+			return nil, errors.New("unsupported format")
 		}
 
 		_, _ = r.Seek(pos, io.SeekStart)
-		if pb, err := f.LoadFromReader(r, features); err == nil {
-			return pb, f, nil
+		if s, err := f.LoadFromReader(r, features); err == nil {
+			return s, nil
 		} else {
-			return nil, nil, err
+			return nil, err
 		}
 	}
 
 	for _, f := range supportedFormats {
 		_, _ = r.Seek(pos, io.SeekStart)
-		if pb, err := f.LoadFromReader(r, features); err == nil {
-			return pb, f, nil
+		if s, err := f.LoadFromReader(r, features); err == nil {
+			return s, nil
 		} else if os.IsNotExist(err) {
-			return nil, nil, err
+			return nil, err
 		}
 	}
-	return nil, nil, errors.New("unsupported format")
+	return nil, errors.New("unsupported format")
 }
 
 func init() {

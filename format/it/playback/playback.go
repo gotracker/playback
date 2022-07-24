@@ -24,7 +24,7 @@ import (
 type Manager struct {
 	player.Tracker
 
-	song *layout.Song
+	song *layout.Layout
 
 	channels  []channel.State
 	PastNotes state.PastNotesProcessor
@@ -41,7 +41,7 @@ type Manager struct {
 }
 
 // NewManager creates a new manager for an IT song
-func NewManager(song *layout.Song) (*Manager, error) {
+func NewManager(song *layout.Layout) (*Manager, error) {
 	m := Manager{
 		Tracker: player.Tracker{
 			BaseClockRate: itPeriod.ITBaseClock,

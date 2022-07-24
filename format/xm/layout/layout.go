@@ -1,8 +1,7 @@
 package layout
 
 import (
-	"github.com/gotracker/playback/filter"
-	"github.com/gotracker/playback/format/it/channel"
+	"github.com/gotracker/playback/format/xm/channel"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
@@ -10,24 +9,23 @@ import (
 	"github.com/gotracker/playback/song"
 )
 
-// Song is the full definition of the song data of an Song file
-type Song struct {
+// Layout is the full definition of the song data of an XM file
+type Layout struct {
 	Head              Header
 	Instruments       map[uint8]*instrument.Instrument
-	InstrumentNoteMap map[uint8]map[note.Semitone]NoteInstrument
+	InstrumentNoteMap map[uint8]map[note.Semitone]*instrument.Instrument
 	Patterns          []pattern.Pattern[channel.Data]
 	ChannelSettings   []ChannelSetting
 	OrderList         []index.Pattern
-	FilterPlugins     map[int]filter.Factory
 }
 
 // GetOrderList returns the list of all pattern orders for the song
-func (s Song) GetOrderList() []index.Pattern {
+func (s Layout) GetOrderList() []index.Pattern {
 	return s.OrderList
 }
 
 // GetPattern returns an interface to a specific pattern indexed by `patNum`
-func (s Song) GetPattern(patNum index.Pattern) song.Pattern[channel.Data] {
+func (s Layout) GetPattern(patNum index.Pattern) song.Pattern[channel.Data] {
 	if int(patNum) >= len(s.Patterns) {
 		return nil
 	}
@@ -35,22 +33,22 @@ func (s Song) GetPattern(patNum index.Pattern) song.Pattern[channel.Data] {
 }
 
 // IsChannelEnabled returns true if the channel at index `channelNum` is enabled
-func (s Song) IsChannelEnabled(channelNum int) bool {
+func (s Layout) IsChannelEnabled(channelNum int) bool {
 	return s.ChannelSettings[channelNum].Enabled
 }
 
 // GetRenderChannel returns the output channel for the channel at index `channelNum`
-func (s Song) GetRenderChannel(channelNum int) int {
+func (s Layout) GetRenderChannel(channelNum int) int {
 	return s.ChannelSettings[channelNum].OutputChannelNum
 }
 
 // NumInstruments returns the number of instruments in the song
-func (s Song) NumInstruments() int {
+func (s Layout) NumInstruments() int {
 	return len(s.Instruments)
 }
 
 // IsValidInstrumentID returns true if the instrument exists
-func (s Song) IsValidInstrumentID(instNum instrument.ID) bool {
+func (s Layout) IsValidInstrumentID(instNum instrument.ID) bool {
 	if instNum.IsEmpty() {
 		return false
 	}
@@ -63,7 +61,7 @@ func (s Song) IsValidInstrumentID(instNum instrument.ID) bool {
 }
 
 // GetInstrument returns the instrument interface indexed by `instNum` (0-based)
-func (s Song) GetInstrument(instNum instrument.ID) (*instrument.Instrument, note.Semitone) {
+func (s Layout) GetInstrument(instNum instrument.ID) (*instrument.Instrument, note.Semitone) {
 	if instNum.IsEmpty() {
 		return nil, note.UnchangedSemitone
 	}
@@ -71,7 +69,7 @@ func (s Song) GetInstrument(instNum instrument.ID) (*instrument.Instrument, note
 	case channel.SampleID:
 		if nm, ok1 := s.InstrumentNoteMap[id.InstID]; ok1 {
 			if sm, ok2 := nm[id.Semitone]; ok2 {
-				return sm.Inst, sm.NoteRemap
+				return sm, note.UnchangedSemitone
 			}
 		}
 	}
@@ -79,6 +77,6 @@ func (s Song) GetInstrument(instNum instrument.ID) (*instrument.Instrument, note
 }
 
 // GetName returns the name of the song
-func (s Song) GetName() string {
+func (s Layout) GetName() string {
 	return s.Head.Name
 }

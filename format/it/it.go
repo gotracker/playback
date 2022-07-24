@@ -17,17 +17,29 @@ var (
 	IT = format{}
 )
 
+func loadSong(r io.Reader, features []feature.Feature) (*Song, error) {
+	l, err := load.IT(r, features)
+	if err != nil {
+		return nil, err
+	}
+
+	s := Song{
+		Layout: *l,
+	}
+
+	return &s, nil
+}
+
 // Load loads an IT file into a playback system
-func (f format) Load(filename string, features []feature.Feature) (playback.Playback, error) {
+func (f format) Load(filename string, features []feature.Feature) (playback.Song, error) {
 	r, err := util.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	return f.LoadFromReader(r, features)
+	return loadSong(r, features)
 }
 
-// LoadFromReader loads an IT file on a reader into a playback system
-func (f format) LoadFromReader(r io.Reader, features []feature.Feature) (playback.Playback, error) {
-	return load.IT(r, features)
+func (f format) LoadFromReader(r io.Reader, features []feature.Feature) (playback.Song, error) {
+	return loadSong(r, features)
 }

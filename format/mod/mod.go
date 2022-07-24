@@ -4,6 +4,7 @@ import (
 	"io"
 
 	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/s3m"
 	"github.com/gotracker/playback/format/s3m/load"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/util"
@@ -16,18 +17,30 @@ var (
 	MOD = format{}
 )
 
-// Load loads an MOD file into a playback system
-func (f format) Load(filename string, features []feature.Feature) (playback.Playback, error) {
+func loadSong(r io.Reader, features []feature.Feature) (*s3m.Song, error) {
+	l, err := load.MOD(r, features)
+	if err != nil {
+		return nil, err
+	}
+
+	s := s3m.Song{
+		Layout: *l,
+	}
+
+	return &s, nil
+}
+
+// Load loads a MOD file into a playback system
+func (f format) Load(filename string, features []feature.Feature) (playback.Song, error) {
 	r, err := util.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	return f.LoadFromReader(r, features)
+	return loadSong(r, features)
 }
 
 // LoadFromReader loads a MOD file on a reader into a playback system
-func (f format) LoadFromReader(r io.Reader, features []feature.Feature) (playback.Playback, error) {
-	// we really just load the mod into an S3M layout, since S3M is essentially a superset
-	return load.MOD(r, features)
+func (f format) LoadFromReader(r io.Reader, features []feature.Feature) (playback.Song, error) {
+	return loadSong(r, features)
 }

@@ -25,7 +25,7 @@ import (
 type Manager struct {
 	player.Tracker
 
-	song *layout.Song
+	song *layout.Layout
 
 	channels []channel.State
 	pattern  pattern.State
@@ -41,7 +41,7 @@ type Manager struct {
 }
 
 // NewManager creates a new manager for an S3M song
-func NewManager(song *layout.Song) (*Manager, error) {
+func NewManager(song *layout.Layout) (*Manager, error) {
 	m := Manager{
 		Tracker: player.Tracker{
 			BaseClockRate: s3mPeriod.S3MBaseClock,

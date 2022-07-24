@@ -253,13 +253,13 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*pattern
 	return pat, int(maxCh)
 }
 
-func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8, features []feature.Feature, wasModFile bool) (*layout.Song, error) {
+func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8, features []feature.Feature, wasModFile bool) (*layout.Layout, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
 	}
 
-	song := layout.Song{
+	song := layout.Layout{
 		Head:        *h,
 		Instruments: make([]*instrument.Instrument, len(f.InstrumentPointers)),
 		OrderList:   make([]index.Pattern, len(f.OrderList)),
@@ -365,7 +365,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	return &song, nil
 }
 
-func readS3M(r io.Reader, features []feature.Feature) (*layout.Song, error) {
+func readS3M(r io.Reader, features []feature.Feature) (*layout.Layout, error) {
 	f, err := s3mfile.Read(r)
 	if err != nil {
 		return nil, err

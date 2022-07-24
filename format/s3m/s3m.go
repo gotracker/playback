@@ -1,4 +1,3 @@
-// Package s3m does a thing.
 package s3m
 
 import (
@@ -17,17 +16,29 @@ var (
 	S3M = format{}
 )
 
-// Load loads an S3M file into a playback system
-func (f format) Load(filename string, features []feature.Feature) (playback.Playback, error) {
+func loadSong(r io.Reader, features []feature.Feature) (*Song, error) {
+	l, err := load.S3M(r, features)
+	if err != nil {
+		return nil, err
+	}
+
+	s := Song{
+		Layout: *l,
+	}
+
+	return &s, nil
+}
+
+// Load loads an IT file into a playback system
+func (f format) Load(filename string, features []feature.Feature) (playback.Song, error) {
 	r, err := util.ReadFile(filename)
 	if err != nil {
 		return nil, err
 	}
 
-	return f.LoadFromReader(r, features)
+	return loadSong(r, features)
 }
 
-// Load loads an S3M file on a reader into a playback system
-func (f format) LoadFromReader(r io.Reader, features []feature.Feature) (playback.Playback, error) {
-	return load.S3M(r, features)
+func (f format) LoadFromReader(r io.Reader, features []feature.Feature) (playback.Song, error) {
+	return loadSong(r, features)
 }

@@ -280,7 +280,7 @@ func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern[channel.Data], int) 
 	return pat, int(maxCh)
 }
 
-func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.Song, error) {
+func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.Layout, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -288,7 +288,7 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 
 	linearFrequencySlides := f.Head.Flags.IsLinearSlides()
 
-	song := layout.Song{
+	song := layout.Layout{
 		Head:              *h,
 		Instruments:       make(map[uint8]*instrument.Instrument),
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument),
@@ -371,7 +371,7 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 	return &song, nil
 }
 
-func readXM(r io.Reader, features []feature.Feature) (*layout.Song, error) {
+func readXM(r io.Reader, features []feature.Feature) (*layout.Layout, error) {
 	f, err := xmfile.Read(r)
 	if err != nil {
 		return nil, err
