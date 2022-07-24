@@ -287,12 +287,20 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.La
 	}
 
 	linearFrequencySlides := f.Head.Flags.IsLinearSlides()
+	extendedFilterRange := f.Head.Flags.IsExtendedFilterRange()
+
+	sharedMem := channel.SharedMemory{
+		LinearFreqSlides:           linearFrequencySlides,
+		ExtendedFilterRange:        extendedFilterRange,
+		ResetMemoryAtStartOfOrder0: true,
+	}
 
 	song := layout.Layout{
 		Head:        *h,
 		Instruments: make(map[uint8]*instrument.Keyboard[*instrument.Instrument]),
 		Patterns:    make([]pattern.Pattern[channel.Data], len(f.Patterns)),
 		OrderList:   make([]index.Pattern, int(f.Head.SongLength)),
+		Flags:       &sharedMem,
 	}
 
 	for i := 0; i < int(f.Head.SongLength); i++ {
@@ -344,11 +352,6 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.La
 			lastEnabledChannel = maxCh
 		}
 		song.Patterns[patNum] = *pattern
-	}
-
-	sharedMem := channel.SharedMemory{
-		LinearFreqSlides:           linearFrequencySlides,
-		ResetMemoryAtStartOfOrder0: true,
 	}
 
 	channels := make([]layout.ChannelSetting, lastEnabledChannel+1)

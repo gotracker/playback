@@ -95,12 +95,20 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.La
 	oldEffectMode := f.Head.Flags.IsOldEffects()
 	efgLinkMode := f.Head.Flags.IsEFGLinking()
 
+	sharedMem := channel.SharedMemory{
+		LinearFreqSlides:           linearFrequencySlides,
+		OldEffectMode:              oldEffectMode,
+		EFGLinkMode:                efgLinkMode,
+		ResetMemoryAtStartOfOrder0: true,
+	}
+
 	song := layout.Layout{
 		Head:          *h,
 		Instruments:   make(map[uint8]*instrument.Keyboard[note.Semitone]),
 		Patterns:      make([]pattern.Pattern[channel.Data], len(f.Patterns)),
 		OrderList:     make([]index.Pattern, int(f.Head.OrderCount)),
 		FilterPlugins: make(map[int]filter.Factory),
+		Flags:         &sharedMem,
 	}
 
 	for _, block := range f.Blocks {
@@ -163,13 +171,6 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.La
 			lastEnabledChannel = maxCh
 		}
 		song.Patterns[patNum] = *pattern
-	}
-
-	sharedMem := channel.SharedMemory{
-		LinearFreqSlides:           linearFrequencySlides,
-		OldEffectMode:              oldEffectMode,
-		EFGLinkMode:                efgLinkMode,
-		ResetMemoryAtStartOfOrder0: true,
 	}
 
 	channels := make([]layout.ChannelSetting, lastEnabledChannel+1)

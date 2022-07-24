@@ -17,6 +17,10 @@ type Data interface {
 	GetName() string
 }
 
-type PatternData[TChannelData any] interface {
+type DataPattern[TChannelData any] interface {
 	GetPattern(index.Pattern) Pattern[TChannelData]
+}
+
+type DataFlags[TFlags any] interface {
+	GetFlags() *TFlags
 }

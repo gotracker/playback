@@ -16,6 +16,7 @@ type Layout struct {
 	Patterns        []pattern.Pattern[channel.Data]
 	ChannelSettings []ChannelSetting
 	OrderList       []index.Pattern
+	Flags           *channel.SharedMemory
 }
 
 // GetOrderList returns the list of all pattern orders for the song
@@ -75,4 +76,8 @@ func (s Layout) GetInstrument(instID instrument.ID) (*instrument.Instrument, not
 // GetName returns the name of the song
 func (s Layout) GetName() string {
 	return s.Head.Name
+}
+
+func (s Layout) GetFlags() *channel.SharedMemory {
+	return s.Flags
 }
