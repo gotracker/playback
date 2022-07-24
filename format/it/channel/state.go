@@ -65,3 +65,13 @@ func (cs *State) TransitionActiveToPastState() {
 	}
 	cs.ChannelState.TransitionActiveToPastState()
 }
+
+// SetTargetSemitone sets the target semitone for the channel
+func (cs *State) SetTargetSemitone(st note.Semitone) {
+	cs.AddNoteOp(cs.SemitoneSetterFactory(st, cs.SetTargetPeriod))
+}
+
+// SetOverrideSemitone sets the semitone override for the channel
+func (cs *State) SetOverrideSemitone(st note.Semitone) {
+	cs.AddNoteOp(cs.SemitoneSetterFactory(st, cs.SetPeriodOverride))
+}
