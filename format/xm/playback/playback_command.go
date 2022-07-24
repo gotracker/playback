@@ -88,6 +88,9 @@ func (m *Manager) processRowNote(ch int, cs *channel.State, currentTick int, las
 	if inst := cs.GetInstrument(); inst != nil {
 		keyOff = inst.IsReleaseNote(n)
 		stop = inst.IsStopNote(n)
+		if keyOff || stop {
+			keyOn = false
+		}
 	}
 
 	if nc := cs.GetVoice(); nc != nil {
