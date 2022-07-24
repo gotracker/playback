@@ -18,7 +18,7 @@ func (e FinePortaDown) Start(cs *channel.State, p playback.Playback) error {
 	mem := cs.GetMemory()
 	y := mem.PortaDown(channel.DataEffect(e)) & 0x0F
 
-	return doPortaDown(cs, float32(y), 4, mem.Shared.LinearFreqSlides)
+	return doPortaDown(cs, float32(y), 4)
 }
 
 func (e FinePortaDown) String() string {

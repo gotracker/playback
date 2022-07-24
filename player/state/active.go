@@ -57,7 +57,7 @@ func (a *Active) Transition() *Active {
 type RenderDetails struct {
 	Mix          *mixing.Mixer
 	Panmixer     mixing.PanMixer
-	SamplerSpeed float32
+	SamplerSpeed period.Frequency
 	Samples      int
 	Duration     time.Duration
 }
@@ -140,7 +140,7 @@ func (a *Active) renderState(centerAheadPan volume.Matrix, details RenderDetails
 	}
 
 	a.Pos = voice.GetPos(ncv)
-	samplerAdd := float32(period.GetSamplerAdd(float64(details.SamplerSpeed)))
+	samplerAdd := float32(period.GetSamplerAdd(details.SamplerSpeed))
 	a.Pos.Add(samplerAdd * float32(details.Samples))
 
 	return data

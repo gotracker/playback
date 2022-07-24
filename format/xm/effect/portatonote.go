@@ -36,9 +36,9 @@ func (e PortaToNote) Tick(cs *channel.State, p playback.Playback, currentTick in
 	current := cs.GetPeriod()
 	target := cs.GetPortaTargetPeriod()
 	if period.ComparePeriods(current, target) == comparison.SpaceshipRightGreater {
-		return doPortaUpToNote(cs, float32(xx), 4, target, mem.Shared.LinearFreqSlides) // subtracts
+		return doPortaUpToNote(cs, float32(xx), 4, target) // subtracts
 	} else {
-		return doPortaDownToNote(cs, float32(xx), 4, target, mem.Shared.LinearFreqSlides) // adds
+		return doPortaDownToNote(cs, float32(xx), 4, target) // adds
 	}
 }
 

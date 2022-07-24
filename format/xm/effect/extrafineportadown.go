@@ -19,7 +19,7 @@ func (e ExtraFinePortaDown) Start(cs *channel.State, p playback.Playback) error 
 	xx := mem.ExtraFinePortaDown(channel.DataEffect(e))
 	y := xx & 0x0F
 
-	return doPortaDown(cs, float32(y), 1, mem.Shared.LinearFreqSlides)
+	return doPortaDown(cs, float32(y), 1)
 }
 
 func (e ExtraFinePortaDown) String() string {

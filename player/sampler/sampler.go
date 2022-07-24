@@ -28,8 +28,8 @@ func NewSampler(samplesPerSec, channels int, baseClockRate period.Frequency) *Sa
 // GetSamplerSpeed returns the current sampler speed
 // which is a product of the base sampler clock rate and the inverse
 // of the output render rate (the sample rate)
-func (s *Sampler) GetSamplerSpeed() float32 {
-	return float32(s.BaseClockRate) / float32(s.SampleRate)
+func (s *Sampler) GetSamplerSpeed() period.Frequency {
+	return s.BaseClockRate / period.Frequency(s.SampleRate)
 }
 
 // Mixer returns a pointer to the current mixer object

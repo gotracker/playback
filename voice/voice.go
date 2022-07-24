@@ -26,7 +26,7 @@ type Voice interface {
 
 	// == required function interfaces ==
 	Advance(tickDuration time.Duration)
-	GetSampler(samplerRate float32) sampling.Sampler
+	GetSampler(samplerRate period.Frequency) sampling.Sampler
 	Clone() Voice
 	StartTransaction() Transaction
 }

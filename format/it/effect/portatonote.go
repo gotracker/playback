@@ -34,13 +34,13 @@ func (e PortaToNote) Tick(cs *channel.State, p playback.Playback, currentTick in
 	if cur == nil {
 		return nil
 	}
-	cur = cur.AddDelta(cs.GetPeriodDelta())
+	cur = cur.AddDelta(cs.GetPeriodDelta(), 1)
 	ptp := cs.GetPortaTargetPeriod()
 	if !mem.Shared.OldEffectMode || currentTick != 0 {
 		if period.ComparePeriods(cur, ptp) == comparison.SpaceshipRightGreater {
-			return doPortaUpToNote(cs, float32(xx), 4, ptp, mem.Shared.LinearFreqSlides) // subtracts
+			return doPortaUpToNote(cs, float32(xx), 4, ptp) // subtracts
 		} else {
-			return doPortaDownToNote(cs, float32(xx), 4, ptp, mem.Shared.LinearFreqSlides) // adds
+			return doPortaDownToNote(cs, float32(xx), 4, ptp) // adds
 		}
 	}
 	return nil

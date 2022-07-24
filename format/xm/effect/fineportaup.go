@@ -19,7 +19,7 @@ func (e FinePortaUp) Start(cs *channel.State, p playback.Playback) error {
 	xy := mem.FinePortaUp(channel.DataEffect(e))
 	y := xy & 0x0F
 
-	return doPortaUp(cs, float32(y), 4, mem.Shared.LinearFreqSlides)
+	return doPortaUp(cs, float32(y), 4)
 }
 
 func (e FinePortaUp) String() string {

@@ -34,7 +34,7 @@ func (e PortaToNote) Tick(cs *channel.State, p playback.Playback, currentTick in
 	if cur == nil {
 		return nil
 	}
-	cur = cur.AddDelta(cs.GetPeriodDelta())
+	cur = cur.AddDelta(cs.GetPeriodDelta(), 1)
 	ptp := cs.GetPortaTargetPeriod()
 	if currentTick != 0 {
 		if period.ComparePeriods(cur, ptp) == comparison.SpaceshipRightGreater {

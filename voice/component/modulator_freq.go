@@ -70,14 +70,14 @@ func (a *FreqModulator) IsAutoVibratoEnabled() bool {
 
 // GetFinalPeriod returns the current period (after AutoVibrato and Delta calculation)
 func (a *FreqModulator) GetFinalPeriod() period.Period {
-	p := a.period.AddDelta(a.delta)
+	p := a.period.AddDelta(a.delta, 1)
 	if a.autoVibratoEnabled {
 		depth := a.autoVibratoDepth
 		if a.autoVibratoSweep > a.autoVibratoAge {
 			depth *= float32(a.autoVibratoAge) / float32(a.autoVibratoSweep)
 		}
 		avDelta := a.autoVibrato.GetWave(depth)
-		p = p.AddDelta(period.Delta(avDelta))
+		p = p.AddDelta(period.Delta(avDelta), 1)
 	}
 
 	return p

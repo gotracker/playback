@@ -22,8 +22,8 @@ func (p Amiga) AddInteger(delta int) Amiga {
 }
 
 // Add adds the current period to a delta value then returns the resulting period
-func (p Amiga) AddDelta(delta period.Delta) period.Period {
-	d := period.ToPeriodDelta(delta)
+func (p Amiga) AddDelta(delta period.Delta, sign int) period.Period {
+	d := period.ToPeriodDelta(delta) * period.PeriodDelta(sign)
 	p += Amiga(d)
 	return p
 }
@@ -58,8 +58,8 @@ func (p Amiga) Lerp(t float64, rhs period.Period) period.Period {
 }
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period
-func (p Amiga) GetSamplerAdd(samplerSpeed float64) float64 {
-	return float64(period.AmigaPeriod(p).GetFrequency(period.Frequency(samplerSpeed)))
+func (p Amiga) GetSamplerAdd(samplerSpeed period.Frequency) float64 {
+	return float64(period.AmigaPeriod(p).GetFrequency(samplerSpeed))
 }
 
 // GetFrequency returns the frequency defined by the period

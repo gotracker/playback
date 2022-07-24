@@ -35,7 +35,7 @@ func doPortaUp(cs *channel.State, amount float32, multiplier float32) error {
 
 	delta := int(amount * multiplier)
 	d := period.PeriodDelta(-delta)
-	cur = cur.AddDelta(d)
+	cur = cur.AddDelta(d, 1)
 	cs.SetPeriod(cur)
 	return nil
 }
@@ -48,7 +48,7 @@ func doPortaUpToNote(cs *channel.State, amount float32, multiplier float32, targ
 
 	delta := int(amount * multiplier)
 	d := period.PeriodDelta(-delta)
-	cur = cur.AddDelta(d)
+	cur = cur.AddDelta(d, 1)
 	if period.ComparePeriods(cur, target) == comparison.SpaceshipLeftGreater {
 		cur = target
 	}
@@ -64,7 +64,7 @@ func doPortaDown(cs *channel.State, amount float32, multiplier float32) error {
 
 	delta := int(amount * multiplier)
 	d := period.PeriodDelta(delta)
-	cur = cur.AddDelta(d)
+	cur = cur.AddDelta(d, 1)
 	cs.SetPeriod(cur)
 	return nil
 }
@@ -77,7 +77,7 @@ func doPortaDownToNote(cs *channel.State, amount float32, multiplier float32, ta
 
 	delta := int(amount * multiplier)
 	d := period.PeriodDelta(delta)
-	cur = cur.AddDelta(d)
+	cur = cur.AddDelta(d, 1)
 	if period.ComparePeriods(cur, target) == comparison.SpaceshipRightGreater {
 		cur = target
 	}

@@ -41,40 +41,14 @@ func doGlobalVolSlide(m effectIntf.XM, delta float32, multiplier float32) error 
 	return nil
 }
 
-func doPortaByDeltaAmiga(cs *channel.State, delta int) error {
-	cur := cs.GetPeriod()
-	if cur == nil {
-		return nil
-	}
-
-	d := period.PeriodDelta(delta)
-	cur = cur.AddDelta(d)
-	cs.SetPeriod(cur)
-	return nil
-}
-
-func doPortaByDeltaLinear(cs *channel.State, delta int) error {
-	cur := cs.GetPeriod()
-	if cur == nil {
-		return nil
-	}
-
-	finetune := period.PeriodDelta(delta)
-	cur = cur.AddDelta(finetune)
-	cs.SetPeriod(cur)
-	return nil
-}
-
-func doPortaUp(cs *channel.State, amount float32, multiplier float32, linearFreqSlides bool) error {
+func doPortaUp(cs *channel.State, amount float32, multiplier float32) error {
 	delta := int(amount * multiplier)
-	if linearFreqSlides {
-		return doPortaByDeltaLinear(cs, delta)
-	}
-	return doPortaByDeltaAmiga(cs, -delta)
+	cs.DoPortaByDelta(-delta)
+	return nil
 }
 
-func doPortaUpToNote(cs *channel.State, amount float32, multiplier float32, target period.Period, linearFreqSlides bool) error {
-	if err := doPortaUp(cs, amount, multiplier, linearFreqSlides); err != nil {
+func doPortaUpToNote(cs *channel.State, amount float32, multiplier float32, target period.Period) error {
+	if err := doPortaUp(cs, amount, multiplier); err != nil {
 		return err
 	}
 	if cur := cs.GetPeriod(); period.ComparePeriods(cur, target) == comparison.SpaceshipLeftGreater {
@@ -83,16 +57,14 @@ func doPortaUpToNote(cs *channel.State, amount float32, multiplier float32, targ
 	return nil
 }
 
-func doPortaDown(cs *channel.State, amount float32, multiplier float32, linearFreqSlides bool) error {
+func doPortaDown(cs *channel.State, amount float32, multiplier float32) error {
 	delta := int(amount * multiplier)
-	if linearFreqSlides {
-		return doPortaByDeltaLinear(cs, -delta)
-	}
-	return doPortaByDeltaAmiga(cs, delta)
+	cs.DoPortaByDelta(delta)
+	return nil
 }
 
-func doPortaDownToNote(cs *channel.State, amount float32, multiplier float32, target period.Period, linearFreqSlides bool) error {
-	if err := doPortaDown(cs, amount, multiplier, linearFreqSlides); err != nil {
+func doPortaDownToNote(cs *channel.State, amount float32, multiplier float32, target period.Period) error {
+	if err := doPortaDown(cs, amount, multiplier); err != nil {
 		return err
 	}
 	if cur := cs.GetPeriod(); period.ComparePeriods(cur, target) == comparison.SpaceshipRightGreater {

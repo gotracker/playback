@@ -17,10 +17,10 @@ type Linear struct {
 }
 
 // Add adds the current period to a delta value then returns the resulting period
-func (p Linear) AddDelta(delta period.Delta) period.Period {
+func (p Linear) AddDelta(delta period.Delta, sign int) period.Period {
 	// 0 means "not playing", so keep it that way
 	if p.Finetune > 0 {
-		d := period.ToPeriodDelta(delta)
+		d := period.ToPeriodDelta(delta) * period.PeriodDelta(sign)
 		p.Finetune += note.Finetune(d)
 		if p.Finetune < 1 {
 			p.Finetune = 1
@@ -55,12 +55,12 @@ func (p Linear) Lerp(t float64, rhs period.Period) period.Period {
 	rnft := float64(right.Finetune)
 
 	delta := period.PeriodDelta(t * (rnft - lnft))
-	p.AddDelta(delta)
+	p.AddDelta(delta, 1)
 	return p
 }
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period
-func (p Linear) GetSamplerAdd(samplerSpeed float64) float64 {
+func (p Linear) GetSamplerAdd(samplerSpeed period.Frequency) float64 {
 	return ToAmigaPeriod(p.Finetune, p.C2Spd).GetSamplerAdd(samplerSpeed)
 }
 

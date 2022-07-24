@@ -22,12 +22,8 @@ func (o doNoteCalc) Process(p playback.Playback, cs *channel.State) error {
 		return nil
 	}
 
-	if inst := cs.GetTargetInst(); inst != nil {
-		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
-		linearFreqSlides := cs.Memory.Shared.LinearFreqSlides
-		period := xmPeriod.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
-		o.UpdateFunc(period)
-	}
+	period := cs.CalculateSemitonePeriod(o.Semitone)
+	o.UpdateFunc(period)
 	return nil
 }
 

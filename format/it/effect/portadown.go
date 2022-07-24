@@ -22,7 +22,7 @@ func (e PortaDown) Tick(cs *channel.State, p playback.Playback, currentTick int)
 	mem := cs.GetMemory()
 	xx := mem.PortaDown(channel.DataEffect(e))
 
-	return doPortaDown(cs, float32(xx), 4, mem.Shared.LinearFreqSlides)
+	return doPortaDown(cs, float32(xx), 4)
 }
 
 func (e PortaDown) String() string {

@@ -18,7 +18,7 @@ func (e ExtraFinePortaUp) Start(cs *channel.State, p playback.Playback) error {
 	mem := cs.GetMemory()
 	y := mem.PortaUp(channel.DataEffect(e)) & 0x0F
 
-	return doPortaUp(cs, float32(y), 1, mem.Shared.LinearFreqSlides)
+	return doPortaUp(cs, float32(y), 1)
 }
 
 func (e ExtraFinePortaUp) String() string {
