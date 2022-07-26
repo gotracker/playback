@@ -13,7 +13,8 @@ import (
 // Layout is the full definition of the song data of an IT file
 type Layout struct {
 	Head            Header
-	Instruments     map[uint8]*instrument.Keyboard[note.Semitone]
+	Instruments     map[uint8]*instrument.Keyboard[channel.SemitoneAndSampleID]
+	Samples         map[uint8]*instrument.Instrument
 	Patterns        []pattern.Pattern[channel.Data]
 	ChannelSettings []ChannelSetting
 	OrderList       []index.Pattern
@@ -62,6 +63,14 @@ func (s Layout) IsValidInstrumentID(instNum instrument.ID) bool {
 	return false
 }
 
+func (s Layout) GetSample(sampleID uint8) *instrument.Instrument {
+	samp, ok := s.Samples[sampleID]
+	if !ok {
+		return nil
+	}
+	return samp
+}
+
 // GetInstrument returns the instrument interface indexed by `instNum` (0-based)
 func (s Layout) GetInstrument(instNum instrument.ID) (*instrument.Instrument, note.Semitone) {
 	if instNum.IsEmpty() {
@@ -74,12 +83,12 @@ func (s Layout) GetInstrument(instNum instrument.ID) (*instrument.Instrument, no
 			return nil, note.UnchangedSemitone
 		}
 
-		inst := keyboard.GetInstrument()
-
 		if remapSt, ok := keyboard.GetRemap(id.Semitone); ok {
-			return inst, remapSt
+			samp := s.GetSample(remapSt.ID)
+			return samp, remapSt.ST
 		}
 
+		inst := keyboard.GetInstrument()
 		return inst, id.Semitone
 	}
 	return nil, note.UnchangedSemitone

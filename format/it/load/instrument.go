@@ -20,6 +20,7 @@ import (
 	"github.com/gotracker/playback/voice/pcm"
 
 	"github.com/gotracker/playback/filter"
+	"github.com/gotracker/playback/format/it/channel"
 	itfilter "github.com/gotracker/playback/format/it/filter"
 	itNote "github.com/gotracker/playback/format/it/note"
 	"github.com/gotracker/playback/instrument"
@@ -294,8 +295,11 @@ func buildNoteSampleKeyboard(noteKeyboard map[int]*convInst, nsk []itfile.NoteSa
 				noteKeyboard[si] = ci
 			}
 			ci.NR = append(ci.NR, noteRemap{
-				Orig:  note.Semitone(o),
-				Remap: st,
+				Orig: note.Semitone(o),
+				Remap: channel.SemitoneAndSampleID{
+					ST: st,
+					ID: ns.Sample,
+				},
 			})
 		}
 	}
