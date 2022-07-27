@@ -261,7 +261,7 @@ func convertEnvelope[T any](outEnv *envelope.Envelope[T], inEnv *itfile.Envelope
 		var ticks int
 		if i+1 < len(outEnv.Values) {
 			in2 := inEnv.NodePoints[i+1]
-			ticks = int(in2.Tick) - int(in1.Tick)
+			ticks = int(in2.Tick) - int(in1.Tick) + 2
 		} else {
 			ticks = math.MaxInt64
 		}

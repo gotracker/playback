@@ -104,7 +104,7 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.La
 
 	song := layout.Layout{
 		Head:          *h,
-		Instruments:   make(map[uint8]*instrument.Keyboard[channel.SemitoneAndSampleID]),
+		Instruments:   make(map[uint8]instrument.Keyboard[channel.SemitoneAndSampleID]),
 		Samples:       make(map[uint8]*instrument.Instrument),
 		Patterns:      make([]pattern.Pattern[channel.Data], len(f.Patterns)),
 		OrderList:     make([]index.Pattern, int(f.Head.OrderCount)),
@@ -226,14 +226,12 @@ func addSampleWithNoteMapToSong(song *layout.Layout, sample *instrument.Instrume
 		InstID: uint8(instNum + 1),
 	}
 	sample.Static.ID = id
-	keyboard := instrument.Keyboard[channel.SemitoneAndSampleID]{
-		Inst: sample,
-	}
+	keyboard := instrument.Keyboard[channel.SemitoneAndSampleID]{}
 
 	for _, st := range sts {
 		keyboard.SetRemap(st.Orig, st.Remap)
 	}
-	song.Instruments[id.InstID] = &keyboard
+	song.Instruments[id.InstID] = keyboard
 	song.Samples[id.InstID] = sample
 }
 
