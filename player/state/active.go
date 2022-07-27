@@ -15,6 +15,7 @@ type Active struct {
 	Playback
 	Voice       voice.Voice
 	PeriodDelta period.PeriodDelta
+	Muted       bool
 }
 
 // Reset sets the active state to defaults
@@ -45,6 +46,7 @@ func (a *Active) Transition() *Active {
 			Playback:    a.Playback,
 			Voice:       a.Voice,
 			PeriodDelta: a.PeriodDelta,
+			Muted:       a.Muted,
 		}
 	}
 
@@ -112,31 +114,31 @@ func (a *Active) renderState(centerAheadPan volume.Matrix, details RenderDetails
 
 	sampler := ncv.GetSampler(details.SamplerSpeed)
 
-	if sampler == nil {
-		return nil
-	}
-
 	// ... so grab the new value now.
 	period := voice.GetFinalPeriod(ncv)
-	pan := voice.GetFinalPan(ncv)
 
-	// make a stand-alone data buffer for this channel for this tick
-	sampleData := mixing.SampleMixIn{
-		Sample:    sampler,
-		StaticVol: volume.Volume(1.0),
-		VolMatrix: centerAheadPan,
-		MixPos:    0,
-		MixLen:    details.Samples,
-	}
+	var data *mixing.Data
+	if sampler != nil && !a.Muted {
+		pan := voice.GetFinalPan(ncv)
 
-	mixBuffer := details.Mix.NewMixBuffer(details.Samples)
-	mixBuffer.MixInSample(sampleData)
-	data := &mixing.Data{
-		Data:       mixBuffer,
-		Pan:        pan,
-		Volume:     volume.Volume(1.0),
-		Pos:        0,
-		SamplesLen: details.Samples,
+		// make a stand-alone data buffer for this channel for this tick
+		sampleData := mixing.SampleMixIn{
+			Sample:    sampler,
+			StaticVol: volume.Volume(1.0),
+			VolMatrix: centerAheadPan,
+			MixPos:    0,
+			MixLen:    details.Samples,
+		}
+
+		mixBuffer := details.Mix.NewMixBuffer(details.Samples)
+		mixBuffer.MixInSample(sampleData)
+		data = &mixing.Data{
+			Data:       mixBuffer,
+			Pan:        pan,
+			Volume:     volume.Volume(1.0),
+			Pos:        0,
+			SamplesLen: details.Samples,
+		}
 	}
 
 	a.Pos = voice.GetPos(ncv)

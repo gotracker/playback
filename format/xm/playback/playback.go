@@ -270,6 +270,10 @@ func (m *Manager) Configure(features []feature.Feature) error {
 			if err := txn.Commit(); err != nil {
 				return err
 			}
+		case feature.ChannelMute:
+			if c := m.GetChannel(f.Channel - 1); c != nil {
+				c.ActiveState.Muted = f.Muted
+			}
 		}
 	}
 	return nil
