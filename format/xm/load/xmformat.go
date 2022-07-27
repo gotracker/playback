@@ -297,7 +297,8 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.La
 
 	song := layout.Layout{
 		Head:        *h,
-		Instruments: make(map[uint8]*instrument.Keyboard[*instrument.Instrument]),
+		Instruments: make(map[uint8]instrument.Keyboard[uint8]),
+		Samples:     make(map[uint8]*instrument.Instrument),
 		Patterns:    make([]pattern.Pattern[channel.Data], len(f.Patterns)),
 		OrderList:   make([]index.Pattern, int(f.Head.SongLength)),
 		Flags:       &sharedMem,
@@ -320,9 +321,8 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.La
 				InstID: uint8(instNum + 1),
 			}
 			sample.Static.ID = id
-			song.Instruments[id.InstID] = &instrument.Keyboard[*instrument.Instrument]{
-				Inst: sample,
-			}
+			song.Instruments[id.InstID] = instrument.Keyboard[uint8]{}
+			song.Samples[id.InstID] = sample
 		}
 		for i, sts := range noteMap {
 			sample := samples[i]
@@ -336,7 +336,7 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.La
 			}
 
 			for _, st := range sts {
-				keyboard.SetRemap(st, sample)
+				keyboard.SetRemap(st, id.InstID)
 			}
 		}
 	}

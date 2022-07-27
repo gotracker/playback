@@ -13,7 +13,7 @@ import (
 // Layout is the full definition of the song data of an IT file
 type Layout struct {
 	Head            Header
-	Instruments     map[uint8]*instrument.Keyboard[channel.SemitoneAndSampleID]
+	Instruments     map[uint8]instrument.Keyboard[channel.SemitoneAndSampleID]
 	Samples         map[uint8]*instrument.Instrument
 	Patterns        []pattern.Pattern[channel.Data]
 	ChannelSettings []ChannelSetting
@@ -57,17 +57,15 @@ func (s Layout) IsValidInstrumentID(instNum instrument.ID) bool {
 	}
 	switch id := instNum.(type) {
 	case channel.SampleID:
-		keyboard, ok := s.Instruments[id.InstID]
-		return ok && keyboard.GetInstrument() != nil
+		inst, _ := s.GetInstrument(id)
+		return inst != nil
 	}
 	return false
 }
 
 func (s Layout) GetSample(sampleID uint8) *instrument.Instrument {
 	samp, ok := s.Samples[sampleID]
-	if !ok {
-		return nil
-	}
+	_ = ok
 	return samp
 }
 
@@ -88,8 +86,8 @@ func (s Layout) GetInstrument(instNum instrument.ID) (*instrument.Instrument, no
 			return samp, remapSt.ST
 		}
 
-		inst := keyboard.GetInstrument()
-		return inst, id.Semitone
+		samp := s.GetSample(id.InstID)
+		return samp, id.Semitone
 	}
 	return nil, note.UnchangedSemitone
 }
