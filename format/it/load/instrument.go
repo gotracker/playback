@@ -3,6 +3,7 @@ package load
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -221,7 +222,7 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 			if len(sampData) > int(nr.Remap.ID) {
 				sd = &sampData[nr.Remap.ID]
 			} else {
-				panic("foo")
+				return nil, errors.New("unexpected sample id mapping out of range")
 			}
 
 			if err := addSampleInfoToConvertedInstrument(&sample, &id, sd, mixVol, convSettings, features); err != nil {
