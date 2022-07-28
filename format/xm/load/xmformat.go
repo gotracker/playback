@@ -3,7 +3,6 @@ package load
 import (
 	"errors"
 	"io"
-	"math"
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/panning"
@@ -147,18 +146,14 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				volEnvSustainMode = loop.ModeNormal
 			}
 
-			ii.VolEnv.Values = make([]envelope.EnvPoint[volume.Volume], int(inst.VolPoints))
-			for i := range ii.VolEnv.Values {
+			var timeline envelope.Timeline[volume.Volume]
+			timeline.Init()
+			for i := 0; i < int(inst.VolPoints); i++ {
 				x1 := int(inst.VolEnv[i].X)
 				y1 := uint8(inst.VolEnv[i].Y)
-				var x2 int
-				if i+1 < len(ii.VolEnv.Values) {
-					x2 = int(inst.VolEnv[i+1].X)
-				} else {
-					x2 = math.MaxInt64
-				}
-				ii.VolEnv.Values[i].Init(x2-x1, xmVolume.XmVolume(y1).Volume())
+				timeline.Push(x1, xmVolume.XmVolume(y1).Volume())
 			}
+			ii.VolEnv.Values = timeline.Result()
 		}
 
 		if ii.PanEnv.Enabled && (panEnvLoopSettings.End-panEnvLoopSettings.Begin) >= 0 {
@@ -169,21 +164,17 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				panEnvSustainMode = loop.ModeNormal
 			}
 
-			ii.PanEnv.Values = make([]envelope.EnvPoint[panning.Position], int(inst.VolPoints))
-			for i := range ii.PanEnv.Values {
+			var timeline envelope.Timeline[panning.Position]
+			timeline.Init()
+			for i := 0; i < int(inst.PanPoints); i++ {
 				x1 := int(inst.PanEnv[i].X)
 				// XM stores pan envelope values in 0..64
 				// So we have to do some gymnastics to remap the values
 				panEnv01 := float64(uint8(inst.PanEnv[i].Y)) / 64
 				y1 := uint8(panEnv01 * 255)
-				var x2 int
-				if i+1 < len(ii.PanEnv.Values) {
-					x2 = int(inst.PanEnv[i+1].X)
-				} else {
-					x2 = math.MaxInt64
-				}
-				ii.PanEnv.Values[i].Init(x2-x1, xmPanning.PanningFromXm(y1))
+				timeline.Push(x1, xmPanning.PanningFromXm(y1))
 			}
+			ii.PanEnv.Values = timeline.Result()
 		}
 
 		if si.Finetune != 0 {

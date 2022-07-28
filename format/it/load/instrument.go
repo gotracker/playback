@@ -254,21 +254,14 @@ func convertEnvelope[T any](outEnv *envelope.Envelope[T], inEnv *itfile.Envelope
 	if enabled := (inEnv.Flags & itfile.EnvelopeFlagSustainLoopOn) != 0; enabled {
 		envSustainMode = loop.ModeNormal
 	}
-	outEnv.Values = make([]envelope.EnvPoint[T], int(inEnv.Count))
-	for i := range outEnv.Values {
+	var timeline envelope.Timeline[T]
+	timeline.Init()
+	for i := 0; i < int(inEnv.Count); i++ {
 		in1 := inEnv.NodePoints[i]
 		y := convert(in1.Y)
-		var ticks int
-		if i+1 < len(outEnv.Values) {
-			in2 := inEnv.NodePoints[i+1]
-			ticks = int(in2.Tick) - int(in1.Tick) + 2
-		} else {
-			ticks = math.MaxInt64
-		}
-		var out envelope.EnvPoint[T]
-		out.Init(ticks, y)
-		outEnv.Values[i] = out
+		timeline.Push(int(in1.Tick), y)
 	}
+	outEnv.Values = timeline.Result()
 
 	outEnv.Loop = loop.NewLoop(envLoopMode, envLoopSettings)
 	outEnv.Sustain = loop.NewLoop(envSustainMode, envSustainSettings)
