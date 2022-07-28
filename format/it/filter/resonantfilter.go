@@ -89,13 +89,14 @@ func (f *ResonantFilter) Filter(dry volume.Matrix) volume.Matrix {
 }
 
 func (f *ResonantFilter) recalculate(v int8) {
-	cutoff, useCutoff := f.cutoff.Get()
+	useCutoff := f.cutoff.IsSet()
 	resonance, useResonance := f.resonance.Get()
 
 	if !useResonance {
 		resonance = 0
 	}
 
+	var cutoff int8
 	if !useCutoff {
 		cutoff = 127
 	} else {
@@ -106,11 +107,14 @@ func (f *ResonantFilter) recalculate(v int8) {
 
 		f.cutoff.Set(cutoff)
 	}
+	if cutoff >= 127 {
+		useCutoff = false
+	}
 
 	computedCutoff := int(cutoff)
 
 	useFilter := true
-	if computedCutoff >= 127 && resonance == 0 {
+	if !useCutoff && !useResonance {
 		useFilter = false
 	}
 
