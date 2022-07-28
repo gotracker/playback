@@ -14,7 +14,7 @@ import (
 type Layout struct {
 	Head            Header
 	Instruments     map[uint8]instrument.Keyboard[channel.SemitoneAndSampleID]
-	Samples         map[uint8]*instrument.Instrument
+	Samples         map[uint16]*instrument.Instrument
 	Patterns        []pattern.Pattern[channel.Data]
 	ChannelSettings []ChannelSetting
 	OrderList       []index.Pattern
@@ -63,8 +63,9 @@ func (s Layout) IsValidInstrumentID(instNum instrument.ID) bool {
 	return false
 }
 
-func (s Layout) GetSample(sampleID uint8) *instrument.Instrument {
-	samp, ok := s.Samples[sampleID]
+func (s Layout) GetSample(instID, sampleID uint8) *instrument.Instrument {
+	sid := uint16(instID)<<8 | uint16(sampleID)
+	samp, ok := s.Samples[sid]
 	_ = ok
 	return samp
 }
@@ -82,11 +83,11 @@ func (s Layout) GetInstrument(instNum instrument.ID) (*instrument.Instrument, no
 		}
 
 		if remapSt, ok := keyboard.GetRemap(id.Semitone); ok {
-			samp := s.GetSample(remapSt.ID)
+			samp := s.GetSample(id.InstID, remapSt.ID)
 			return samp, remapSt.ST
 		}
 
-		samp := s.GetSample(id.InstID)
+		samp := s.GetSample(id.InstID, id.InstID)
 		return samp, id.Semitone
 	}
 	return nil, note.UnchangedSemitone

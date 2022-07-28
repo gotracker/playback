@@ -133,7 +133,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 	return outInsts, nil
 }
 
-func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, pluginFilters map[int]filter.Factory, features []feature.Feature) (map[int]*convInst, error) {
+func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, pluginFilters map[int]filter.Factory, features []feature.Feature, instNum int) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
@@ -156,41 +156,13 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		}
 	}
 
-	for i, ci := range outInsts {
+	for _, ci := range outInsts {
 		id := instrument.PCM{
 			Panning: panning.CenterAhead,
 			FadeOut: fadeout.Settings{
 				Mode:   fadeout.ModeAlwaysActive,
 				Amount: volume.Volume(inst.Fadeout) / 1024,
 			},
-		}
-
-		ii := instrument.Instrument{
-			Static: instrument.StaticValues{
-				FilterFactory: channelFilterFactory,
-				PluginFilter:  pluginFilterFactory,
-			},
-			Inst: &id,
-		}
-
-		switch inst.NewNoteAction {
-		case itfile.NewNoteActionCut:
-			ii.Static.NewNoteAction = note.ActionCut
-		case itfile.NewNoteActionContinue:
-			ii.Static.NewNoteAction = note.ActionContinue
-		case itfile.NewNoteActionOff:
-			ii.Static.NewNoteAction = note.ActionRelease
-		case itfile.NewNoteActionFade:
-			ii.Static.NewNoteAction = note.ActionFadeout
-		default:
-			ii.Static.NewNoteAction = note.ActionCut
-		}
-
-		mixVol := volume.Volume(inst.GlobalVolume.Value())
-
-		ci.Inst = &ii
-		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], mixVol, convSettings, features); err != nil {
-			return nil, err
 		}
 
 		if err := convertEnvelope(&id.VolEnv, &inst.VolumeEnvelope, convertVolEnvValue); err != nil {
@@ -207,6 +179,57 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		id.PitchFiltMode = (inst.PitchEnvelope.Flags & 0x80) != 0 // special flag (IT format changes pitch to resonant filter cutoff envelope)
 		if err := convertEnvelope(&id.PitchFiltEnv, &inst.PitchEnvelope, convertPitchEnvValue); err != nil {
 			return nil, err
+		}
+
+		sampleMap := make(map[uint8]*instrument.Instrument)
+		for nri := range ci.NR {
+			nr := &ci.NR[nri]
+
+			si := sampleMap[nr.Remap.ID]
+			if si != nil {
+				nr.Inst = si
+				continue
+			}
+
+			sample := instrument.Instrument{
+				Static: instrument.StaticValues{
+					ID: channel.SampleID{
+						InstID: uint8(instNum + 1),
+					},
+					FilterFactory: channelFilterFactory,
+					PluginFilter:  pluginFilterFactory,
+				},
+				Inst: &id,
+			}
+
+			switch inst.NewNoteAction {
+			case itfile.NewNoteActionCut:
+				sample.Static.NewNoteAction = note.ActionCut
+			case itfile.NewNoteActionContinue:
+				sample.Static.NewNoteAction = note.ActionContinue
+			case itfile.NewNoteActionOff:
+				sample.Static.NewNoteAction = note.ActionRelease
+			case itfile.NewNoteActionFade:
+				sample.Static.NewNoteAction = note.ActionFadeout
+			default:
+				sample.Static.NewNoteAction = note.ActionCut
+			}
+
+			mixVol := volume.Volume(inst.GlobalVolume.Value())
+
+			var sd *itfile.FullSample
+			if len(sampData) > int(nr.Remap.ID) {
+				sd = &sampData[nr.Remap.ID]
+			} else {
+				panic("foo")
+			}
+
+			if err := addSampleInfoToConvertedInstrument(&sample, &id, sd, mixVol, convSettings, features); err != nil {
+				return nil, err
+			}
+
+			nr.Inst = &sample
+			sampleMap[nr.Remap.ID] = &sample
 		}
 	}
 
@@ -291,7 +314,7 @@ func buildNoteSampleKeyboard(noteKeyboard map[int]*convInst, nsk []itfile.NoteSa
 				Orig: note.Semitone(o),
 				Remap: channel.SemitoneAndSampleID{
 					ST: st,
-					ID: ns.Sample,
+					ID: uint8(si),
 				},
 			})
 		}

@@ -105,7 +105,7 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.La
 	song := layout.Layout{
 		Head:          *h,
 		Instruments:   make(map[uint8]instrument.Keyboard[channel.SemitoneAndSampleID]),
-		Samples:       make(map[uint8]*instrument.Instrument),
+		Samples:       make(map[uint16]*instrument.Instrument),
 		Patterns:      make([]pattern.Pattern[channel.Data], len(f.Patterns)),
 		OrderList:     make([]index.Pattern, int(f.Head.OrderCount)),
 		FilterPlugins: make(map[int]filter.Factory),
@@ -142,17 +142,17 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.La
 				}
 
 				for _, ci := range instMap {
-					addSampleWithNoteMapToSong(&song, ci.Inst, ci.NR, instNum)
+					addSampleWithNoteMapToSong(&song, ci.NR, instNum)
 				}
 
 			case *itfile.IMPIInstrument:
-				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, convSettings, song.FilterPlugins, features)
+				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, convSettings, song.FilterPlugins, features, instNum)
 				if err != nil {
 					return nil, err
 				}
 
 				for _, ci := range instMap {
-					addSampleWithNoteMapToSong(&song, ci.Inst, ci.NR, instNum)
+					addSampleWithNoteMapToSong(&song, ci.NR, instNum)
 				}
 			}
 		}
@@ -216,23 +216,22 @@ func decodeFilter(f *itblock.FX) (filter.Factory, error) {
 type noteRemap struct {
 	Orig  note.Semitone
 	Remap channel.SemitoneAndSampleID
+	Inst  *instrument.Instrument
 }
 
-func addSampleWithNoteMapToSong(song *layout.Layout, sample *instrument.Instrument, sts []noteRemap, instNum int) {
-	if sample == nil {
-		return
-	}
-	id := channel.SampleID{
-		InstID: uint8(instNum + 1),
-	}
-	sample.Static.ID = id
+func addSampleWithNoteMapToSong(song *layout.Layout, sts []noteRemap, instNum int) {
 	keyboard := instrument.Keyboard[channel.SemitoneAndSampleID]{}
 
 	for _, st := range sts {
+		sample := st.Inst
+		if sample == nil {
+			continue
+		}
 		keyboard.SetRemap(st.Orig, st.Remap)
+		sid := uint16(instNum+1)<<8 | uint16(st.Remap.ID)
+		song.Samples[sid] = sample
 	}
-	song.Instruments[id.InstID] = keyboard
-	song.Samples[id.InstID] = sample
+	song.Instruments[uint8(instNum)+1] = keyboard
 }
 
 func readIT(r io.Reader, features []feature.Feature) (*layout.Layout, error) {
