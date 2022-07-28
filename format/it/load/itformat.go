@@ -94,11 +94,13 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.La
 	linearFrequencySlides := f.Head.Flags.IsLinearSlides()
 	oldEffectMode := f.Head.Flags.IsOldEffects()
 	efgLinkMode := f.Head.Flags.IsEFGLinking()
+	extendedFilterRange := f.Head.Flags.IsExtendedFilterRange()
 
 	sharedMem := channel.SharedMemory{
 		LinearFreqSlides:           linearFrequencySlides,
 		OldEffectMode:              oldEffectMode,
 		EFGLinkMode:                efgLinkMode,
+		ExtendedFilterRange:        extendedFilterRange,
 		ResetMemoryAtStartOfOrder0: true,
 	}
 
@@ -131,12 +133,12 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.La
 		for instNum, inst := range f.Instruments {
 			convSettings := convertITInstrumentSettings{
 				linearFrequencySlides: linearFrequencySlides,
-				extendedFilterRange:   (f.Head.Flags & 0x1000) != 0, // OpenMPT hack to introduce extended filter ranges
+				extendedFilterRange:   extendedFilterRange,
 				useHighPassFilter:     false,
 			}
 			switch ii := inst.(type) {
 			case *itfile.IMPIInstrumentOld:
-				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, convSettings, features)
+				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, convSettings, features, instNum, f.Head.TrackerCompatVersion)
 				if err != nil {
 					return nil, err
 				}
@@ -146,7 +148,7 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.La
 				}
 
 			case *itfile.IMPIInstrument:
-				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, convSettings, song.FilterPlugins, features, instNum)
+				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, convSettings, song.FilterPlugins, features, instNum, f.Head.TrackerCompatVersion)
 				if err != nil {
 					return nil, err
 				}

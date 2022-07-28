@@ -3,9 +3,6 @@ package load
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
-	"fmt"
-	"io"
 	"math"
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
@@ -40,7 +37,7 @@ type convertITInstrumentSettings struct {
 	useHighPassFilter     bool
 }
 
-func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, features []feature.Feature) (map[int]*convInst, error) {
+func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, features []feature.Feature, instNum int, compatVer uint16) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
@@ -89,7 +86,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 		}
 
 		ci.Inst = &ii
-		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], volume.Volume(1), convSettings, features); err != nil {
+		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], volume.Volume(1), convSettings, features, compatVer); err != nil {
 			return nil, err
 		}
 
@@ -134,7 +131,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 	return outInsts, nil
 }
 
-func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, pluginFilters map[int]filter.Factory, features []feature.Feature, instNum int) (map[int]*convInst, error) {
+func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, pluginFilters map[int]filter.Factory, features []feature.Feature, instNum int, compatVer uint16) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
@@ -192,6 +189,13 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 				continue
 			}
 
+			var sd *itfile.FullSample
+			if len(sampData) > int(nr.Remap.ID) {
+				sd = &sampData[nr.Remap.ID]
+			} else {
+				continue
+			}
+
 			sample := instrument.Instrument{
 				Static: instrument.StaticValues{
 					ID: channel.SampleID{
@@ -218,14 +222,7 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 
 			mixVol := volume.Volume(inst.GlobalVolume.Value())
 
-			var sd *itfile.FullSample
-			if len(sampData) > int(nr.Remap.ID) {
-				sd = &sampData[nr.Remap.ID]
-			} else {
-				return nil, errors.New("unexpected sample id mapping out of range")
-			}
-
-			if err := addSampleInfoToConvertedInstrument(&sample, &id, sd, mixVol, convSettings, features); err != nil {
+			if err := addSampleInfoToConvertedInstrument(&sample, &id, sd, mixVol, convSettings, features, compatVer); err != nil {
 				return nil, err
 			}
 
@@ -358,8 +355,7 @@ func itAutoVibratoWSToProtrackerWS(vibtype uint8) uint8 {
 	}
 }
 
-func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, convSettings convertITInstrumentSettings, features []feature.Feature) error {
-	instLen := int(si.Header.Length)
+func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, convSettings convertITInstrumentSettings, features []feature.Feature, compatVer uint16) error {
 	numChannels := 1
 
 	id.MixingVolume = volume.Volume(si.Header.GlobalVolume.Value())
@@ -404,12 +400,15 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	format := getSampleFormat(is16Bit, isSigned, isBigEndian)
 
 	isDeltaSamples := si.Header.ConvertFlags.IsSampleDelta()
+	samplesLen := int(si.Header.Length)
 	var data []byte
 	if si.Header.Flags.IsCompressed() {
-		if is16Bit {
-			data = uncompress16IT214(si.Data, isBigEndian)
-		} else {
-			data = uncompress8IT214(si.Data)
+		decomp := newITSampleDecompress(si.Data, samplesLen, is16Bit, isBigEndian, compatVer)
+
+		var err error
+		data, err = decomp.Decompress(numChannels)
+		if err != nil {
+			return err
 		}
 		isDeltaSamples = true
 	} else {
@@ -426,7 +425,9 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		bytesPerFrame *= 2
 	}
 
-	if len(data) < int(si.Header.Length+1)*bytesPerFrame {
+	samplesBytes := samplesLen * bytesPerFrame
+
+	if len(data) < samplesBytes {
 		var value any
 		var order binary.ByteOrder = binary.LittleEndian
 		if is16Bit {
@@ -447,7 +448,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		}
 
 		buf := bytes.NewBuffer(data)
-		for buf.Len() < int(si.Header.Length+1)*bytesPerFrame {
+		for buf.Len() < samplesBytes {
 			if err := binary.Write(buf, order, value); err != nil {
 				return err
 			}
@@ -455,7 +456,21 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		data = buf.Bytes()
 	}
 
-	samp, err := instrument.NewSample(data, instLen, numChannels, format, features)
+	if numChannels > 1 {
+		// interleave samples
+		var order binary.ByteOrder = binary.LittleEndian
+		if isBigEndian {
+			order = binary.BigEndian
+		}
+
+		if is16Bit {
+			data = interleaveChannels[uint16](data, samplesLen, numChannels, order)
+		} else {
+			data = interleaveChannels[uint8](data, samplesLen, numChannels, order)
+		}
+	}
+
+	samp, err := instrument.NewSample(data, samplesLen, numChannels, format, features)
 	if err != nil {
 		return err
 	}
@@ -494,240 +509,24 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	return nil
 }
 
-func itReadbits(n int8, r io.ByteReader, bitnum *uint32, bitbuf *uint32) (uint32, error) {
-	var value uint32 = 0
-	var i uint32 = uint32(n)
+func interleaveChannels[T any](in []byte, samplesLen, numChannels int, order binary.ByteOrder) []byte {
+	r := bytes.NewReader(in)
+	samples := make([]T, samplesLen*numChannels)
 
-	// this could be better
-	for i > 0 {
-		i--
-		if *bitnum == 0 {
-			b, err := r.ReadByte()
-			if err != nil {
-				return value >> (32 - n), err
-			}
-			*bitbuf = uint32(b)
-			*bitnum = 8
-		}
-		value >>= 1
-		value |= (*bitbuf) << 31
-		(*bitbuf) >>= 1
-		(*bitnum)--
-	}
-	return value >> (32 - n), nil
-}
-
-// 8-bit sample uncompressor for IT 2.14+
-func uncompress8IT214(data []byte) []byte {
-	in := bytes.NewReader(data)
-	out := &bytes.Buffer{}
-
-	var (
-		blklen uint16 // length of compressed data block in samples
-		blkpos uint16 // position in block
-		width  uint8  // actual "bit width"
-		value  uint16 // value read from file to be processed
-		v      int8   // sample value
-
-		// state for itReadbits
-		bitbuf uint32
-		bitnum uint32
-	)
-
-	// now unpack data till the dest buffer is full
-	for in.Len() > 0 {
-		// read a new block of compressed data and reset variables
-		// block layout: word size, <size> bytes data
-		bitbuf = 0
-		bitnum = 0
-
-		blklen = uint16(math.Min(0x8000, float64(in.Len())))
-		blkpos = 0
-
-		width = 9 // start with width of 9 bits
-
-		var clen uint16
-		if err := binary.Read(in, binary.LittleEndian, &clen); err != nil {
-			panic(err)
-		}
-
-		// now uncompress the data block
-	blockLoop:
-		for blkpos < blklen {
-			if width > 9 {
-				// illegal width, abort
-				panic(fmt.Sprintf("Illegal bit width %d for 8-bit sample\n", width))
-			}
-			vv, err := itReadbits(int8(width), in, &bitnum, &bitbuf)
-			if err != nil {
-				break blockLoop
-			}
-			value = uint16(vv)
-
-			if width < 7 {
-				// method 1 (1-6 bits)
-				// check for "100..."
-				if value == 1<<(width-1) {
-					// yes!
-					vv, err := itReadbits(3, in, &bitnum, &bitbuf) // read new width
-					if err != nil {
-						break blockLoop
-					}
-					value = uint16(vv + 1)
-					if value < uint16(width) {
-						width = uint8(value)
-					} else {
-						width = uint8(value + 1)
-					}
-					continue blockLoop // ... next value
-				}
-			} else if width < 9 {
-				// method 2 (7-8 bits)
-				var border uint8 = (0xFF >> (9 - width)) - 4 // lower border for width chg
-				if value > uint16(border) && value <= (uint16(border)+8) {
-					value -= uint16(border) // convert width to 1-8
-					if value < uint16(width) {
-						width = uint8(value)
-					} else {
-						width = uint8(value + 1)
-					}
-					continue blockLoop // ... next value
-				}
-			} else {
-				// method 3 (9 bits)
-				// bit 8 set?
-				if (value & 0x100) != 0 {
-					width = uint8((value + 1) & 0xff) // new width...
-					continue blockLoop                // ... next value
-				}
-			}
-
-			// now expand value to signed byte
-			if width < 8 {
-				var shift uint8 = 8 - width
-				v = int8(value << shift)
-				v >>= shift
-			} else {
-				v = int8(value)
-			}
-
-			if err := out.WriteByte(byte(v)); err != nil {
-				panic(err)
-			}
-			blkpos++
+	for c := 0; c < numChannels; c++ {
+		pos := c
+		for i := 0; i < samplesLen; i++ {
+			_ = binary.Read(r, order, &samples[pos])
+			pos += numChannels
 		}
 	}
-	return out.Bytes()
-}
 
-// 16-bit sample uncompressor for IT 2.14+
-func uncompress16IT214(data []byte, isBigEndian bool) []byte {
-	in := bytes.NewReader(data)
-	out := &bytes.Buffer{}
-
-	var (
-		blklen uint16 // length of compressed data block in samples
-		blkpos uint16 // position in block
-		width  uint8  // actual "bit width"
-		value  uint32 // value read from file to be processed
-		v      int16  // sample value
-		order  binary.ByteOrder
-
-		// state for itReadbits
-		bitbuf uint32
-		bitnum uint32
-	)
-
-	if isBigEndian {
-		order = binary.BigEndian
-	} else {
-		order = binary.LittleEndian
+	buf := &bytes.Buffer{}
+	for _, s := range samples {
+		_ = binary.Write(buf, order, s)
 	}
 
-	// now unpack data till the dest buffer is full
-	for in.Len() > 0 {
-		// read a new block of compressed data and reset variables
-		// block layout: word size, <size> bytes data
-		bitbuf = 0
-		bitnum = 0
-
-		blklen = uint16(math.Min(0x4000, float64(in.Len())))
-		blkpos = 0
-
-		width = 17 // start with width of 17 bits
-
-		var clen uint16
-		if err := binary.Read(in, binary.LittleEndian, &clen); err != nil {
-			panic(err)
-		}
-
-		// now uncompress the data block
-	blockLoop:
-		for blkpos < blklen {
-			if width > 17 {
-				// illegal width, abort
-				panic(fmt.Sprintf("Illegal bit width %d for 16-bit sample\n", width))
-			}
-			vv, err := itReadbits(int8(width), in, &bitnum, &bitbuf)
-			if err != nil {
-				break blockLoop
-			}
-			value = vv
-
-			if width < 7 {
-				// method 1 (1-6 bits)
-				// check for "100..."
-				if value == 1<<(width-1) {
-					// yes!
-					vv, err := itReadbits(4, in, &bitnum, &bitbuf) // read new width
-					if err != nil {
-						break blockLoop
-					}
-					value = vv + 1
-					if value < uint32(width) {
-						width = uint8(value)
-					} else {
-						width = uint8(value + 1)
-					}
-					continue blockLoop // ... next value
-				}
-			} else if width < 17 {
-				// method 2 (7-16 bits)
-				var border uint16 = (0xFFFF >> (17 - width)) - 8 // lower border for width chg
-				if value > uint32(border) && value <= uint32(border+16) {
-					value -= uint32(border) // convert width to 1-16
-					if value < uint32(width) {
-						width = uint8(value)
-					} else {
-						width = uint8(value + 1)
-					}
-					continue blockLoop // ... next value
-				}
-			} else {
-				// method 3 (9 bits)
-				// bit 8 set?
-				if (value & 0x10000) != 0 {
-					width = uint8((value + 1) & 0xff) // new width...
-					continue blockLoop                // ... next value
-				}
-			}
-
-			// now expand value to signed byte
-			if width < 8 {
-				var shift uint8 = 16 - width
-				v = int16(value << shift)
-				v >>= shift
-			} else {
-				v = int16(value)
-			}
-
-			if err := binary.Write(out, order, v); err != nil {
-				panic(err)
-			}
-			blkpos++
-		}
-	}
-	return out.Bytes()
+	return buf.Bytes()
 }
 
 func deltaDecode(data []byte, format pcm.SampleDataFormat) {

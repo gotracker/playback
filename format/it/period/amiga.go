@@ -77,7 +77,7 @@ func ToAmigaPeriod(finetunes note.Finetune, c2spd period.Frequency) Amiga {
 		finetunes = 0
 	}
 	pow := math.Pow(2, float64(finetunes)/semitonesPerOctave)
-	linFreq := float64(c2spd) * pow / float64(DefaultC2Spd)
+	linFreq := float64(c2spd) * pow / float64(MiddleCFrequency)
 
 	period := Amiga(float64(semitonePeriodTable[0]) / linFreq)
 	return period

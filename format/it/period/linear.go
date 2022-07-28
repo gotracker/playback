@@ -86,7 +86,7 @@ func ToLinearPeriod(p period.Period) Linear {
 
 		lp := Linear{
 			Finetune: fts,
-			C2Spd:    DefaultC2Spd,
+			C2Spd:    MiddleCFrequency,
 		}
 		return lp
 	}

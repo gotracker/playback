@@ -6,15 +6,15 @@ import (
 )
 
 const (
-	// DefaultC2Spd is the default C2SPD for IT samples
-	DefaultC2Spd = 8363
-	// C5Period is the sampler (Amiga-style) period of the C-5 note
-	C5Period = 428
+	// MiddleCFrequency is the default C2SPD for IT samples
+	MiddleCFrequency = 8363
+	// MiddleCPeriod is the sampler (Amiga-style) period of the C-5 note
+	MiddleCPeriod = 856
 
-	floatDefaultC2Spd = float32(DefaultC2Spd)
+	floatDefaultC2Spd = float32(MiddleCFrequency)
 
 	// ITBaseClock is the base clock speed of IT files
-	ITBaseClock period.Frequency = DefaultC2Spd * C5Period
+	ITBaseClock period.Frequency = MiddleCFrequency * MiddleCPeriod
 
 	notesPerOctave     = 12
 	semitonesPerNote   = 64
@@ -46,7 +46,7 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd period.Frequ
 	}
 
 	if c2spd == 0 {
-		c2spd = period.Frequency(DefaultC2Spd)
+		c2spd = period.Frequency(MiddleCFrequency)
 	}
 
 	if ft != 0 {
