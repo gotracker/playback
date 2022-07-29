@@ -136,7 +136,7 @@ func (f *ResonantFilter) recalculate(v int8) {
 
 	f2 := float64(f.playbackRate) / 2.0
 	freq := f2
-	fcComputedCutoff := float64(computedCutoff+256) * 512.0
+	fcComputedCutoff := float64(computedCutoff+256) * 256.0
 	freq = 110.0 * math.Pow(2.0, 0.25+(fcComputedCutoff/filterRange))
 	if freq < 120.0 {
 		freq = 120.0
