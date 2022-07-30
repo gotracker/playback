@@ -20,6 +20,7 @@ import (
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/player/feature"
+	"github.com/gotracker/playback/voice/pcm"
 )
 
 func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
@@ -129,6 +130,8 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.La
 		song.OrderList[i] = index.Pattern(f.OrderList[i])
 	}
 
+	sampleMap := make(map[uint8]pcm.Sample)
+
 	if f.Head.Flags.IsUseInstruments() {
 		for instNum, inst := range f.Instruments {
 			convSettings := convertITInstrumentSettings{
@@ -138,7 +141,7 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.La
 			}
 			switch ii := inst.(type) {
 			case *itfile.IMPIInstrumentOld:
-				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, convSettings, features, instNum, f.Head.TrackerCompatVersion)
+				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, sampleMap, convSettings, features, instNum, f.Head.TrackerCompatVersion)
 				if err != nil {
 					return nil, err
 				}
@@ -148,7 +151,7 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.La
 				}
 
 			case *itfile.IMPIInstrument:
-				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, convSettings, song.FilterPlugins, features, instNum, f.Head.TrackerCompatVersion)
+				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, sampleMap, convSettings, song.FilterPlugins, features, instNum, f.Head.TrackerCompatVersion)
 				if err != nil {
 					return nil, err
 				}

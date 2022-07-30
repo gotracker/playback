@@ -20,6 +20,7 @@ import (
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/format/it/channel"
 	itfilter "github.com/gotracker/playback/format/it/filter"
+	itDecompressor "github.com/gotracker/playback/format/it/load/sample"
 	itNote "github.com/gotracker/playback/format/it/note"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
@@ -37,7 +38,7 @@ type convertITInstrumentSettings struct {
 	useHighPassFilter     bool
 }
 
-func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, features []feature.Feature, instNum int, compatVer uint16) (map[int]*convInst, error) {
+func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData []itfile.FullSample, convSampData map[uint8]pcm.Sample, convSettings convertITInstrumentSettings, features []feature.Feature, instNum int, compatVer uint16) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
@@ -86,7 +87,11 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 		}
 
 		ci.Inst = &ii
-		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], volume.Volume(1), convSettings, features, compatVer); err != nil {
+
+		if err := setupPCMInstrument(&id, &sampData[i], uint8(i), convSampData, volume.Volume(1), convSettings, features, compatVer); err != nil {
+			return nil, err
+		}
+		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], convSettings, features, compatVer); err != nil {
 			return nil, err
 		}
 
@@ -131,7 +136,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 	return outInsts, nil
 }
 
-func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, pluginFilters map[int]filter.Factory, features []feature.Feature, instNum int, compatVer uint16) (map[int]*convInst, error) {
+func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, convSampData map[uint8]pcm.Sample, convSettings convertITInstrumentSettings, pluginFilters map[int]filter.Factory, features []feature.Feature, instNum int, compatVer uint16) (map[int]*convInst, error) {
 	outInsts := make(map[int]*convInst)
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
@@ -222,7 +227,10 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 
 			mixVol := volume.Volume(inst.GlobalVolume.Value())
 
-			if err := addSampleInfoToConvertedInstrument(&sample, &id, sd, mixVol, convSettings, features, compatVer); err != nil {
+			if err := setupPCMInstrument(&id, sd, nr.Remap.ID, convSampData, mixVol, convSettings, features, compatVer); err != nil {
+				return nil, err
+			}
+			if err := addSampleInfoToConvertedInstrument(&sample, &id, sd, convSettings, features, compatVer); err != nil {
 				return nil, err
 			}
 
@@ -355,7 +363,7 @@ func itAutoVibratoWSToProtrackerWS(vibtype uint8) uint8 {
 	}
 }
 
-func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, convSettings convertITInstrumentSettings, features []feature.Feature, compatVer uint16) error {
+func setupPCMInstrument(id *instrument.PCM, si *itfile.FullSample, sampleId uint8, convSampData map[uint8]pcm.Sample, instVol volume.Volume, convSettings convertITInstrumentSettings, features []feature.Feature, compatVer uint16) error {
 	numChannels := 1
 
 	id.MixingVolume = volume.Volume(si.Header.GlobalVolume.Value())
@@ -394,6 +402,15 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		numChannels = 2
 	}
 
+	if !si.Header.DefaultPan.IsDisabled() {
+		id.Panning = panning.MakeStereoPosition(si.Header.DefaultPan.Value(), 0, 1)
+	}
+
+	if sampData, ok := convSampData[sampleId]; ok {
+		id.Sample = sampData
+		return nil
+	}
+
 	is16Bit := si.Header.Flags.Is16Bit()
 	isSigned := si.Header.ConvertFlags.IsSignedSamples()
 	isBigEndian := si.Header.ConvertFlags.IsBigEndian()
@@ -403,10 +420,10 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	samplesLen := int(si.Header.Length)
 	var data []byte
 	if si.Header.Flags.IsCompressed() {
-		decomp := newITSampleDecompress(si.Data, samplesLen, is16Bit, isBigEndian, compatVer)
+		decomp := itDecompressor.New(si.Data, samplesLen, numChannels, is16Bit, isBigEndian, compatVer)
 
 		var err error
-		data, err = decomp.Decompress(numChannels)
+		data, err = decomp.Decompress()
 		if err != nil {
 			return err
 		}
@@ -474,8 +491,13 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	if err != nil {
 		return err
 	}
-	id.Sample = samp
 
+	id.Sample = samp
+	convSampData[sampleId] = samp
+	return nil
+}
+
+func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, convSettings convertITInstrumentSettings, features []feature.Feature, compatVer uint16) error {
 	ii.Static.Filename = si.Header.GetFilename()
 	ii.Static.Name = si.Header.GetName()
 	ii.C2Spd = period.Frequency(si.Header.C5Speed)
@@ -501,9 +523,6 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 
 	if si.Header.VibratoSweep != 0 {
 		ii.Static.AutoVibrato.Sweep = int(si.Header.VibratoDepth) * 256 / int(si.Header.VibratoSweep)
-	}
-	if !si.Header.DefaultPan.IsDisabled() {
-		id.Panning = panning.MakeStereoPosition(si.Header.DefaultPan.Value(), 0, 1)
 	}
 
 	return nil
