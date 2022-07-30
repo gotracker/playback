@@ -21,8 +21,8 @@ type StaticValues struct {
 	AutoVibrato        voice.AutoVibrato
 	NewNoteAction      note.Action
 	Finetune           note.Finetune
-	FilterFactory      filter.Factory
-	PluginFilter       filter.Factory
+	FilterFactory      filter.Factory `json:"-"`
+	PluginFilter       filter.Factory `json:"-"`
 }
 
 // Instrument is the mildly-decoded instrument/sample header
