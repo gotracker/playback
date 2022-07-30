@@ -11,7 +11,7 @@ type itBitReader struct {
 	bitBuf  uint32
 	bufPos  int
 	bufSize int
-	buffer  [8]byte
+	buffer  [1]byte
 }
 
 func (r *itBitReader) ReadBits(n uint) (uint, error) {
