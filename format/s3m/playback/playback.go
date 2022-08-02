@@ -44,7 +44,7 @@ type Manager struct {
 func NewManager(song *layout.Layout) (*Manager, error) {
 	m := Manager{
 		Tracker: player.Tracker{
-			BaseClockRate: s3mPeriod.S3MBaseClock,
+			BaseClockRate: s3mPeriod.BaseClock,
 		},
 		song: song,
 	}

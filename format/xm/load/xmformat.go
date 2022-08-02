@@ -178,10 +178,10 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 		}
 
 		if si.Finetune != 0 {
-			sample.C2Spd = xmPeriod.CalcFinetuneC2Spd(xmPeriod.DefaultC2Spd, note.Finetune(si.Finetune), linearFrequencySlides)
+			sample.C2Spd = xmPeriod.CalcFinetuneC2Spd(xmPeriod.MiddleCFrequency, note.Finetune(si.Finetune/4), linearFrequencySlides)
 		}
 		if sample.C2Spd == 0 {
-			sample.C2Spd = period.Frequency(xmPeriod.DefaultC2Spd)
+			sample.C2Spd = period.Frequency(xmPeriod.MiddleCFrequency)
 		}
 		if si.Flags.IsStereo() {
 			numChannels = 2

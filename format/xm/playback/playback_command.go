@@ -128,7 +128,7 @@ func (m *Manager) SetFilterEnable(on bool) {
 		if o := c.GetRenderChannel(); o != nil {
 			if on {
 				if o.Filter == nil {
-					o.Filter = filter.NewAmigaLPF(period.Frequency(xmPeriod.DefaultC2Spd), m.GetSampleRate())
+					o.Filter = filter.NewAmigaLPF(period.Frequency(xmPeriod.MiddleCFrequency), m.GetSampleRate())
 				}
 			} else {
 				o.Filter = nil

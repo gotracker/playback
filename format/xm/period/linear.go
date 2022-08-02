@@ -65,7 +65,7 @@ func (p Linear) GetSamplerAdd(samplerSpeed period.Frequency) float64 {
 
 // GetFrequency returns the frequency defined by the period
 func (p Linear) GetFrequency() period.Frequency {
-	am := ToAmigaPeriod(p.Finetune, DefaultC2Spd)
+	am := ToAmigaPeriod(p.Finetune, p.C2Spd)
 	return am.GetFrequency()
 }
 
@@ -79,13 +79,20 @@ func ToLinearPeriod(p period.Period) Linear {
 	case Linear:
 		return pp
 	case Amiga:
-		linFreq := float64(semitonePeriodTable[0]) / float64(pp)
+		if pp.AmigaPeriod <= 0 {
+			return Linear{
+				Finetune: 0,
+				C2Spd:    pp.Coeff * MiddleCFrequency,
+			}
+		}
+
+		linFreq := float64(semitonePeriodTable[0]) / float64(pp.AmigaPeriod)
 
 		fts := note.Finetune(semitonesPerOctave * math.Log2(linFreq))
 
 		lp := Linear{
 			Finetune: fts,
-			C2Spd:    DefaultC2Spd,
+			C2Spd:    pp.Coeff * MiddleCFrequency,
 		}
 		return lp
 	}
