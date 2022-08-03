@@ -6,7 +6,6 @@ import (
 	"github.com/gotracker/playback/format/it/channel"
 	itPeriod "github.com/gotracker/playback/format/it/period"
 	"github.com/gotracker/playback/note"
-	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/state"
 )
 
@@ -118,7 +117,7 @@ func (m *Manager) SetFilterEnable(on bool) {
 		if o := c.GetRenderChannel(); o != nil {
 			if on {
 				if o.Filter == nil {
-					o.Filter = filter.NewAmigaLPF(period.Frequency(itPeriod.MiddleCFrequency), m.GetSampleRate())
+					o.Filter = filter.NewAmigaLPF(itPeriod.MiddleCFrequency, m.GetSampleRate())
 				}
 			} else {
 				o.Filter = nil

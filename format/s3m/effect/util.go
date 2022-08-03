@@ -28,60 +28,34 @@ func doVolSlide(cs *channel.State, delta float32, multiplier float32) error {
 }
 
 func doPortaUp(cs *channel.State, amount float32, multiplier float32) error {
-	cur := cs.GetPeriod()
-	if cur == nil {
-		return nil
-	}
-
 	delta := int(amount * multiplier)
-	d := period.PeriodDelta(-delta)
-	cur = cur.AddDelta(d, 1)
-	cs.SetPeriod(cur)
+	cs.DoPortaByDelta(-delta)
 	return nil
 }
 
 func doPortaUpToNote(cs *channel.State, amount float32, multiplier float32, target period.Period) error {
-	cur := cs.GetPeriod()
-	if cur == nil {
-		return nil
+	if err := doPortaUp(cs, amount, multiplier); err != nil {
+		return err
 	}
-
-	delta := int(amount * multiplier)
-	d := period.PeriodDelta(-delta)
-	cur = cur.AddDelta(d, 1)
-	if period.ComparePeriods(cur, target) == comparison.SpaceshipLeftGreater {
-		cur = target
+	if cur := cs.GetPeriod(); period.ComparePeriods(cur, target) == comparison.SpaceshipLeftGreater {
+		cs.SetPeriod(target)
 	}
-	cs.SetPeriod(cur)
 	return nil
 }
 
 func doPortaDown(cs *channel.State, amount float32, multiplier float32) error {
-	cur := cs.GetPeriod()
-	if cur == nil {
-		return nil
-	}
-
 	delta := int(amount * multiplier)
-	d := period.PeriodDelta(delta)
-	cur = cur.AddDelta(d, 1)
-	cs.SetPeriod(cur)
+	cs.DoPortaByDelta(delta)
 	return nil
 }
 
 func doPortaDownToNote(cs *channel.State, amount float32, multiplier float32, target period.Period) error {
-	cur := cs.GetPeriod()
-	if cur == nil {
-		return nil
+	if err := doPortaDown(cs, amount, multiplier); err != nil {
+		return err
 	}
-
-	delta := int(amount * multiplier)
-	d := period.PeriodDelta(delta)
-	cur = cur.AddDelta(d, 1)
-	if period.ComparePeriods(cur, target) == comparison.SpaceshipRightGreater {
-		cur = target
+	if cur := cs.GetPeriod(); period.ComparePeriods(cur, target) == comparison.SpaceshipRightGreater {
+		cs.SetPeriod(target)
 	}
-	cs.SetPeriod(cur)
 	return nil
 }
 

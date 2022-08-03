@@ -21,7 +21,7 @@ func (o doNoteCalc) Process(p playback.Playback, cs *channel.State) error {
 
 	if inst := cs.GetTargetInst(); inst != nil {
 		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
-		period := s3mPeriod.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd())
+		period := cs.CalculateSemitonePeriod(cs.Semitone)
 		o.UpdateFunc(period)
 	}
 	return nil
@@ -52,60 +52,58 @@ func (m *Manager) processEffect(ch int, cs *channel.State, currentTick int, last
 }
 
 func (m *Manager) processRowNote(ch int, cs *channel.State, currentTick int, lastTick bool) error {
-	triggerTick, noteAction := cs.WillTriggerOn(currentTick)
-	if !triggerTick {
+	targetTick, noteAction := cs.WillTriggerOn(currentTick)
+	if !targetTick {
 		return nil
 	}
-	var n note.Note = note.EmptyNote{}
-	if cs.GetData() != nil {
-		n = cs.GetData().GetNote()
-	}
+
 	keyOn := false
-	keyOff := false
-	stop := false
+	if nc := cs.GetVoice(); nc != nil {
+		keyOn = nc.IsKeyOn()
+	}
 
-	if targetInst := cs.GetTargetInst(); targetInst != nil {
+	if noteAction == note.ActionRetrigger {
+		cs.TransitionActiveToPastState()
+	}
+
+	wantAttack := false
+	targetPeriod := cs.GetTargetPeriod()
+	if targetPeriod != nil {
+		targetInst := cs.GetTargetInst()
+		if targetInst != nil {
+			keyOn = true
+			wantAttack = noteAction == note.ActionRetrigger
+		}
+
+		if cs.UseTargetPeriod {
+			cs.SetPeriod(targetPeriod)
+			cs.SetPortaTargetPeriod(targetPeriod)
+		}
+
 		cs.SetInstrument(targetInst)
-		keyOn = true
-	} else {
-		cs.SetInstrument(nil)
-	}
-
-	if cs.UseTargetPeriod {
-		if nc := cs.GetVoice(); nc != nil {
-			nc.Release()
-			nc.Fadeout()
-		}
-		targetPeriod := cs.GetTargetPeriod()
-		cs.SetPeriod(targetPeriod)
-		cs.SetPortaTargetPeriod(targetPeriod)
-	}
-	cs.SetPos(cs.GetTargetPos())
-
-	if inst := cs.GetInstrument(); inst != nil {
-		keyOff = inst.IsReleaseNote(n)
-		stop = inst.IsStopNote(n)
-		if keyOff || stop {
-			keyOn = false
-		}
+		cs.SetPos(cs.GetTargetPos())
 	}
 
 	if nc := cs.GetVoice(); nc != nil {
-		if keyOn && noteAction == note.ActionRetrigger {
-			// S3M is weird and only sets the global volume on the channel when a KeyOn happens
-			cs.SetGlobalVolume(m.GetGlobalVolume())
-			nc.Attack()
-			mem := cs.GetMemory()
-			mem.Retrigger()
-		} else if keyOff {
+		switch noteAction {
+		case note.ActionRetrigger:
+			if keyOn && wantAttack {
+				// S3M is weird and only sets the global volume on the channel when a KeyOn happens
+				cs.SetGlobalVolume(m.GetGlobalVolume())
+				nc.Attack()
+				mem := cs.GetMemory()
+				mem.Retrigger()
+			}
+		case note.ActionRelease:
 			nc.Release()
 			nc.Fadeout()
 			cs.SetPeriod(nil)
-		} else if stop {
+		case note.ActionCut:
 			cs.SetInstrument(nil)
 			cs.SetPeriod(nil)
 		}
 	}
+
 	return nil
 }
 

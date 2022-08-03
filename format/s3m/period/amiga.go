@@ -20,15 +20,20 @@ type Amiga struct {
 // AddInteger truncates the current period to an integer and adds the delta integer in
 // then returns the resulting period
 func (p Amiga) AddInteger(delta int) Amiga {
+	if p.AmigaPeriod <= 0 {
+		return p
+	}
 	p.AmigaPeriod = period.AmigaPeriod(int(p.AmigaPeriod) + delta)
+	if p.AmigaPeriod < 64 {
+		p.AmigaPeriod = 64
+	}
 	return p
 }
 
 // Add adds the current period to a delta value then returns the resulting period
 func (p Amiga) AddDelta(delta period.Delta, sign int) period.Period {
 	d := period.ToPeriodDelta(delta) * period.PeriodDelta(sign)
-	p.AmigaPeriod += period.AmigaPeriod(d)
-	return p
+	return p.AddInteger(int(d))
 }
 
 // Compare returns:
@@ -76,8 +81,11 @@ func (p Amiga) String() string {
 
 // ToAmigaPeriod calculates an amiga period for a linear finetune period
 func ToAmigaPeriod(finetunes note.Finetune, c2spd period.Frequency) Amiga {
-	if finetunes < 0 {
-		finetunes = 0
+	if finetunes <= 0 {
+		return Amiga{
+			AmigaPeriod: 0,
+			Coeff:       c2spd / MiddleCFrequency,
+		}
 	}
 	st := note.Semitone(finetunes / semitonesPerNote)
 	ft := finetunes % semitonesPerNote
@@ -88,8 +96,14 @@ func ToAmigaPeriod(finetunes note.Finetune, c2spd period.Frequency) Amiga {
 	f >>= st.Octave()
 	linFreq := math.Pow(2, float64(ft)/semitonesPerOctave)
 
+	am := period.AmigaPeriod(float64(f) / linFreq)
+	if am < 64 {
+		// S3M clamps period to 64 as minimum
+		am = 64
+	}
+
 	p := Amiga{
-		AmigaPeriod: period.AmigaPeriod(float64(f) / linFreq),
+		AmigaPeriod: am,
 		Coeff:       c2spd / MiddleCFrequency,
 	}
 	return p

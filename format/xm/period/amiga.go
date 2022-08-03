@@ -76,9 +76,13 @@ func (p Amiga) String() string {
 
 // ToAmigaPeriod calculates an amiga period for a linear finetune period
 func ToAmigaPeriod(finetunes note.Finetune, c2spd period.Frequency) Amiga {
-	if finetunes < 0 {
-		finetunes = 0
+	if finetunes <= 0 {
+		return Amiga{
+			AmigaPeriod: 0,
+			Coeff:       c2spd / MiddleCFrequency,
+		}
 	}
+
 	st := note.Semitone(finetunes / semitonesPerNote)
 	ft := finetunes % semitonesPerNote
 
