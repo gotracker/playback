@@ -99,6 +99,7 @@ func (m *Manager) processRowNote(ch int, cs *channel.State, currentTick int, las
 			nc.Fadeout()
 			cs.SetPeriod(nil)
 		case note.ActionCut:
+			nc.Release()
 			cs.SetInstrument(nil)
 			cs.SetPeriod(nil)
 		}

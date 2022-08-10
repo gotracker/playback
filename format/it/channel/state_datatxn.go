@@ -19,8 +19,6 @@ func (c dataConverter) Process(out *state.ChannelDataActions, data *Data, cs *St
 	inst := cs.GetInstrument()
 	prevInst := inst
 
-	s := cs.GetSongDataInterface()
-
 	if data.HasNote() || data.HasInstrument() {
 		instID := data.GetInstrument(cs.StoredSemitone)
 		n = data.GetNote()
@@ -28,6 +26,7 @@ func (c dataConverter) Process(out *state.ChannelDataActions, data *Data, cs *St
 			wantRetrigger    bool
 			wantRetriggerVol bool
 		)
+		s := cs.GetSongDataInterface()
 		if instID.IsEmpty() {
 			// use current
 			inst = prevInst
@@ -61,6 +60,8 @@ func (c dataConverter) Process(out *state.ChannelDataActions, data *Data, cs *St
 
 	if note.IsInvalid(n) {
 		out.TargetPeriod.Set(nil)
+		out.NoteAction.Set(note.ActionCut)
+	} else if note.IsStop(n) {
 		out.NoteAction.Set(note.ActionCut)
 	} else if note.IsRelease(n) {
 		out.NoteAction.Set(note.ActionRelease)

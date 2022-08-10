@@ -4,7 +4,6 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/state"
 )
@@ -16,11 +15,13 @@ func (c dataConverter) Process(out *state.ChannelDataActions, data *Data, cs *St
 		return nil
 	}
 
-	var inst *instrument.Instrument
+	var n note.Note = note.EmptyNote{}
+	inst := cs.GetInstrument()
+	prevInst := inst
 
 	if data.HasNote() || data.HasInstrument() {
 		instID := data.GetInstrument(cs.StoredSemitone)
-		n := data.GetNote()
+		n = data.GetNote()
 		var (
 			wantRetrigger    bool
 			wantRetriggerVol bool
@@ -28,7 +29,7 @@ func (c dataConverter) Process(out *state.ChannelDataActions, data *Data, cs *St
 		s := cs.GetSongDataInterface()
 		if instID.IsEmpty() {
 			// use current
-			inst = cs.GetInstrument()
+			inst = prevInst
 			wantRetrigger = true
 		} else if !s.IsValidInstrumentID(instID) {
 			out.TargetInst.Set(nil)
@@ -37,6 +38,9 @@ func (c dataConverter) Process(out *state.ChannelDataActions, data *Data, cs *St
 			var str note.Semitone
 			inst, str = s.GetInstrument(instID)
 			n = note.CoalesceNoteSemitone(n, str)
+			if !note.IsEmpty(n) && inst == nil {
+				inst = prevInst
+			}
 			wantRetrigger = true
 			wantRetriggerVol = true
 		}
@@ -51,18 +55,24 @@ func (c dataConverter) Process(out *state.ChannelDataActions, data *Data, cs *St
 				out.NoteAction.Set(note.ActionRetrigger)
 			}
 		}
+	}
 
-		if note.IsInvalid(n) {
-			out.TargetPeriod.Set(nil)
+	if note.IsInvalid(n) {
+		out.TargetPeriod.Set(nil)
+		out.NoteAction.Set(note.ActionCut)
+	} else if inst != nil && note.IsSpecial(n) {
+		if inst.IsStopNote(n) {
 			out.NoteAction.Set(note.ActionCut)
-		} else if note.IsRelease(n) {
+		} else if inst.IsReleaseNote(n) {
 			out.NoteAction.Set(note.ActionRelease)
+		}
+	} else if !note.IsEmpty(n) {
+		if nn, ok := n.(note.Normal); ok {
+			st := note.Semitone(nn)
+			out.TargetStoredSemitone.Set(st)
+			out.NoteCalcST.Set(st)
 		} else {
-			if nn, ok := n.(note.Normal); ok {
-				st := note.Semitone(nn)
-				out.TargetStoredSemitone.Set(st)
-				out.NoteCalcST.Set(st)
-			}
+			out.NoteAction.Set(note.ActionCut)
 		}
 	}
 
