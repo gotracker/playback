@@ -141,7 +141,7 @@ func (t *Tracker) renderTick() (*output.PremixData, error) {
 	return premix, nil
 }
 
-func (t *Tracker) renderOPL2Tick(mixerData *mixing.Data, mix *mixing.Mixer, tickSamples int) {
+func (t *Tracker) renderOPL2Tick(mixerData *mixing.Data, mix mixing.Mixer, tickSamples int) {
 	// make a stand-alone data buffer for this channel for this tick
 	data := mix.NewMixBuffer(tickSamples)
 

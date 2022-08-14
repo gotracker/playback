@@ -57,7 +57,7 @@ func (a *Active) Transition() *Active {
 }
 
 type RenderDetails struct {
-	Mix          *mixing.Mixer
+	Mix          mixing.Mixer
 	Panmixer     mixing.PanMixer
 	SamplerSpeed period.Frequency
 	Samples      int

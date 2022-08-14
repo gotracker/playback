@@ -28,17 +28,17 @@ func NewSampler(samplesPerSec, channels int, baseClockRate period.Frequency) *Sa
 // GetSamplerSpeed returns the current sampler speed
 // which is a product of the base sampler clock rate and the inverse
 // of the output render rate (the sample rate)
-func (s *Sampler) GetSamplerSpeed() period.Frequency {
+func (s Sampler) GetSamplerSpeed() period.Frequency {
 	return s.BaseClockRate / period.Frequency(s.SampleRate)
 }
 
 // Mixer returns a pointer to the current mixer object
-func (s *Sampler) Mixer() *mixing.Mixer {
-	return &s.mixer
+func (s Sampler) Mixer() mixing.Mixer {
+	return s.mixer
 }
 
 // GetPanMixer returns the panning mixer that can generate a matrix
 // based on input pan value
-func (s *Sampler) GetPanMixer() mixing.PanMixer {
+func (s Sampler) GetPanMixer() mixing.PanMixer {
 	return mixing.GetPanMixer(s.mixer.Channels)
 }
