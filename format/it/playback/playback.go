@@ -133,7 +133,7 @@ func (m *Manager) SetNumChannels(num int) {
 func (m *Manager) channelInit(ch int) *render.Channel {
 	return &render.Channel{
 		ChannelNum:      ch,
-		Filter:          nil,
+		AmigaLPF:        nil,
 		GetSampleRate:   m.GetSampleRate,
 		SetGlobalVolume: m.SetGlobalVolume,
 		GetOPL2Chip:     m.GetOPL2Chip,
@@ -299,6 +299,12 @@ func (m *Manager) Configure(features []feature.Feature) error {
 			if c := m.GetChannel(f.Channel - 1); c != nil {
 				c.ActiveState.Muted = f.Muted
 			}
+		case feature.MovingAverageFilter:
+			var window int
+			if f.Enabled && f.WindowSize != 0 {
+				window = f.WindowSize
+			}
+			m.SetMovingAverageFilter(window)
 		}
 	}
 	return nil

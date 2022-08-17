@@ -110,17 +110,32 @@ func (m *Manager) processVoiceUpdates(ch int, cs *channel.State, currentTick int
 	return nil
 }
 
+func (m *Manager) SetMovingAverageFilter(windowSize int) {
+	for i := range m.song.ChannelSettings {
+		c := m.GetChannel(i)
+		if o := c.GetRenderChannel(); o != nil {
+			if windowSize != 0 {
+				if o.MovingAvg == nil {
+					o.MovingAvg = filter.NewMovingAverage(windowSize)
+				}
+			} else {
+				o.MovingAvg = nil
+			}
+		}
+	}
+}
+
 // SetFilterEnable activates or deactivates the amiga low-pass filter on the instruments
 func (m *Manager) SetFilterEnable(on bool) {
 	for i := range m.song.ChannelSettings {
 		c := m.GetChannel(i)
 		if o := c.GetRenderChannel(); o != nil {
 			if on {
-				if o.Filter == nil {
-					o.Filter = filter.NewAmigaLPF(itPeriod.MiddleCFrequency, m.GetSampleRate())
+				if o.AmigaLPF == nil {
+					o.AmigaLPF = filter.NewAmigaLPF(itPeriod.MiddleCFrequency, m.GetSampleRate())
 				}
 			} else {
-				o.Filter = nil
+				o.AmigaLPF = nil
 			}
 		}
 	}
