@@ -44,13 +44,6 @@ func NewMovingAverage(windowSize int) Filter {
 		ma.coeffs[x] = coeff
 		acc += coeff
 	}
-	// normalize
-	if acc != 0 {
-		acc = 1.0 / acc
-		for x := 0; x < windowSize; x++ {
-			ma.coeffs[x] *= acc
-		}
-	}
 	return &ma
 }
 
@@ -66,17 +59,28 @@ func (ma MovingAverage) Clone() Filter {
 }
 
 func (ma *MovingAverage) Filter(dry volume.Matrix) volume.Matrix {
+	if dry.Channels == 0 {
+		return dry
+	}
+
 	var wet volume.Matrix
+	wet.Channels = dry.Channels
+
 	windowLen := len(ma.points)
-	// shift our history
-	ma.writePos = (ma.writePos + 1) % windowLen
 	// now set our dry data into the buffer
 	ma.points[ma.writePos] = dry
 	// add up the points and apply the coefficients
-	for i, pt := range ma.points {
-		cpos := (ma.writePos + i) % windowLen
-		wet.Accumulate(pt.Apply(ma.coeffs[cpos]))
+	cpos := ma.writePos
+	for _, coeff := range ma.coeffs {
+		cpos++
+		cpos %= windowLen
+		conv := ma.points[cpos].Apply(coeff)
+		wet.Accumulate(conv)
 	}
+
+	// shift our history
+	ma.writePos++
+	ma.writePos %= windowLen
 
 	return wet
 }
