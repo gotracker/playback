@@ -70,8 +70,9 @@ func (ma *MovingAverage) Filter(dry volume.Matrix) volume.Matrix {
 		return dry
 	}
 
-	var wet volume.Matrix
-	wet.Channels = dry.Channels
+	wet := volume.Matrix{
+		Channels: dry.Channels,
+	}
 
 	windowLen := len(ma.points)
 	// now set our dry data into the buffer
@@ -80,14 +81,18 @@ func (ma *MovingAverage) Filter(dry volume.Matrix) volume.Matrix {
 	cpos := ma.writePos
 	for _, coeff := range ma.coeffs {
 		cpos++
-		cpos %= windowLen
+		if cpos >= windowLen {
+			cpos -= windowLen
+		}
 		conv := ma.points[cpos].Apply(coeff)
 		wet.Accumulate(conv)
 	}
 
 	// shift our history
 	ma.writePos++
-	ma.writePos %= windowLen
+	if ma.writePos >= windowLen {
+		ma.writePos -= windowLen
+	}
 
 	return wet
 }
