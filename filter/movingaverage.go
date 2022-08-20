@@ -44,6 +44,13 @@ func NewMovingAverage(windowSize int) Filter {
 		ma.coeffs[x] = coeff
 		acc += coeff
 	}
+	// Normalize
+	if acc != 1.0 && acc != 0.0 {
+		v := 1.0 / acc
+		for x := 0; x < windowSize; x++ {
+			ma.coeffs[x] *= v
+		}
+	}
 	return &ma
 }
 
