@@ -167,7 +167,7 @@ func (v *opl2Voice) GetPeriodDelta() period.Delta {
 func (v *opl2Voice) GetFinalPeriod() period.Period {
 	p := v.freq.GetFinalPeriod()
 	if v.IsPitchEnvelopeEnabled() {
-		p = p.AddDelta(v.GetCurrentPitchEnvelope())
+		p = p.AddDelta(v.GetCurrentPitchEnvelope(), 1)
 	}
 	return p
 }
@@ -274,7 +274,7 @@ func (v *opl2Voice) GetSample(pos sampling.Pos) volume.Matrix {
 	return volume.Matrix{}
 }
 
-func (v *opl2Voice) GetSampler(samplerRate float32) sampling.Sampler {
+func (v *opl2Voice) GetSampler(samplerRate period.Frequency) sampling.Sampler {
 	return nil
 }
 

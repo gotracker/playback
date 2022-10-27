@@ -219,7 +219,7 @@ func (v *pcmVoice) GetFinalPeriod() period.Period {
 	p := v.freq.GetFinalPeriod()
 	if v.IsPitchEnvelopeEnabled() {
 		delta := v.GetCurrentPitchEnvelope()
-		p = p.AddDelta(delta)
+		p = p.AddDelta(delta, 1)
 	}
 	return p
 }
@@ -411,9 +411,9 @@ func (v *pcmVoice) Advance(tickDuration time.Duration) {
 	}
 }
 
-func (v *pcmVoice) GetSampler(samplerRate float32) sampling.Sampler {
+func (v *pcmVoice) GetSampler(samplerRate period.Frequency) sampling.Sampler {
 	period := v.GetFinalPeriod()
-	samplerAdd := float32(period.GetSamplerAdd(float64(samplerRate)))
+	samplerAdd := float32(period.GetSamplerAdd(samplerRate))
 	o := component.OutputFilter{
 		Input:  v,
 		Output: v.outputFilter,

@@ -6,7 +6,6 @@ import (
 	"github.com/gotracker/playback/format/it/channel"
 	itPeriod "github.com/gotracker/playback/format/it/period"
 	"github.com/gotracker/playback/note"
-	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/state"
 )
 
@@ -15,29 +14,25 @@ type doNoteCalc struct {
 	UpdateFunc state.PeriodUpdateFunc
 }
 
-func (o doNoteCalc) Process(p playback.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+func (o doNoteCalc) Process(p playback.Playback, cs *channel.State) error {
 	if o.UpdateFunc == nil {
 		return nil
 	}
 
-	if inst := cs.GetTargetInst(); inst != nil {
-		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
-		linearFreqSlides := cs.Memory.Shared.LinearFreqSlides
-		period := itPeriod.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd(), linearFreqSlides)
-		o.UpdateFunc(period)
-	}
+	period := cs.CalculateSemitonePeriod(o.Semitone)
+	o.UpdateFunc(period)
 	return nil
 }
 
-func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
+func (m *Manager) processEffect(ch int, cs *channel.State, currentTick int, lastTick bool) error {
 	if txn := cs.GetTxn(); txn != nil {
-		if err := txn.CommitPreTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+		if err := txn.CommitPreTick(m, cs, currentTick, lastTick); err != nil {
 			return err
 		}
-		if err := txn.CommitTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+		if err := txn.CommitTick(m, cs, currentTick, lastTick); err != nil {
 			return err
 		}
-		if err := txn.CommitPostTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+		if err := txn.CommitPostTick(m, cs, currentTick, lastTick); err != nil {
 			return err
 		}
 	}
@@ -54,7 +49,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, c
 	return nil
 }
 
-func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
+func (m *Manager) processRowNote(ch int, cs *channel.State, currentTick int, lastTick bool) error {
 	targetTick, noteAction := cs.WillTriggerOn(currentTick)
 	if !targetTick {
 		return nil
@@ -106,7 +101,7 @@ func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, 
 	return nil
 }
 
-func (m *Manager) processVoiceUpdates(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
+func (m *Manager) processVoiceUpdates(ch int, cs *channel.State, currentTick int, lastTick bool) error {
 	if cs.UsePeriodOverride {
 		cs.UsePeriodOverride = false
 		arpeggioPeriod := cs.GetPeriodOverride()
@@ -115,17 +110,32 @@ func (m *Manager) processVoiceUpdates(ch int, cs *state.ChannelState[channel.Mem
 	return nil
 }
 
+func (m *Manager) SetMovingAverageFilter(windowSize int) {
+	for i := range m.song.ChannelSettings {
+		c := m.GetChannel(i)
+		if o := c.GetRenderChannel(); o != nil {
+			if windowSize != 0 {
+				if o.MovingAvg == nil {
+					o.MovingAvg = filter.NewMovingAverage(windowSize)
+				}
+			} else {
+				o.MovingAvg = nil
+			}
+		}
+	}
+}
+
 // SetFilterEnable activates or deactivates the amiga low-pass filter on the instruments
 func (m *Manager) SetFilterEnable(on bool) {
 	for i := range m.song.ChannelSettings {
 		c := m.GetChannel(i)
 		if o := c.GetRenderChannel(); o != nil {
 			if on {
-				if o.Filter == nil {
-					o.Filter = filter.NewAmigaLPF(period.Frequency(itPeriod.DefaultC2Spd), m.GetSampleRate())
+				if o.AmigaLPF == nil {
+					o.AmigaLPF = filter.NewAmigaLPF(itPeriod.MiddleCFrequency, m.GetSampleRate())
 				}
 			} else {
-				o.Filter = nil
+				o.AmigaLPF = nil
 			}
 		}
 	}

@@ -14,28 +14,28 @@ type doNoteCalc struct {
 	UpdateFunc state.PeriodUpdateFunc
 }
 
-func (o doNoteCalc) Process(p playback.Playback, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+func (o doNoteCalc) Process(p playback.Playback, cs *channel.State) error {
 	if o.UpdateFunc == nil {
 		return nil
 	}
 
 	if inst := cs.GetTargetInst(); inst != nil {
 		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
-		period := s3mPeriod.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd())
+		period := cs.CalculateSemitonePeriod(cs.Semitone)
 		o.UpdateFunc(period)
 	}
 	return nil
 }
 
-func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
+func (m *Manager) processEffect(ch int, cs *channel.State, currentTick int, lastTick bool) error {
 	if txn := cs.GetTxn(); txn != nil {
-		if err := txn.CommitPreTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+		if err := txn.CommitPreTick(m, cs, currentTick, lastTick); err != nil {
 			return err
 		}
-		if err := txn.CommitTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+		if err := txn.CommitTick(m, cs, currentTick, lastTick); err != nil {
 			return err
 		}
-		if err := txn.CommitPostTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
+		if err := txn.CommitPostTick(m, cs, currentTick, lastTick); err != nil {
 			return err
 		}
 	}
@@ -51,62 +51,64 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory, c
 	return nil
 }
 
-func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
-	triggerTick, noteAction := cs.WillTriggerOn(currentTick)
-	if !triggerTick {
+func (m *Manager) processRowNote(ch int, cs *channel.State, currentTick int, lastTick bool) error {
+	targetTick, noteAction := cs.WillTriggerOn(currentTick)
+	if !targetTick {
 		return nil
 	}
-	var n note.Note = note.EmptyNote{}
-	if cs.GetData() != nil {
-		n = cs.GetData().GetNote()
-	}
+
 	keyOn := false
-	keyOff := false
-	stop := false
-
-	if targetInst := cs.GetTargetInst(); targetInst != nil {
-		cs.SetInstrument(targetInst)
-		keyOn = true
-	} else {
-		cs.SetInstrument(nil)
+	if nc := cs.GetVoice(); nc != nil {
+		keyOn = nc.IsKeyOn()
 	}
 
-	if cs.UseTargetPeriod {
-		if nc := cs.GetVoice(); nc != nil {
-			nc.Release()
-			nc.Fadeout()
+	if noteAction == note.ActionRetrigger {
+		cs.TransitionActiveToPastState()
+	}
+
+	wantAttack := false
+	targetPeriod := cs.GetTargetPeriod()
+	if targetPeriod != nil {
+		targetInst := cs.GetTargetInst()
+		if targetInst != nil {
+			keyOn = true
+			wantAttack = noteAction == note.ActionRetrigger
 		}
-		targetPeriod := cs.GetTargetPeriod()
-		cs.SetPeriod(targetPeriod)
-		cs.SetPortaTargetPeriod(targetPeriod)
-	}
-	cs.SetPos(cs.GetTargetPos())
 
-	if inst := cs.GetInstrument(); inst != nil {
-		keyOff = inst.IsReleaseNote(n)
-		stop = inst.IsStopNote(n)
+		if cs.UseTargetPeriod {
+			cs.SetPeriod(targetPeriod)
+			cs.SetPortaTargetPeriod(targetPeriod)
+		}
+
+		cs.SetInstrument(targetInst)
+		cs.SetPos(cs.GetTargetPos())
 	}
 
 	if nc := cs.GetVoice(); nc != nil {
-		if keyOn && noteAction == note.ActionRetrigger {
-			// S3M is weird and only sets the global volume on the channel when a KeyOn happens
-			cs.SetGlobalVolume(m.GetGlobalVolume())
-			nc.Attack()
-			mem := cs.GetMemory()
-			mem.Retrigger()
-		} else if keyOff {
+		switch noteAction {
+		case note.ActionRetrigger:
+			if keyOn && wantAttack {
+				// S3M is weird and only sets the global volume on the channel when a KeyOn happens
+				cs.SetGlobalVolume(m.GetGlobalVolume())
+				nc.Attack()
+				mem := cs.GetMemory()
+				mem.Retrigger()
+			}
+		case note.ActionRelease:
 			nc.Release()
 			nc.Fadeout()
 			cs.SetPeriod(nil)
-		} else if stop {
+		case note.ActionCut:
+			nc.Release()
 			cs.SetInstrument(nil)
 			cs.SetPeriod(nil)
 		}
 	}
+
 	return nil
 }
 
-func (m *Manager) processVoiceUpdates(ch int, cs *state.ChannelState[channel.Memory, channel.Data], currentTick int, lastTick bool) error {
+func (m *Manager) processVoiceUpdates(ch int, cs *channel.State, currentTick int, lastTick bool) error {
 	if cs.UsePeriodOverride {
 		cs.UsePeriodOverride = false
 		arpeggioPeriod := cs.GetPeriodOverride()
@@ -115,17 +117,32 @@ func (m *Manager) processVoiceUpdates(ch int, cs *state.ChannelState[channel.Mem
 	return nil
 }
 
+func (m *Manager) SetMovingAverageFilter(windowSize int) {
+	for i := range m.song.ChannelSettings {
+		c := m.GetChannel(i)
+		if o := c.GetRenderChannel(); o != nil {
+			if windowSize != 0 {
+				if o.MovingAvg == nil {
+					o.MovingAvg = filter.NewMovingAverage(windowSize)
+				}
+			} else {
+				o.MovingAvg = nil
+			}
+		}
+	}
+}
+
 // SetFilterEnable activates or deactivates the amiga low-pass filter on the instruments
 func (m *Manager) SetFilterEnable(on bool) {
 	for i := range m.song.ChannelSettings {
 		c := m.GetChannel(i)
 		if o := c.GetRenderChannel(); o != nil {
 			if on {
-				if o.Filter == nil {
-					o.Filter = filter.NewAmigaLPF(s3mPeriod.DefaultC2Spd, m.GetSampleRate())
+				if o.AmigaLPF == nil {
+					o.AmigaLPF = filter.NewAmigaLPF(s3mPeriod.MiddleCFrequency, m.GetSampleRate())
 				}
 			} else {
-				o.Filter = nil
+				o.AmigaLPF = nil
 			}
 		}
 	}

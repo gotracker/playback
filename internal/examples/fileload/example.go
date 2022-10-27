@@ -50,10 +50,18 @@ func ExamplePlayFileToStdout() {
 	// the song one time through.
 	features = append(features, feature.SongLoop{Count: 0})
 
-	// There's an automagical loader utility which divines the file type and presents a player that can
-	// effectively play it. See `ExamplePlayBufferToStdout` (./internal/examples/bufferload) for an
-	// example of the io.Reader version of this call.
-	player, _, err := format.Load(filename, features)
+	// There's an automagical loader utility which divines the file type and presents a song struct that
+	// can generate a player to effectively play it.
+	// See `ExamplePlayBufferToStdout` (./internal/examples/bufferload) for an example of the io.Reader
+	// version of this call.
+	s, err := format.Load(filename, features)
+	if err != nil {
+		panic(err)
+	}
+
+	// Have the song construct a player for us. This has the added benefit of registering the song with
+	// the player so it can (nearly) immediately be used.
+	player, err := s.ConstructPlayer()
 	if err != nil {
 		panic(err)
 	}

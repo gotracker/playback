@@ -17,10 +17,10 @@ type Linear struct {
 }
 
 // Add adds the current period to a delta value then returns the resulting period
-func (p Linear) AddDelta(delta period.Delta) period.Period {
+func (p Linear) AddDelta(delta period.Delta, sign int) period.Period {
 	// 0 means "not playing", so keep it that way
 	if p.Finetune > 0 {
-		d := period.ToPeriodDelta(delta)
+		d := period.ToPeriodDelta(delta) * period.PeriodDelta(sign)
 		p.Finetune += note.Finetune(d)
 		if p.Finetune < 1 {
 			p.Finetune = 1
@@ -55,21 +55,17 @@ func (p Linear) Lerp(t float64, rhs period.Period) period.Period {
 	rnft := float64(right.Finetune)
 
 	delta := period.PeriodDelta(t * (rnft - lnft))
-	return p.AddDelta(delta)
+	return p.AddDelta(delta, 1)
 }
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period
-func (p Linear) GetSamplerAdd(samplerSpeed float64) float64 {
-	period := float64(ToAmigaPeriod(p.Finetune, DefaultC2Spd))
-	if period == 0 {
-		return 0
-	}
-	return samplerSpeed / period
+func (p Linear) GetSamplerAdd(samplerSpeed period.Frequency) float64 {
+	return ToAmigaPeriod(p.Finetune, p.C2Spd).GetSamplerAdd(samplerSpeed)
 }
 
 // GetFrequency returns the frequency defined by the period
 func (p Linear) GetFrequency() period.Frequency {
-	am := ToAmigaPeriod(p.Finetune, DefaultC2Spd)
+	am := ToAmigaPeriod(p.Finetune, p.C2Spd)
 	return am.GetFrequency()
 }
 
@@ -83,13 +79,20 @@ func ToLinearPeriod(p period.Period) Linear {
 	case Linear:
 		return pp
 	case Amiga:
-		linFreq := float64(semitonePeriodTable[0]) / float64(pp)
+		if pp.AmigaPeriod <= 0 {
+			return Linear{
+				Finetune: 0,
+				C2Spd:    pp.Coeff * MiddleCFrequency,
+			}
+		}
+
+		linFreq := float64(semitonePeriodTable[0]) / float64(pp.AmigaPeriod)
 
 		fts := note.Finetune(semitonesPerOctave * math.Log2(linFreq))
 
 		lp := Linear{
 			Finetune: fts,
-			C2Spd:    DefaultC2Spd,
+			C2Spd:    pp.Coeff * MiddleCFrequency,
 		}
 		return lp
 	}

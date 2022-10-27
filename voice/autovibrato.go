@@ -11,7 +11,7 @@ type AutoVibrato struct {
 	WaveformSelection uint8
 	Depth             float32
 	Rate              int
-	Factory           func() oscillator.Oscillator
+	Factory           func() oscillator.Oscillator `json:"-"`
 }
 
 // Generate creates an AutoVibrato waveform oscillator and configures it with the inital values

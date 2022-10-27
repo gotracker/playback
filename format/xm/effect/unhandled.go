@@ -3,7 +3,6 @@ package effect
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/channel"
 	effectIntf "github.com/gotracker/playback/format/xm/effect/intf"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
@@ -16,7 +15,7 @@ type UnhandledCommand struct {
 }
 
 // PreStart triggers when the effect enters onto the channel state
-func (e UnhandledCommand) PreStart(cs playback.Channel[channel.Memory, channel.Data], m effectIntf.XM) error {
+func (e UnhandledCommand) PreStart(cs *channel.State, m effectIntf.XM) error {
 	if !m.IgnoreUnknownEffect() {
 		panic("unhandled command")
 	}
@@ -33,7 +32,7 @@ type UnhandledVolCommand struct {
 }
 
 // PreStart triggers when the effect enters onto the channel state
-func (e UnhandledVolCommand) PreStart(cs playback.Channel[channel.Memory, channel.Data], m effectIntf.XM) error {
+func (e UnhandledVolCommand) PreStart(cs *channel.State, m effectIntf.XM) error {
 	if !m.IgnoreUnknownEffect() {
 		panic("unhandled command")
 	}

@@ -24,9 +24,9 @@ import (
 type Manager struct {
 	player.Tracker
 
-	song *layout.Song
+	song *layout.Layout
 
-	channels  []state.ChannelState[channel.Memory, channel.Data]
+	channels  []channel.State
 	PastNotes state.PastNotesProcessor
 	pattern   pattern.State
 
@@ -41,10 +41,10 @@ type Manager struct {
 }
 
 // NewManager creates a new manager for an IT song
-func NewManager(song *layout.Song) (*Manager, error) {
+func NewManager(song *layout.Layout) (*Manager, error) {
 	m := Manager{
 		Tracker: player.Tracker{
-			BaseClockRate: itPeriod.ITBaseClock,
+			BaseClockRate: itPeriod.BaseClock,
 		},
 		song: song,
 	}
@@ -100,7 +100,7 @@ func (m *Manager) GetNumChannels() int {
 	return len(m.channels)
 }
 
-func (m *Manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateFunc) state.NoteOp[channel.Memory, channel.Data] {
+func (m *Manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateFunc) state.NoteOp[channel.State] {
 	return doNoteCalc{
 		Semitone:   st,
 		UpdateFunc: fn,
@@ -109,7 +109,7 @@ func (m *Manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateF
 
 // SetNumChannels updates the song to have the specified number of channels and resets their states
 func (m *Manager) SetNumChannels(num int) {
-	m.channels = make([]state.ChannelState[channel.Memory, channel.Data], num)
+	m.channels = make([]channel.State, num)
 	m.PastNotes.SetMax(channel.MaxTotalChannels - num)
 
 	for ch := range m.channels {
@@ -133,7 +133,7 @@ func (m *Manager) SetNumChannels(num int) {
 func (m *Manager) channelInit(ch int) *render.Channel {
 	return &render.Channel{
 		ChannelNum:      ch,
-		Filter:          nil,
+		AmigaLPF:        nil,
 		GetSampleRate:   m.GetSampleRate,
 		SetGlobalVolume: m.SetGlobalVolume,
 		GetOPL2Chip:     m.GetOPL2Chip,
@@ -295,6 +295,16 @@ func (m *Manager) Configure(features []feature.Feature) error {
 			if err := txn.Commit(); err != nil {
 				return err
 			}
+		case feature.ChannelMute:
+			if c := m.GetChannel(f.Channel - 1); c != nil {
+				c.ActiveState.Muted = f.Muted
+			}
+		case feature.MovingAverageFilter:
+			var window int
+			if f.Enabled && f.WindowSize != 0 {
+				window = f.WindowSize
+			}
+			m.SetMovingAverageFilter(window)
 		}
 	}
 	return nil
@@ -311,7 +321,10 @@ func (m *Manager) GetSongData() song.Data {
 }
 
 // GetChannel returns the channel interface for the specified channel number
-func (m *Manager) GetChannel(ch int) *state.ChannelState[channel.Memory, channel.Data] {
+func (m *Manager) GetChannel(ch int) *channel.State {
+	if ch < 0 || ch >= len(m.channels) {
+		return nil
+	}
 	return &m.channels[ch]
 }
 

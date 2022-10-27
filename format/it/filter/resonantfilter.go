@@ -23,8 +23,8 @@ type ResonantFilter struct {
 	b1       volume.Volume
 
 	enabled             bool
-	resonance           optional.Value[uint8]
-	cutoff              optional.Value[uint8]
+	resonance           optional.Value[int8]
+	cutoff              optional.Value[int8]
 	playbackRate        period.Frequency
 	highpass            bool
 	extendedFilterRange bool
@@ -39,24 +39,22 @@ func NewResonantFilter(cutoff uint8, resonance uint8, playbackRate period.Freque
 	}
 
 	if resonance&0x80 != 0 {
-		rf.resonance.Set(uint8(resonance) & 0x7f)
+		rf.resonance.Set(int8(resonance) & 0x7f)
 	}
-	c := uint8(0x7F)
+	c := int8(0x7F)
 	if (cutoff & 0x80) != 0 {
-		c = cutoff & 0x7f
-		rf.cutoff.Set(uint8(c))
+		c = int8(cutoff) & 0x7f
+		rf.cutoff.Set(c)
 	}
 
-	rf.recalculate(int8(c))
+	rf.recalculate(c)
 	return rf
 }
 
 func (f *ResonantFilter) Clone() filter.Filter {
 	c := *f
 	c.channels = make([]channelData, len(f.channels))
-	for i := range f.channels {
-		c.channels[i] = f.channels[i]
-	}
+	copy(c.channels, f.channels)
 	return &c
 }
 
@@ -89,30 +87,32 @@ func (f *ResonantFilter) Filter(dry volume.Matrix) volume.Matrix {
 }
 
 func (f *ResonantFilter) recalculate(v int8) {
-	cutoff, useCutoff := f.cutoff.Get()
+	useCutoff := f.cutoff.IsSet()
 	resonance, useResonance := f.resonance.Get()
 
 	if !useResonance {
 		resonance = 0
 	}
 
+	var cutoff int8
 	if !useCutoff {
 		cutoff = 127
 	} else {
-		cutoff = uint8(v)
+		cutoff = v
 		if cutoff < 0 {
 			cutoff = 0
-		} else if cutoff > 127 {
-			cutoff = 127
 		}
 
-		f.cutoff.Set(uint8(cutoff))
+		f.cutoff.Set(cutoff)
+	}
+	if cutoff >= 127 {
+		useCutoff = false
 	}
 
-	computedCutoff := int(cutoff) * 2
+	computedCutoff := int(cutoff)
 
 	useFilter := true
-	if computedCutoff >= 254 && resonance == 0 {
+	if !useCutoff && !useResonance {
 		useFilter = false
 	}
 
@@ -122,8 +122,8 @@ func (f *ResonantFilter) recalculate(v int8) {
 	}
 
 	const (
-		itFilterRange  = 24.0 // standard IT range
-		extfilterRange = 20.0 // extended OpenMPT range
+		itFilterRange  = 10240.0 // standard IT range
+		extfilterRange = 12288.0 // extended OpenMPT range
 	)
 
 	filterRange := itFilterRange
@@ -136,20 +136,18 @@ func (f *ResonantFilter) recalculate(v int8) {
 
 	f2 := float64(f.playbackRate) / 2.0
 	freq := f2
-	if computedCutoff < 254 {
-		fcComputedCutoff := float64(computedCutoff)
-		freq = 110.0 * math.Pow(2.0, 0.25+(fcComputedCutoff/filterRange))
-		if freq < 120.0 {
-			freq = 120.0
-		} else if freq > 20000 {
-			freq = 20000
-		}
+	fcComputedCutoff := float64(computedCutoff+256) * 256.0
+	freq = 110.0 * math.Pow(2.0, 0.25+(fcComputedCutoff/filterRange))
+	if freq < 120.0 {
+		freq = 120.0
+	} else if freq > 20000 {
+		freq = 20000
 	}
 	if freq > f2 {
 		freq = f2
 	}
 
-	fc := freq * 4.0 * math.Pi
+	fc := freq * 2.0 * math.Pi
 
 	var d, e float64
 	if f.extendedFilterRange {

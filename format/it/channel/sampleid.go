@@ -20,3 +20,8 @@ func (s SampleID) IsEmpty() bool {
 func (s SampleID) String() string {
 	return fmt.Sprint(s.InstID)
 }
+
+type SemitoneAndSampleID struct {
+	ST note.Semitone
+	ID uint8
+}

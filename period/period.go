@@ -6,10 +6,10 @@ import (
 
 // Period is an interface that defines a sampler period
 type Period interface {
-	AddDelta(Delta) Period
-	Compare(Period) comparison.Spaceship // <=>
-	Lerp(float64, Period) Period
-	GetSamplerAdd(float64) float64
+	AddDelta(delta Delta, sign int) Period
+	Compare(rhs Period) comparison.Spaceship // <=>
+	Lerp(t float64, rhs Period) Period
+	GetSamplerAdd(baseFreq Frequency) float64
 	GetFrequency() Frequency
 }
 
@@ -23,6 +23,8 @@ func ToPeriodDelta(delta Delta) PeriodDelta {
 	switch d := delta.(type) {
 	case PeriodDelta:
 		return d
+	case int:
+		return PeriodDelta(d)
 	case float32:
 		return PeriodDelta(d)
 	default:

@@ -3,7 +3,6 @@ package load
 import (
 	"errors"
 	"io"
-	"math"
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/panning"
@@ -147,18 +146,14 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				volEnvSustainMode = loop.ModeNormal
 			}
 
-			ii.VolEnv.Values = make([]envelope.EnvPoint[volume.Volume], int(inst.VolPoints))
-			for i := range ii.VolEnv.Values {
+			var timeline envelope.Timeline[volume.Volume]
+			timeline.Init()
+			for i := 0; i < int(inst.VolPoints); i++ {
 				x1 := int(inst.VolEnv[i].X)
 				y1 := uint8(inst.VolEnv[i].Y)
-				var x2 int
-				if i+1 < len(ii.VolEnv.Values) {
-					x2 = int(inst.VolEnv[i+1].X)
-				} else {
-					x2 = math.MaxInt64
-				}
-				ii.VolEnv.Values[i].Init(x2-x1, xmVolume.XmVolume(y1).Volume())
+				timeline.Push(x1, xmVolume.XmVolume(y1).Volume())
 			}
+			ii.VolEnv.Values = timeline.Result()
 		}
 
 		if ii.PanEnv.Enabled && (panEnvLoopSettings.End-panEnvLoopSettings.Begin) >= 0 {
@@ -169,28 +164,24 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				panEnvSustainMode = loop.ModeNormal
 			}
 
-			ii.PanEnv.Values = make([]envelope.EnvPoint[panning.Position], int(inst.VolPoints))
-			for i := range ii.PanEnv.Values {
+			var timeline envelope.Timeline[panning.Position]
+			timeline.Init()
+			for i := 0; i < int(inst.PanPoints); i++ {
 				x1 := int(inst.PanEnv[i].X)
 				// XM stores pan envelope values in 0..64
 				// So we have to do some gymnastics to remap the values
 				panEnv01 := float64(uint8(inst.PanEnv[i].Y)) / 64
 				y1 := uint8(panEnv01 * 255)
-				var x2 int
-				if i+1 < len(ii.PanEnv.Values) {
-					x2 = int(inst.PanEnv[i+1].X)
-				} else {
-					x2 = math.MaxInt64
-				}
-				ii.PanEnv.Values[i].Init(x2-x1, xmPanning.PanningFromXm(y1))
+				timeline.Push(x1, xmPanning.PanningFromXm(y1))
 			}
+			ii.PanEnv.Values = timeline.Result()
 		}
 
 		if si.Finetune != 0 {
-			sample.C2Spd = xmPeriod.CalcFinetuneC2Spd(xmPeriod.DefaultC2Spd, note.Finetune(si.Finetune), linearFrequencySlides)
+			sample.C2Spd = xmPeriod.CalcFinetuneC2Spd(xmPeriod.MiddleCFrequency, note.Finetune(si.Finetune/4), linearFrequencySlides)
 		}
 		if sample.C2Spd == 0 {
-			sample.C2Spd = period.Frequency(xmPeriod.DefaultC2Spd)
+			sample.C2Spd = period.Frequency(xmPeriod.MiddleCFrequency)
 		}
 		if si.Flags.IsStereo() {
 			numChannels = 2
@@ -280,20 +271,28 @@ func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern[channel.Data], int) 
 	return pat, int(maxCh)
 }
 
-func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.Song, error) {
+func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.Layout, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
 	}
 
 	linearFrequencySlides := f.Head.Flags.IsLinearSlides()
+	extendedFilterRange := f.Head.Flags.IsExtendedFilterRange()
 
-	song := layout.Song{
-		Head:              *h,
-		Instruments:       make(map[uint8]*instrument.Instrument),
-		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument),
-		Patterns:          make([]pattern.Pattern[channel.Data], len(f.Patterns)),
-		OrderList:         make([]index.Pattern, int(f.Head.SongLength)),
+	sharedMem := channel.SharedMemory{
+		LinearFreqSlides:           linearFrequencySlides,
+		ExtendedFilterRange:        extendedFilterRange,
+		ResetMemoryAtStartOfOrder0: true,
+	}
+
+	song := layout.Layout{
+		Head:        *h,
+		Instruments: make(map[uint8]instrument.Keyboard[uint8]),
+		Samples:     make(map[uint8]*instrument.Instrument),
+		Patterns:    make([]pattern.Pattern[channel.Data], len(f.Patterns)),
+		OrderList:   make([]index.Pattern, int(f.Head.SongLength)),
+		Flags:       &sharedMem,
 	}
 
 	for i := 0; i < int(f.Head.SongLength); i++ {
@@ -313,7 +312,8 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 				InstID: uint8(instNum + 1),
 			}
 			sample.Static.ID = id
-			song.Instruments[id.InstID] = sample
+			song.Instruments[id.InstID] = instrument.Keyboard[uint8]{}
+			song.Samples[id.InstID] = sample
 		}
 		for i, sts := range noteMap {
 			sample := samples[i]
@@ -321,13 +321,13 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 			if !ok {
 				continue
 			}
-			inm, ok := song.InstrumentNoteMap[id.InstID]
+			keyboard, ok := song.Instruments[id.InstID]
 			if !ok {
-				inm = make(map[note.Semitone]*instrument.Instrument)
-				song.InstrumentNoteMap[id.InstID] = inm
+				continue
 			}
+
 			for _, st := range sts {
-				inm[st] = samples[i]
+				keyboard.SetRemap(st, id.InstID)
 			}
 		}
 	}
@@ -343,11 +343,6 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 			lastEnabledChannel = maxCh
 		}
 		song.Patterns[patNum] = *pattern
-	}
-
-	sharedMem := channel.SharedMemory{
-		LinearFreqSlides:           linearFrequencySlides,
-		ResetMemoryAtStartOfOrder0: true,
 	}
 
 	channels := make([]layout.ChannelSetting, lastEnabledChannel+1)
@@ -371,7 +366,7 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 	return &song, nil
 }
 
-func readXM(r io.Reader, features []feature.Feature) (*layout.Song, error) {
+func readXM(r io.Reader, features []feature.Feature) (*layout.Layout, error) {
 	f, err := xmfile.Read(r)
 	if err != nil {
 		return nil, err

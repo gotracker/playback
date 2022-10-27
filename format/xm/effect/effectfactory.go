@@ -8,12 +8,12 @@ import (
 )
 
 type EffectXM interface {
-	playback.Effect
+	playback.Effecter[channel.State]
 }
 
 // VolEff is a combined effect that includes a volume effect and a standard effect
 type VolEff struct {
-	playback.CombinedEffect[channel.Memory, channel.Data]
+	playback.CombinedEffect[channel.State]
 	eff EffectXM
 }
 
@@ -25,7 +25,7 @@ func (e VolEff) String() string {
 }
 
 // Factory produces an effect for the provided channel pattern data
-func Factory(mem *channel.Memory, data *channel.Data) EffectXM {
+func Factory(cs *channel.State, data *channel.Data) playback.Effecter[channel.State] {
 	if data == nil {
 		return nil
 	}
@@ -33,6 +33,8 @@ func Factory(mem *channel.Memory, data *channel.Data) EffectXM {
 	if !data.HasCommand() {
 		return nil
 	}
+
+	mem := cs.GetMemory()
 
 	eff := VolEff{}
 	if data.What.HasVolume() {

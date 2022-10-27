@@ -21,8 +21,8 @@ type StaticValues struct {
 	AutoVibrato        voice.AutoVibrato
 	NewNoteAction      note.Action
 	Finetune           note.Finetune
-	FilterFactory      filter.Factory
-	PluginFilter       filter.Factory
+	FilterFactory      filter.Factory `json:"-"`
+	PluginFilter       filter.Factory `json:"-"`
 }
 
 // Instrument is the mildly-decoded instrument/sample header
@@ -114,18 +114,16 @@ func (inst Instrument) GetAutoVibrato() voice.AutoVibrato {
 
 // IsReleaseNote returns true if the note is a release (Note-Off)
 func (inst Instrument) IsReleaseNote(n note.Note) bool {
-	switch n.Type() {
-	case note.SpecialTypeStopOrRelease:
-		return inst.GetKind() == KindOPL2
+	if n != nil && inst.GetKind() == KindOPL2 && n.Type() == note.SpecialTypeStopOrRelease {
+		return true
 	}
 	return note.IsRelease(n)
 }
 
 // IsStopNote returns true if the note is a stop (Note-Cut)
 func (inst Instrument) IsStopNote(n note.Note) bool {
-	switch n.Type() {
-	case note.SpecialTypeStopOrRelease:
-		return inst.GetKind() == KindPCM
+	if n != nil && inst.GetKind() == KindPCM && n.Type() == note.SpecialTypeStopOrRelease {
+		return true
 	}
 	return note.IsRelease(n)
 }

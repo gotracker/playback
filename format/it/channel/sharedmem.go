@@ -13,6 +13,8 @@ type SharedMemory struct {
 	OldEffectMode bool
 	// EFGLinkMode will make effects Exx, Fxx, and Gxx share the same memory
 	EFGLinkMode bool
+	// ExtendedFilterRange will enable an extended range of the resonant filter
+	ExtendedFilterRange bool
 	// ResetMemoryAtStartOfOrder0 if true will reset the memory registers when the first tick of the first row of the first order pattern plays
 	ResetMemoryAtStartOfOrder0 bool
 }

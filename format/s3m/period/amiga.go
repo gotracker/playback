@@ -12,29 +12,28 @@ import (
 
 // Amiga defines a sampler period that follows the Amiga-style approach of note
 // definition. Useful in calculating resampling.
-type Amiga period.AmigaPeriod
+type Amiga struct {
+	period.AmigaPeriod
+	Coeff period.Frequency
+}
 
 // AddInteger truncates the current period to an integer and adds the delta integer in
 // then returns the resulting period
 func (p Amiga) AddInteger(delta int) Amiga {
-	ret := Amiga(int(p) + delta)
-	// clamp to 64 as minimum
-	if ret < 64 {
-		ret = 64
+	if p.AmigaPeriod <= 0 {
+		return p
 	}
-	return ret
+	p.AmigaPeriod = period.AmigaPeriod(int(p.AmigaPeriod) + delta)
+	if p.AmigaPeriod < 64 {
+		p.AmigaPeriod = 64
+	}
+	return p
 }
 
 // Add adds the current period to a delta value then returns the resulting period
-func (p Amiga) AddDelta(delta period.Delta) period.Period {
-	ret := p
-	d := period.ToPeriodDelta(delta)
-	ret += Amiga(d)
-	// clamp to 64 as minimum
-	if ret < 64 {
-		ret = 64
-	}
-	return ret
+func (p Amiga) AddDelta(delta period.Delta, sign int) period.Period {
+	d := period.ToPeriodDelta(delta) * period.PeriodDelta(sign)
+	return p.AddInteger(int(d))
 }
 
 // Compare returns:
@@ -57,37 +56,55 @@ func (p Amiga) Compare(rhs period.Period) comparison.Spaceship {
 
 // Lerp linear-interpolates the current period with the `rhs` period
 func (p Amiga) Lerp(t float64, rhs period.Period) period.Period {
-	right := Amiga(0)
+	var right Amiga
 	if r, ok := rhs.(Amiga); ok {
 		right = r
 	}
 
-	ret := Amiga(period.AmigaPeriod(p).Lerp(t, period.AmigaPeriod(right)))
-	return ret
+	p.AmigaPeriod = p.AmigaPeriod.Lerp(t, right.AmigaPeriod)
+	return p
 }
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period
-func (p Amiga) GetSamplerAdd(samplerSpeed float64) float64 {
-	return float64(period.AmigaPeriod(p).GetFrequency(period.Frequency(samplerSpeed)))
+func (p Amiga) GetSamplerAdd(samplerSpeed period.Frequency) float64 {
+	return float64(p.AmigaPeriod.GetFrequency(samplerSpeed) * p.Coeff)
 }
 
 // GetFrequency returns the frequency defined by the period
 func (p Amiga) GetFrequency() period.Frequency {
-	return period.AmigaPeriod(p).GetFrequency(period.Frequency(S3MBaseClock))
+	return p.AmigaPeriod.GetFrequency(BaseClock) * p.Coeff
 }
 
 func (p Amiga) String() string {
-	return fmt.Sprintf("Amiga{ Period:%f }", float32(p))
+	return fmt.Sprintf("Amiga{ Period:%f, Coeff:%f }", float32(p.AmigaPeriod), p.Coeff)
 }
 
 // ToAmigaPeriod calculates an amiga period for a linear finetune period
 func ToAmigaPeriod(finetunes note.Finetune, c2spd period.Frequency) Amiga {
-	if finetunes < 0 {
-		finetunes = 0
+	if finetunes <= 0 {
+		return Amiga{
+			AmigaPeriod: 0,
+			Coeff:       c2spd / MiddleCFrequency,
+		}
 	}
-	pow := math.Pow(2, float64(finetunes)/semitonesPerOctave)
-	linFreq := float64(c2spd) * pow / float64(DefaultC2Spd)
+	st := note.Semitone(finetunes / semitonesPerNote)
+	ft := finetunes % semitonesPerNote
 
-	period := Amiga(float64(semitonePeriodTable[0]) / linFreq)
-	return period
+	k := st.Key()
+
+	f := int(semitonePeriodTable[k])
+	f >>= st.Octave()
+	linFreq := math.Pow(2, float64(ft)/semitonesPerOctave)
+
+	am := period.AmigaPeriod(float64(f) / linFreq)
+	if am < 64 {
+		// S3M clamps period to 64 as minimum
+		am = 64
+	}
+
+	p := Amiga{
+		AmigaPeriod: am,
+		Coeff:       c2spd / MiddleCFrequency,
+	}
+	return p
 }

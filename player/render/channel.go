@@ -11,7 +11,8 @@ import (
 // Channel is the important bits to make output to a particular downmixing channel work
 type Channel struct {
 	ChannelNum       int
-	Filter           filter.Filter
+	AmigaLPF         filter.Filter
+	MovingAvg        filter.Filter
 	GetSampleRate    func() period.Frequency
 	SetGlobalVolume  func(volume.Volume)
 	GetOPL2Chip      func() render.OPL2Chip
@@ -26,8 +27,11 @@ func (oc *Channel) ApplyFilter(dry volume.Matrix) volume.Matrix {
 	}
 	premix := oc.GetPremixVolume()
 	wet := dry.Apply(premix)
-	if oc.Filter != nil {
-		return oc.Filter.Filter(wet)
+	if oc.AmigaLPF != nil {
+		wet = oc.AmigaLPF.Filter(wet)
+	}
+	if oc.MovingAvg != nil {
+		wet = oc.MovingAvg.Filter(wet)
 	}
 	return wet
 }
@@ -39,7 +43,7 @@ func (oc *Channel) GetPremixVolume() volume.Volume {
 
 // SetFilterEnvelopeValue updates the filter on the channel with the new envelope value
 func (oc *Channel) SetFilterEnvelopeValue(envVal int8) {
-	if oc.Filter != nil {
-		oc.Filter.UpdateEnv(envVal)
+	if oc.AmigaLPF != nil {
+		oc.AmigaLPF.UpdateEnv(envVal)
 	}
 }

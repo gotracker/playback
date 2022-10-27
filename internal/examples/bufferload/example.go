@@ -16,7 +16,7 @@ import (
 // ExamplePlayBufferToStdout will read in a music module file (in this case: `test/ode_to_protracker.mod`)
 // and render it out in 44100Hz, 2 channel, 16-bit signed, little-endian integer PCM format.
 // If you have PulseAudio installed and configured correctly, then simply pipe the output from this test
-// into it with `go run ./internal/examples/fileload | pacat -p --channels=2 --rate=44100 --format=s16le`
+// into it with `go run ./internal/examples/bufferload | pacat -p --channels=2 --rate=44100 --format=s16le`
 func ExamplePlayBufferToStdout() {
 	const (
 		sampleRate   = 44100
@@ -50,11 +50,19 @@ func ExamplePlayBufferToStdout() {
 	// the song one time through.
 	features = append(features, feature.SongLoop{Count: 0})
 
-	// There's an automagical loader utility which divines the file type and presents a player that can
-	// effectively play it. See `ExamplePlayFileToStdout` (./internal/examples/fileload) for an example
-	// of the file loader version of this call. In this example, we know the format, so we can pass in
-	// the specific format loader we want to use.
-	player, _, err := format.LoadFromReader("mod", bytes.NewReader(modfile), features)
+	// There's an automagical loader utility which divines the file type and presents a song struct that
+	// can generate a player to effectively play it.
+	// See `ExamplePlayFileToStdout` (./internal/examples/fileload) for an example of the file loader
+	// version of this call. In this example, we know the format, so we can pass in the specific format
+	// loader we want to use.
+	s, err := format.LoadFromReader("mod", bytes.NewReader(modfile), features)
+	if err != nil {
+		panic(err)
+	}
+
+	// Have the song construct a player for us. This has the added benefit of registering the song with
+	// the player so it can (nearly) immediately be used.
+	player, err := s.ConstructPlayer()
 	if err != nil {
 		panic(err)
 	}

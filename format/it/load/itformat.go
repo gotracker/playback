@@ -11,7 +11,6 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	itblock "github.com/gotracker/goaudiofile/music/tracked/it/block"
 	"github.com/gotracker/gomixing/volume"
-
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/format/it/layout"
@@ -21,6 +20,7 @@ import (
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/player/feature"
+	"github.com/gotracker/playback/voice/pcm"
 )
 
 func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
@@ -86,7 +86,7 @@ func convertItPattern(pkt itfile.PackedPattern, channels int) (*pattern.Pattern[
 	return pat, int(maxCh), nil
 }
 
-func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.Song, error) {
+func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.Layout, error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -95,14 +95,24 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.So
 	linearFrequencySlides := f.Head.Flags.IsLinearSlides()
 	oldEffectMode := f.Head.Flags.IsOldEffects()
 	efgLinkMode := f.Head.Flags.IsEFGLinking()
+	extendedFilterRange := f.Head.Flags.IsExtendedFilterRange()
 
-	song := layout.Song{
-		Head:              *h,
-		Instruments:       make(map[uint8]*instrument.Instrument),
-		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument),
-		Patterns:          make([]pattern.Pattern[channel.Data], len(f.Patterns)),
-		OrderList:         make([]index.Pattern, int(f.Head.OrderCount)),
-		FilterPlugins:     make(map[int]filter.Factory),
+	sharedMem := channel.SharedMemory{
+		LinearFreqSlides:           linearFrequencySlides,
+		OldEffectMode:              oldEffectMode,
+		EFGLinkMode:                efgLinkMode,
+		ExtendedFilterRange:        extendedFilterRange,
+		ResetMemoryAtStartOfOrder0: true,
+	}
+
+	song := layout.Layout{
+		Head:          *h,
+		Instruments:   make(map[uint8]instrument.Keyboard[channel.SemitoneAndSampleID]),
+		Samples:       make(map[uint16]*instrument.Instrument),
+		Patterns:      make([]pattern.Pattern[channel.Data], len(f.Patterns)),
+		OrderList:     make([]index.Pattern, int(f.Head.OrderCount)),
+		FilterPlugins: make(map[int]filter.Factory),
+		Flags:         &sharedMem,
 	}
 
 	for _, block := range f.Blocks {
@@ -120,32 +130,34 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.So
 		song.OrderList[i] = index.Pattern(f.OrderList[i])
 	}
 
+	sampleMap := make(map[uint8]pcm.Sample)
+
 	if f.Head.Flags.IsUseInstruments() {
 		for instNum, inst := range f.Instruments {
 			convSettings := convertITInstrumentSettings{
 				linearFrequencySlides: linearFrequencySlides,
-				extendedFilterRange:   (f.Head.Flags & 0x1000) != 0, // OpenMPT hack to introduce extended filter ranges
+				extendedFilterRange:   extendedFilterRange,
 				useHighPassFilter:     false,
 			}
 			switch ii := inst.(type) {
 			case *itfile.IMPIInstrumentOld:
-				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, convSettings, features)
+				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, sampleMap, convSettings, features, instNum, f.Head.TrackerCompatVersion)
 				if err != nil {
 					return nil, err
 				}
 
 				for _, ci := range instMap {
-					addSampleWithNoteMapToSong(&song, ci.Inst, ci.NR, instNum)
+					addSampleWithNoteMapToSong(&song, ci.NR, instNum)
 				}
 
 			case *itfile.IMPIInstrument:
-				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, convSettings, song.FilterPlugins, features)
+				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, sampleMap, convSettings, song.FilterPlugins, features, instNum, f.Head.TrackerCompatVersion)
 				if err != nil {
 					return nil, err
 				}
 
 				for _, ci := range instMap {
-					addSampleWithNoteMapToSong(&song, ci.Inst, ci.NR, instNum)
+					addSampleWithNoteMapToSong(&song, ci.NR, instNum)
 				}
 			}
 		}
@@ -165,13 +177,6 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.So
 			lastEnabledChannel = maxCh
 		}
 		song.Patterns[patNum] = *pattern
-	}
-
-	sharedMem := channel.SharedMemory{
-		LinearFreqSlides:           linearFrequencySlides,
-		OldEffectMode:              oldEffectMode,
-		EFGLinkMode:                efgLinkMode,
-		ResetMemoryAtStartOfOrder0: true,
 	}
 
 	channels := make([]layout.ChannelSetting, lastEnabledChannel+1)
@@ -215,37 +220,26 @@ func decodeFilter(f *itblock.FX) (filter.Factory, error) {
 
 type noteRemap struct {
 	Orig  note.Semitone
-	Remap note.Semitone
+	Remap channel.SemitoneAndSampleID
+	Inst  *instrument.Instrument
 }
 
-func addSampleWithNoteMapToSong(song *layout.Song, sample *instrument.Instrument, sts []noteRemap, instNum int) {
-	if sample == nil {
-		return
-	}
-	id := channel.SampleID{
-		InstID: uint8(instNum + 1),
-	}
-	sample.Static.ID = id
-	song.Instruments[id.InstID] = sample
+func addSampleWithNoteMapToSong(song *layout.Layout, sts []noteRemap, instNum int) {
+	keyboard := instrument.Keyboard[channel.SemitoneAndSampleID]{}
 
-	id, ok := sample.Static.ID.(channel.SampleID)
-	if !ok {
-		return
-	}
-	inm, ok := song.InstrumentNoteMap[id.InstID]
-	if !ok {
-		inm = make(map[note.Semitone]layout.NoteInstrument)
-		song.InstrumentNoteMap[id.InstID] = inm
-	}
 	for _, st := range sts {
-		inm[st.Orig] = layout.NoteInstrument{
-			NoteRemap: st.Remap,
-			Inst:      sample,
+		sample := st.Inst
+		if sample == nil {
+			continue
 		}
+		keyboard.SetRemap(st.Orig, st.Remap)
+		sid := uint16(instNum+1)<<8 | uint16(st.Remap.ID)
+		song.Samples[sid] = sample
 	}
+	song.Instruments[uint8(instNum)+1] = keyboard
 }
 
-func readIT(r io.Reader, features []feature.Feature) (*layout.Song, error) {
+func readIT(r io.Reader, features []feature.Feature) (*layout.Layout, error) {
 	f, err := itfile.Read(r)
 	if err != nil {
 		return nil, err

@@ -35,9 +35,7 @@ func NewAmigaLPF(instrument, playback period.Frequency) *AmigaLPF {
 func (f *AmigaLPF) Clone() Filter {
 	c := *f
 	c.channels = make([]channelData, len(f.channels))
-	for i := range f.channels {
-		c.channels[i] = f.channels[i]
-	}
+	copy(c.channels, f.channels)
 	return &c
 }
 

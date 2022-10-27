@@ -11,7 +11,7 @@ type Envelope[T any] struct {
 	Loop       loop.Loop
 	Sustain    loop.Loop
 	Values     []EnvPoint[T]
-	OnFinished voice.Callback
+	OnFinished voice.Callback `json:"-"`
 }
 
 // EnvPoint is a point for the envelope
