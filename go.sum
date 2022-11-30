@@ -1,5 +1,5 @@
-github.com/gotracker/goaudiofile v1.0.14 h1:gbut0vivYxV0EWH/rzvqukmx6GjbtvMylLHQpZ//7d0=
-github.com/gotracker/goaudiofile v1.0.14/go.mod h1:+biBmTEKcFRF4hCR1flCtqOA76p6OReIAwqqV+07N8Y=
+github.com/gotracker/goaudiofile v1.0.15 h1:90MtPQB1i99DSTradMol49VZlV4smJ5iLYGrdecfIps=
+github.com/gotracker/goaudiofile v1.0.15/go.mod h1:+biBmTEKcFRF4hCR1flCtqOA76p6OReIAwqqV+07N8Y=
 github.com/gotracker/gomixing v1.3.0 h1:L0pOTsjIppAbSoo+yYRVghrfF2dcAywUTsk6Ig2Z/IM=
 github.com/gotracker/gomixing v1.3.0/go.mod h1:KSwLWBk4HMKTVZH+zq4Db7nlDVcRegIL4uStkat0ASg=
 github.com/gotracker/opl2 v1.0.1 h1:1PVNs0dXqEAQxdws7fz2WEE3nSKkMb1osTTT7KgEi5g=
