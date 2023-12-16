@@ -11,7 +11,7 @@ import (
 type ExtraFinePortaDown ChannelCommand // 'EEx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e ExtraFinePortaDown) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e ExtraFinePortaDown) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 

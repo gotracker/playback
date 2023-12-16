@@ -16,10 +16,10 @@ import (
 	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/format/it/layout"
 	itPanning "github.com/gotracker/playback/format/it/panning"
+	"github.com/gotracker/playback/format/it/pattern"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
-	"github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/player/feature"
 )
 
@@ -42,18 +42,15 @@ func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
 	return &head, nil
 }
 
-func convertItPattern(pkt itfile.PackedPattern, channels int) (*pattern.Pattern[channel.Data], int, error) {
-	pat := &pattern.Pattern[channel.Data]{
-		Orig: pkt,
-	}
+func convertItPattern(pkt itfile.PackedPattern, channels int) (pattern.Pattern, int, error) {
+	pat := make(pattern.Pattern, pkt.Rows)
 
 	channelMem := make([]itfile.ChannelData, channels)
 	maxCh := uint8(0)
 	pos := 0
 	for rowNum := 0; rowNum < int(pkt.Rows); rowNum++ {
-		pat.Rows = append(pat.Rows, pattern.RowData[channel.Data]{})
-		row := &pat.Rows[rowNum]
-		row.Channels = make([]channel.Data, channels)
+		row := make([]channel.Data, channels)
+		pat[rowNum] = row
 	channelLoop:
 		for {
 			sz, chn, err := pkt.ReadChannelData(pos, channelMem)
@@ -76,7 +73,7 @@ func convertItPattern(pkt itfile.PackedPattern, channels int) (*pattern.Pattern[
 				EffectParameter: channel.DataEffect(chn.CommandData),
 			}
 
-			row.Channels[channelNum] = cd
+			row[channelNum] = cd
 			if maxCh < uint8(channelNum) {
 				maxCh = uint8(channelNum)
 			}
@@ -100,7 +97,7 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.So
 		Head:              *h,
 		Instruments:       make(map[uint8]*instrument.Instrument),
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument),
-		Patterns:          make([]pattern.Pattern[channel.Data], len(f.Patterns)),
+		Patterns:          make([]pattern.Pattern, len(f.Patterns)),
 		OrderList:         make([]index.Pattern, int(f.Head.OrderCount)),
 		FilterPlugins:     make(map[int]filter.Factory),
 	}
@@ -152,7 +149,7 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.So
 	}
 
 	lastEnabledChannel := 0
-	song.Patterns = make([]pattern.Pattern[channel.Data], len(f.Patterns))
+	song.Patterns = make([]pattern.Pattern, len(f.Patterns))
 	for patNum, pkt := range f.Patterns {
 		pattern, maxCh, err := convertItPattern(pkt, len(f.Head.ChannelVol))
 		if err != nil {
@@ -164,7 +161,7 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.So
 		if lastEnabledChannel < maxCh {
 			lastEnabledChannel = maxCh
 		}
-		song.Patterns[patNum] = *pattern
+		song.Patterns[patNum] = pattern
 	}
 
 	sharedMem := channel.SharedMemory{

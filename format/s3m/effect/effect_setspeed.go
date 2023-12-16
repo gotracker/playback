@@ -12,7 +12,7 @@ import (
 type SetSpeed ChannelCommand // 'A'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e SetSpeed) PreStart(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e SetSpeed) PreStart(cs playback.Channel[channel.Memory], p playback.Playback) error {
 	if e != 0 {
 		m := p.(effectIntf.S3M)
 		if err := m.SetTicks(int(e)); err != nil {
@@ -23,7 +23,7 @@ func (e SetSpeed) PreStart(cs playback.Channel[channel.Memory, channel.Data], p 
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetSpeed) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e SetSpeed) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }

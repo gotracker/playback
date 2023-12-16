@@ -2,10 +2,10 @@ package layout
 
 import (
 	"github.com/gotracker/playback/format/s3m/channel"
+	"github.com/gotracker/playback/format/s3m/pattern"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
-	"github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/song"
 )
 
@@ -13,7 +13,7 @@ import (
 type Song struct {
 	Head            Header
 	Instruments     []*instrument.Instrument
-	Patterns        []pattern.Pattern[channel.Data]
+	Patterns        []pattern.Pattern
 	ChannelSettings []ChannelSetting
 	OrderList       []index.Pattern
 }
@@ -24,7 +24,7 @@ func (s Song) GetOrderList() []index.Pattern {
 }
 
 // GetPattern returns an interface to a specific pattern indexed by `patNum`
-func (s Song) GetPattern(patNum index.Pattern) song.Pattern[channel.Data] {
+func (s Song) GetPattern(patNum index.Pattern) song.Pattern {
 	if int(patNum) >= len(s.Patterns) {
 		return nil
 	}

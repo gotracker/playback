@@ -11,7 +11,7 @@ import (
 type SetEnvelopePosition channel.DataEffect // 'Lxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetEnvelopePosition) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e SetEnvelopePosition) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xx := channel.DataEffect(e)

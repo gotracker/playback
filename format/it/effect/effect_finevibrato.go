@@ -11,14 +11,14 @@ import (
 type FineVibrato channel.DataEffect // 'U'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FineVibrato) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e FineVibrato) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 	return nil
 }
 
 // Tick is called on every tick
-func (e FineVibrato) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
+func (e FineVibrato) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, y := mem.Vibrato(channel.DataEffect(e))
 	if currentTick != 0 {

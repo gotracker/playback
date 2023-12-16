@@ -5,6 +5,7 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
+	"github.com/gotracker/playback/song"
 )
 
 type EffectIT interface {
@@ -13,7 +14,7 @@ type EffectIT interface {
 
 // VolEff is a combined effect that includes a volume effect and a standard effect
 type VolEff struct {
-	playback.CombinedEffect[channel.Memory, channel.Data]
+	playback.CombinedEffect[channel.Memory]
 	eff EffectIT
 }
 
@@ -25,24 +26,25 @@ func (e VolEff) String() string {
 }
 
 // Factory produces an effect for the provided channel pattern data
-func Factory(mem *channel.Memory, data *channel.Data) EffectIT {
-	if data == nil {
+func Factory(mem *channel.Memory, data song.ChannelData) EffectIT {
+	d, _ := data.(*channel.Data)
+	if d == nil {
 		return nil
 	}
 
-	if !data.What.HasCommand() && !data.What.HasVolPan() {
+	if !d.What.HasCommand() && !d.What.HasVolPan() {
 		return nil
 	}
 
 	eff := VolEff{}
-	if data.What.HasVolPan() {
-		ve := volPanEffectFactory(mem, data.VolPan)
+	if d.What.HasVolPan() {
+		ve := volPanEffectFactory(mem, d.VolPan)
 		if ve != nil {
 			eff.Effects = append(eff.Effects, ve)
 		}
 	}
 
-	if e := standardEffectFactory(mem, data); e != nil {
+	if e := standardEffectFactory(mem, d); e != nil {
 		eff.Effects = append(eff.Effects, e)
 		eff.eff = e
 	}

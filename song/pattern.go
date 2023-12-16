@@ -12,16 +12,16 @@ var (
 )
 
 // Pattern is an interface for pattern data
-type Pattern[TChannelData any] interface {
-	GetRow(index.Row) Row[TChannelData]
-	GetRows() Rows[TChannelData]
+type Pattern interface {
+	GetRow(index.Row) Row
+	GetRows() Rows
 }
 
 // Patterns is an array of pattern interfaces
-type Patterns[TChannelData any] []Pattern[TChannelData]
+type Patterns []Pattern
 
 // Rows is an interface to obtain row data
-type Rows[TChannelData any] interface {
-	GetRow(index.Row) Row[TChannelData]
+type Rows interface {
+	GetRow(index.Row) Row
 	NumRows() int
 }

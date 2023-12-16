@@ -11,13 +11,13 @@ import (
 type Tremor ChannelCommand // 'I'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e Tremor) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e Tremor) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e Tremor) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
+func (e Tremor) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, y := mem.LastNonZeroXY(channel.DataEffect(e))
 	return doTremor(cs, currentTick, int(x)+1, int(y)+1)

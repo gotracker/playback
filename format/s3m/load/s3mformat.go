@@ -9,19 +9,19 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
+
+	"github.com/gotracker/playback/format/s3m/channel"
+	"github.com/gotracker/playback/format/s3m/layout"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	"github.com/gotracker/playback/format/s3m/pattern"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/voice/fadeout"
 	"github.com/gotracker/playback/voice/loop"
 	"github.com/gotracker/playback/voice/pcm"
-
-	"github.com/gotracker/playback/format/s3m/channel"
-	"github.com/gotracker/playback/format/s3m/layout"
-	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
-	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
-	"github.com/gotracker/playback/index"
-	"github.com/gotracker/playback/instrument"
-	"github.com/gotracker/playback/pattern"
 )
 
 func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*layout.Header, error) {
@@ -185,18 +185,15 @@ func convertSCRSFullToInstrument(scrs *s3mfile.SCRSFull, signedSamples bool, fea
 	return nil, errors.New("unhandled scrs ancillary type")
 }
 
-func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*pattern.Pattern[channel.Data], int) {
-	pat := &pattern.Pattern[channel.Data]{
-		Orig: pkt,
-	}
+func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (pattern.Pattern, int) {
+	pat := make(pattern.Pattern, numRows)
 
 	buffer := bytes.NewBuffer(pkt.Data)
 
-	rowNum := uint8(0)
 	maxCh := uint8(0)
-	for rowNum < numRows {
-		pat.Rows = append(pat.Rows, pattern.RowData[channel.Data]{})
-		row := &pat.Rows[rowNum]
+	for rowNum := uint8(0); rowNum < numRows; rowNum++ {
+		row := make(pattern.Row, 0)
+	channelLoop:
 		for {
 			var what s3mfile.PatternFlags
 			if err := binary.Read(buffer, binary.LittleEndian, &what); err != nil {
@@ -204,15 +201,14 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*pattern
 			}
 
 			if what == 0 {
-				rowNum++
-				break
+				break channelLoop
 			}
 
 			channelNum := what.Channel()
-			for len(row.Channels) <= int(channelNum) {
-				row.Channels = append(row.Channels, channel.Data{})
+			for len(row) <= int(channelNum) {
+				row = append(row, channel.Data{})
 			}
-			temp := &row.Channels[channelNum]
+			temp := &row[channelNum]
 			if maxCh < channelNum {
 				maxCh = channelNum
 			}
@@ -248,6 +244,7 @@ func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (*pattern
 				}
 			}
 		}
+		pat[rowNum] = row
 	}
 
 	return pat, int(maxCh)
@@ -300,7 +297,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	}
 
 	lastEnabledChannel := 0
-	song.Patterns = make([]pattern.Pattern[channel.Data], len(f.Patterns))
+	song.Patterns = make([]pattern.Pattern, len(f.Patterns))
 	for patNum, pkt := range f.Patterns {
 		pattern, maxCh := convertS3MPackedPattern(pkt, getPatternLen(patNum))
 		if pattern == nil {
@@ -309,7 +306,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		if lastEnabledChannel < maxCh {
 			lastEnabledChannel = maxCh
 		}
-		song.Patterns[patNum] = *pattern
+		song.Patterns[patNum] = pattern
 	}
 
 	sharedMem := channel.SharedMemory{

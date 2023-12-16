@@ -5,6 +5,7 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/channel"
+	"github.com/gotracker/playback/song"
 )
 
 type EffectXM interface {
@@ -13,7 +14,7 @@ type EffectXM interface {
 
 // VolEff is a combined effect that includes a volume effect and a standard effect
 type VolEff struct {
-	playback.CombinedEffect[channel.Memory, channel.Data]
+	playback.CombinedEffect[channel.Memory]
 	eff EffectXM
 }
 
@@ -25,24 +26,25 @@ func (e VolEff) String() string {
 }
 
 // Factory produces an effect for the provided channel pattern data
-func Factory(mem *channel.Memory, data *channel.Data) EffectXM {
-	if data == nil {
+func Factory(mem *channel.Memory, data song.ChannelData) EffectXM {
+	d, _ := data.(*channel.Data)
+	if d == nil {
 		return nil
 	}
 
-	if !data.HasCommand() {
+	if !d.HasCommand() {
 		return nil
 	}
 
 	eff := VolEff{}
-	if data.What.HasVolume() {
-		ve := volumeEffectFactory(mem, data.Volume)
+	if d.What.HasVolume() {
+		ve := volumeEffectFactory(mem, d.Volume)
 		if ve != nil {
 			eff.Effects = append(eff.Effects, ve)
 		}
 	}
 
-	if e := standardEffectFactory(mem, data); e != nil {
+	if e := standardEffectFactory(mem, d); e != nil {
 		eff.Effects = append(eff.Effects, e)
 		eff.eff = e
 	}

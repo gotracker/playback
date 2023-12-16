@@ -9,7 +9,7 @@ import (
 
 // PortaVolumeSlide defines a portamento-to-note combined with a volume slide effect
 type PortaVolumeSlide struct { // '5'
-	playback.CombinedEffect[channel.Memory, channel.Data]
+	playback.CombinedEffect[channel.Memory]
 }
 
 // NewPortaVolumeSlide creates a new PortaVolumeSlide object

@@ -13,7 +13,7 @@ import (
 type ChannelVolumeSlide channel.DataEffect // 'Nxy'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e ChannelVolumeSlide) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e ChannelVolumeSlide) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	mem := cs.GetMemory()
@@ -39,7 +39,7 @@ func (e ChannelVolumeSlide) Start(cs playback.Channel[channel.Memory, channel.Da
 }
 
 // Tick is called on every tick
-func (e ChannelVolumeSlide) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
+func (e ChannelVolumeSlide) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, y := mem.ChannelVolumeSlide(channel.DataEffect(e))
 

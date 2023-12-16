@@ -3,10 +3,10 @@ package layout
 import (
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/format/it/channel"
+	"github.com/gotracker/playback/format/it/pattern"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
-	"github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/song"
 )
 
@@ -15,7 +15,7 @@ type Song struct {
 	Head              Header
 	Instruments       map[uint8]*instrument.Instrument
 	InstrumentNoteMap map[uint8]map[note.Semitone]NoteInstrument
-	Patterns          []pattern.Pattern[channel.Data]
+	Patterns          []pattern.Pattern
 	ChannelSettings   []ChannelSetting
 	OrderList         []index.Pattern
 	FilterPlugins     map[int]filter.Factory
@@ -27,11 +27,11 @@ func (s Song) GetOrderList() []index.Pattern {
 }
 
 // GetPattern returns an interface to a specific pattern indexed by `patNum`
-func (s Song) GetPattern(patNum index.Pattern) song.Pattern[channel.Data] {
+func (s Song) GetPattern(patNum index.Pattern) song.Pattern {
 	if int(patNum) >= len(s.Patterns) {
 		return nil
 	}
-	return &s.Patterns[patNum]
+	return s.Patterns[patNum]
 }
 
 // IsChannelEnabled returns true if the channel at index `channelNum` is enabled

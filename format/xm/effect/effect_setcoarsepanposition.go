@@ -12,7 +12,7 @@ import (
 type SetCoarsePanPosition channel.DataEffect // 'E8x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetCoarsePanPosition) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e SetCoarsePanPosition) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xy := channel.DataEffect(e)

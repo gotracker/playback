@@ -27,7 +27,7 @@ type Manager struct {
 
 	song *layout.Song
 
-	channels []state.ChannelState[channel.Memory, channel.Data]
+	channels []state.ChannelState[channel.Memory]
 	pattern  pattern.State
 
 	preMixRowTxn  *playpattern.RowUpdateTransaction
@@ -37,7 +37,7 @@ type Manager struct {
 	rowRenderState *rowRenderState
 	OnEffect       func(playback.Effect)
 
-	chOrder [4][]*state.ChannelState[channel.Memory, channel.Data]
+	chOrder [4][]*state.ChannelState[channel.Memory]
 }
 
 // NewManager creates a new manager for an S3M song
@@ -132,7 +132,7 @@ func (m *Manager) GetNumChannels() int {
 	return len(m.channels)
 }
 
-func (m *Manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateFunc) state.NoteOp[channel.Memory, channel.Data] {
+func (m *Manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateFunc) state.NoteOp[channel.Memory] {
 	return doNoteCalc{
 		Semitone:   st,
 		UpdateFunc: fn,
@@ -141,7 +141,7 @@ func (m *Manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateF
 
 // SetNumChannels updates the song to have the specified number of channels and resets their states
 func (m *Manager) SetNumChannels(num int) {
-	m.channels = make([]state.ChannelState[channel.Memory, channel.Data], num)
+	m.channels = make([]state.ChannelState[channel.Memory], num)
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
@@ -315,7 +315,7 @@ func (m *Manager) GetSongData() song.Data {
 }
 
 // GetChannel returns the channel interface for the specified channel number
-func (m *Manager) GetChannel(ch int) *state.ChannelState[channel.Memory, channel.Data] {
+func (m *Manager) GetChannel(ch int) *state.ChannelState[channel.Memory] {
 	return &m.channels[ch]
 }
 

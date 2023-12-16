@@ -13,7 +13,7 @@ import (
 type SampleOffset channel.DataEffect // 'O'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SampleOffset) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e SampleOffset) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	mem := cs.GetMemory()
 	xx := mem.SampleOffset(channel.DataEffect(e))

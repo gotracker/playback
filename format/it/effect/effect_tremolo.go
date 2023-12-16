@@ -11,13 +11,13 @@ import (
 type Tremolo channel.DataEffect // 'R'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e Tremolo) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e Tremolo) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e Tremolo) Tick(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback, currentTick int) error {
+func (e Tremolo) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, y := mem.Tremolo(channel.DataEffect(e))
 	// NOTE: JBC - IT dos not update on tick 0, but MOD does.

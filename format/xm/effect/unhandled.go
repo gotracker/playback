@@ -16,7 +16,7 @@ type UnhandledCommand struct {
 }
 
 // PreStart triggers when the effect enters onto the channel state
-func (e UnhandledCommand) PreStart(cs playback.Channel[channel.Memory, channel.Data], m effectIntf.XM) error {
+func (e UnhandledCommand) PreStart(cs playback.Channel[channel.Memory], m effectIntf.XM) error {
 	if !m.IgnoreUnknownEffect() {
 		panic("unhandled command")
 	}
@@ -33,7 +33,7 @@ type UnhandledVolCommand struct {
 }
 
 // PreStart triggers when the effect enters onto the channel state
-func (e UnhandledVolCommand) PreStart(cs playback.Channel[channel.Memory, channel.Data], m effectIntf.XM) error {
+func (e UnhandledVolCommand) PreStart(cs playback.Channel[channel.Memory], m effectIntf.XM) error {
 	if !m.IgnoreUnknownEffect() {
 		panic("unhandled command")
 	}

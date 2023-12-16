@@ -12,7 +12,7 @@ import (
 type StereoControl ChannelCommand // 'SAx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e StereoControl) Start(cs playback.Channel[channel.Memory, channel.Data], p playback.Playback) error {
+func (e StereoControl) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xf

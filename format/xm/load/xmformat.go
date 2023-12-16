@@ -8,6 +8,17 @@ import (
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
+
+	"github.com/gotracker/playback/format/xm/channel"
+	"github.com/gotracker/playback/format/xm/layout"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	"github.com/gotracker/playback/format/xm/pattern"
+	xmPeriod "github.com/gotracker/playback/format/xm/period"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/voice"
@@ -15,17 +26,6 @@ import (
 	"github.com/gotracker/playback/voice/fadeout"
 	"github.com/gotracker/playback/voice/loop"
 	"github.com/gotracker/playback/voice/pcm"
-
-	"github.com/gotracker/playback/format/xm/channel"
-	"github.com/gotracker/playback/format/xm/layout"
-	xmPanning "github.com/gotracker/playback/format/xm/panning"
-	xmPeriod "github.com/gotracker/playback/format/xm/period"
-	xmVolume "github.com/gotracker/playback/format/xm/volume"
-	"github.com/gotracker/playback/index"
-	"github.com/gotracker/playback/instrument"
-	"github.com/gotracker/playback/note"
-	"github.com/gotracker/playback/oscillator"
-	"github.com/gotracker/playback/pattern"
 )
 
 func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {
@@ -251,16 +251,14 @@ func convertXMInstrumentToInstrument(ih *xmfile.InstrumentHeader, linearFrequenc
 	return xmInstrumentToInstrument(ih, linearFrequencySlides, features)
 }
 
-func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern[channel.Data], int) {
-	pat := &pattern.Pattern[channel.Data]{
-		Orig: pkt,
-	}
+func convertXmPattern(pkt xmfile.Pattern) (pattern.Pattern, int) {
+	pat := make(pattern.Pattern, len(pkt.Data))
 
 	maxCh := uint8(0)
 	for rowNum, drow := range pkt.Data {
-		pat.Rows = append(pat.Rows, pattern.RowData[channel.Data]{})
-		row := &pat.Rows[rowNum]
-		row.Channels = make([]channel.Data, len(drow))
+		row := make(pattern.Row, len(drow))
+		pat[rowNum] = row
+
 		for channelNum, chn := range drow {
 			cd := channel.Data{
 				What:            chn.Flags,
@@ -270,7 +268,7 @@ func convertXmPattern(pkt xmfile.Pattern) (*pattern.Pattern[channel.Data], int) 
 				Effect:          channel.Command(chn.Effect),
 				EffectParameter: channel.DataEffect(chn.EffectParameter),
 			}
-			row.Channels[channelNum] = cd
+			row[channelNum] = cd
 			if maxCh < uint8(channelNum) {
 				maxCh = uint8(channelNum)
 			}
@@ -292,7 +290,7 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 		Head:              *h,
 		Instruments:       make(map[uint8]*instrument.Instrument),
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument),
-		Patterns:          make([]pattern.Pattern[channel.Data], len(f.Patterns)),
+		Patterns:          make([]pattern.Pattern, len(f.Patterns)),
 		OrderList:         make([]index.Pattern, int(f.Head.SongLength)),
 	}
 
@@ -333,7 +331,7 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 	}
 
 	lastEnabledChannel := 0
-	song.Patterns = make([]pattern.Pattern[channel.Data], len(f.Patterns))
+	song.Patterns = make([]pattern.Pattern, len(f.Patterns))
 	for patNum, pkt := range f.Patterns {
 		pattern, maxCh := convertXmPattern(pkt)
 		if pattern == nil {
@@ -342,7 +340,7 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 		if lastEnabledChannel < maxCh {
 			lastEnabledChannel = maxCh
 		}
-		song.Patterns[patNum] = *pattern
+		song.Patterns[patNum] = pattern
 	}
 
 	sharedMem := channel.SharedMemory{

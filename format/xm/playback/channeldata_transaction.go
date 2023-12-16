@@ -14,7 +14,7 @@ import (
 
 type channelDataConverter struct{}
 
-func (c channelDataConverter) Process(out *state.ChannelDataActions, data *channel.Data, s song.Data, cs *state.ChannelState[channel.Memory, channel.Data]) error {
+func (c channelDataConverter) Process(out *state.ChannelDataActions, data song.ChannelData, s song.Data, cs *state.ChannelState[channel.Memory]) error {
 	if data == nil {
 		return nil
 	}
@@ -82,17 +82,17 @@ func (c channelDataConverter) Process(out *state.ChannelDataActions, data *chann
 }
 
 type channelDataTransaction struct {
-	state.ChannelDataTxnHelper[channel.Memory, channel.Data, channelDataConverter]
+	state.ChannelDataTxnHelper[channel.Memory, channelDataConverter]
 }
 
-func (d *channelDataTransaction) CommitPreRow(p playback.Playback, cs *state.ChannelState[channel.Memory, channel.Data], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
+func (d *channelDataTransaction) CommitPreRow(p playback.Playback, cs *state.ChannelState[channel.Memory], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory]) error {
 	e := effect.Factory(cs.GetMemory(), d.Data)
 	cs.SetActiveEffect(e)
 	if e != nil {
 		if onEff := p.GetOnEffect(); onEff != nil {
 			onEff(e)
 		}
-		if err := playback.EffectPreStart[channel.Memory, channel.Data](e, cs, p); err != nil {
+		if err := playback.EffectPreStart[channel.Memory](e, cs, p); err != nil {
 			return err
 		}
 	}
@@ -100,7 +100,7 @@ func (d *channelDataTransaction) CommitPreRow(p playback.Playback, cs *state.Cha
 	return nil
 }
 
-func (d *channelDataTransaction) CommitRow(p playback.Playback, cs *state.ChannelState[channel.Memory, channel.Data], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory, channel.Data]) error {
+func (d *channelDataTransaction) CommitRow(p playback.Playback, cs *state.ChannelState[channel.Memory], semitoneSetterFactory state.SemitoneSetterFactory[channel.Memory]) error {
 	if pos, ok := d.TargetPos.Get(); ok {
 		cs.SetTargetPos(pos)
 	}

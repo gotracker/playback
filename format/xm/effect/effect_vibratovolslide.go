@@ -9,7 +9,7 @@ import (
 
 // VibratoVolumeSlide defines a combination vibrato and volume slide effect
 type VibratoVolumeSlide struct { // '6'
-	playback.CombinedEffect[channel.Memory, channel.Data]
+	playback.CombinedEffect[channel.Memory]
 }
 
 // NewVibratoVolumeSlide creates a new VibratoVolumeSlide object

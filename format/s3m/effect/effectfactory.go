@@ -3,6 +3,7 @@ package effect
 import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/s3m/channel"
+	"github.com/gotracker/playback/song"
 )
 
 type EffectS3M interface {
@@ -12,80 +13,81 @@ type EffectS3M interface {
 type ChannelCommand channel.DataEffect
 
 // Factory produces an effect for the provided channel pattern data
-func Factory(mem *channel.Memory, data *channel.Data) EffectS3M {
-	if data == nil {
+func Factory(mem *channel.Memory, data song.ChannelData) EffectS3M {
+	d, _ := data.(*channel.Data)
+	if d == nil {
 		return nil
 	}
 
-	if !data.What.HasCommand() {
+	if !d.What.HasCommand() {
 		return nil
 	}
 
-	mem.LastNonZero(data.Info)
-	switch data.Command + '@' {
+	mem.LastNonZero(d.Info)
+	switch d.Command + '@' {
 	case '@': // unused
 		return nil
 	case 'A': // Set Speed
-		return SetSpeed(data.Info)
+		return SetSpeed(d.Info)
 	case 'B': // Pattern Jump
-		return OrderJump(data.Info)
+		return OrderJump(d.Info)
 	case 'C': // Pattern Break
-		return RowJump(data.Info)
+		return RowJump(d.Info)
 	case 'D': // Volume Slide / Fine Volume Slide
-		return volumeSlideFactory(mem, data.Command, data.Info)
+		return volumeSlideFactory(mem, d.Command, d.Info)
 	case 'E': // Porta Down/Fine Porta Down/Xtra Fine Porta
-		xx := mem.LastNonZero(data.Info)
+		xx := mem.LastNonZero(d.Info)
 		x := xx >> 4
 		if x == 0x0F {
 			return FinePortaDown(xx)
 		} else if x == 0x0E {
 			return ExtraFinePortaDown(xx)
 		}
-		return PortaDown(data.Info)
+		return PortaDown(d.Info)
 	case 'F': // Porta Up/Fine Porta Up/Extra Fine Porta Down
-		xx := mem.LastNonZero(data.Info)
+		xx := mem.LastNonZero(d.Info)
 		x := xx >> 4
 		if x == 0x0F {
 			return FinePortaUp(xx)
 		} else if x == 0x0E {
 			return ExtraFinePortaUp(xx)
 		}
-		return PortaUp(data.Info)
+		return PortaUp(d.Info)
 	case 'G': // Porta to note
-		return PortaToNote(data.Info)
+		return PortaToNote(d.Info)
 	case 'H': // Vibrato
-		return Vibrato(data.Info)
+		return Vibrato(d.Info)
 	case 'I': // Tremor
-		return Tremor(data.Info)
+		return Tremor(d.Info)
 	case 'J': // Arpeggio
-		return Arpeggio(data.Info)
+		return Arpeggio(d.Info)
 	case 'K': // Vibrato+Volume Slide
-		return NewVibratoVolumeSlide(mem, data.Command, data.Info)
+		return NewVibratoVolumeSlide(mem, d.Command, d.Info)
 	case 'L': // Porta+Volume Slide
-		return NewPortaVolumeSlide(mem, data.Command, data.Info)
+		return NewPortaVolumeSlide(mem, d.Command, d.Info)
 	case 'M': // unused
 		return nil
 	case 'N': // unused
 		return nil
 	case 'O': // Sample Offset
-		return SampleOffset(data.Info)
+		return SampleOffset(d.Info)
 	case 'P': // unused
 		return nil
 	case 'Q': // Retrig + Volume Slide
-		return RetrigVolumeSlide(data.Info)
+		return RetrigVolumeSlide(d.Info)
 	case 'R': // Tremolo
-		return Tremolo(data.Info)
+		return Tremolo(d.Info)
 	case 'S': // Special
-		return specialEffect(mem, data)
+		return specialEffect(mem, d)
 	case 'T': // Set Tempo
-		return SetTempo(data.Info)
+		return SetTempo(d.Info)
 	case 'U': // Fine Vibrato
-		return FineVibrato(data.Info)
+		return FineVibrato(d.Info)
 	case 'V': // Global Volume
-		return SetGlobalVolume(data.Info)
+		return SetGlobalVolume(d.Info)
 	default:
 	}
-	return UnhandledCommand{Command: data.Command, Info: data.Info}
+	return UnhandledCommand{Command: d.Command, Info: d.Info}
 }
 
 func specialEffect(mem *channel.Memory, data *channel.Data) EffectS3M {

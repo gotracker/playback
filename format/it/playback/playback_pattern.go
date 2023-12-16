@@ -102,7 +102,7 @@ func (m *Manager) processPatternRow() error {
 			continue
 		}
 
-		cdata := &channels[channelNum]
+		cdata := channels[channelNum]
 
 		cs := &m.channels[channelNum]
 		if err := cs.SetData(cdata); err != nil {
@@ -147,7 +147,7 @@ func (m *Manager) processPatternRow() error {
 	return nil
 }
 
-func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory, channel.Data]) error {
+func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory]) error {
 	mem := cs.GetMemory()
 	mem.TremorMem().Reset()
 

@@ -6,6 +6,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/render"
+	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice"
 
 	"github.com/gotracker/playback/instrument"
@@ -13,7 +14,7 @@ import (
 )
 
 // Channel is an interface for channel state
-type Channel[TMemory, TChannelData any] interface {
+type Channel[TMemory any] interface {
 	ResetRetriggerCount()
 	SetMemory(*TMemory)
 	GetMemory() *TMemory
@@ -21,7 +22,7 @@ type Channel[TMemory, TChannelData any] interface {
 	SetActiveVolume(volume.Volume)
 	FreezePlayback()
 	UnfreezePlayback()
-	GetData() *TChannelData
+	GetData() song.ChannelData
 	GetPortaTargetPeriod() period.Period
 	SetPortaTargetPeriod(period.Period)
 	GetTargetPeriod() period.Period
