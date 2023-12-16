@@ -4,7 +4,7 @@ import (
 	"github.com/gotracker/playback/format/xm/channel"
 )
 
-func standardEffectFactory(mem *channel.Memory, cd *channel.Data) EffectXM {
+func standardEffectFactory(mem *channel.Memory, cd channel.Data) EffectXM {
 	if !cd.What.HasEffect() && !cd.What.HasEffectParameter() {
 		return nil
 	}

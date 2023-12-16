@@ -14,11 +14,11 @@ type ChannelCommand channel.DataEffect
 
 // Factory produces an effect for the provided channel pattern data
 func Factory(mem *channel.Memory, data song.ChannelData) EffectS3M {
-	d, _ := data.(*channel.Data)
-	if d == nil {
+	if data == nil {
 		return nil
 	}
 
+	d, _ := data.(channel.Data)
 	if !d.What.HasCommand() {
 		return nil
 	}
@@ -90,7 +90,7 @@ func Factory(mem *channel.Memory, data song.ChannelData) EffectS3M {
 	return UnhandledCommand{Command: d.Command, Info: d.Info}
 }
 
-func specialEffect(mem *channel.Memory, data *channel.Data) EffectS3M {
+func specialEffect(mem *channel.Memory, data channel.Data) EffectS3M {
 	var cmd = mem.LastNonZero(data.Info)
 	switch cmd >> 4 {
 	case 0x0: // Set Filter on/off

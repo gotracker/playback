@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gotracker/playback/format/xm/channel"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
 )
@@ -96,13 +97,9 @@ func (m *Manager) processPatternRow() error {
 	}
 
 	// generate effects and run prestart
-	channels := row.GetChannels()
-	for channelNum := range channels {
-		if channelNum >= m.GetNumChannels() {
-			continue
-		}
-
-		cdata := channels[channelNum]
+	nch := row.GetNumChannels()
+	for channelNum := 0; channelNum < nch; channelNum++ {
+		cdata := row.GetChannel(index.Channel(channelNum))
 
 		cs := &m.channels[channelNum]
 		if err := cs.SetData(cdata); err != nil {
@@ -132,11 +129,7 @@ func (m *Manager) processPatternRow() error {
 	m.rowRenderState.currentTick = 0
 
 	// run row processing, now that prestart has completed
-	for channelNum := range row.GetChannels() {
-		if channelNum >= m.GetNumChannels() {
-			continue
-		}
-
+	for channelNum := 0; channelNum < nch; channelNum++ {
 		cs := &m.channels[channelNum]
 
 		if err := m.processRowForChannel(cs); err != nil {

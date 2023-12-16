@@ -27,10 +27,11 @@ func (e VolEff) String() string {
 
 // Factory produces an effect for the provided channel pattern data
 func Factory(mem *channel.Memory, data song.ChannelData) EffectIT {
-	d, _ := data.(*channel.Data)
-	if d == nil {
+	if data == nil {
 		return nil
 	}
+
+	d, _ := data.(channel.Data)
 
 	if !d.What.HasCommand() && !d.What.HasVolPan() {
 		return nil
@@ -59,7 +60,7 @@ func Factory(mem *channel.Memory, data song.ChannelData) EffectIT {
 	}
 }
 
-func standardEffectFactory(mem *channel.Memory, data *channel.Data) EffectIT {
+func standardEffectFactory(mem *channel.Memory, data channel.Data) EffectIT {
 	switch data.Effect + '@' {
 	case '@': // unused
 		return nil
@@ -134,7 +135,7 @@ func standardEffectFactory(mem *channel.Memory, data *channel.Data) EffectIT {
 	return UnhandledCommand{Command: data.Effect, Info: data.EffectParameter}
 }
 
-func specialEffect(data *channel.Data) EffectIT {
+func specialEffect(data channel.Data) EffectIT {
 	switch data.EffectParameter >> 4 {
 	case 0x0: // unused
 		return nil
@@ -173,7 +174,7 @@ func specialEffect(data *channel.Data) EffectIT {
 	return UnhandledCommand{Command: data.Effect, Info: data.EffectParameter}
 }
 
-func specialNoteEffects(data *channel.Data) EffectIT {
+func specialNoteEffects(data channel.Data) EffectIT {
 	switch data.EffectParameter & 0xf {
 	case 0x0: // Past Note Cut
 		return PastNoteCut(data.EffectParameter)
@@ -226,7 +227,7 @@ func volumeSlideFactory(mem *channel.Memory, cd channel.Command, ce channel.Data
 	return nil
 }
 
-func soundControlEffect(data *channel.Data) EffectIT {
+func soundControlEffect(data channel.Data) EffectIT {
 	switch data.EffectParameter & 0xF {
 	case 0x0: // Surround Off
 	case 0x1: // Surround On

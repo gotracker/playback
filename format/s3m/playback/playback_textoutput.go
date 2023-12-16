@@ -19,8 +19,8 @@ func (m *Manager) getRowText() *render.RowDisplay[channel.Data] {
 			continue
 		}
 
-		if cd, _ := cs.GetData().(*channel.Data); cd != nil {
-			rowText.Channels[ch] = *cd
+		if data := cs.GetData(); data != nil {
+			rowText.Channels[ch], _ = data.(channel.Data)
 		}
 	}
 	return &rowText

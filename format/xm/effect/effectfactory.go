@@ -27,11 +27,11 @@ func (e VolEff) String() string {
 
 // Factory produces an effect for the provided channel pattern data
 func Factory(mem *channel.Memory, data song.ChannelData) EffectXM {
-	d, _ := data.(*channel.Data)
-	if d == nil {
+	if data == nil {
 		return nil
 	}
 
+	d, _ := data.(channel.Data)
 	if !d.HasCommand() {
 		return nil
 	}
