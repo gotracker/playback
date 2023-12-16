@@ -9,22 +9,7 @@ import (
 // OnTick runs the S3M tick processing
 func (m *Manager) OnTick() error {
 	m.premix = nil
-	premix, err := m.renderTick()
-	if err != nil {
-		return err
-	}
 
-	m.premix = premix
-	return nil
-}
-
-// GetPremixData gets the current premix data from the manager
-func (m *Manager) GetPremixData() (*output.PremixData, error) {
-	return m.premix, nil
-}
-
-// RenderOneRow renders the next single row from the song pattern data into a RowRender object
-func (m *Manager) renderTick() (*output.PremixData, error) {
 	postMixRowTxn := m.pattern.StartTransaction()
 	defer func() {
 		postMixRowTxn.Cancel()
@@ -34,7 +19,7 @@ func (m *Manager) renderTick() (*output.PremixData, error) {
 
 	if m.rowRenderState == nil || m.rowRenderState.currentTick >= m.rowRenderState.ticksThisRow {
 		if err := m.processPatternRow(); err != nil {
-			return nil, err
+			return err
 		}
 	}
 
@@ -45,7 +30,7 @@ func (m *Manager) renderTick() (*output.PremixData, error) {
 	}
 
 	if err := m.soundRenderTick(premix); err != nil {
-		return nil, err
+		return err
 	}
 
 	finalData.Order = int(m.pattern.GetCurrentOrder())
@@ -61,9 +46,16 @@ func (m *Manager) renderTick() (*output.PremixData, error) {
 	}
 
 	if err := postMixRowTxn.Commit(); err != nil {
-		return nil, err
+		return err
 	}
-	return premix, nil
+
+	m.premix = premix
+	return nil
+}
+
+// GetPremixData gets the current premix data from the manager
+func (m *Manager) GetPremixData() (*output.PremixData, error) {
+	return m.premix, nil
 }
 
 type rowRenderState struct {

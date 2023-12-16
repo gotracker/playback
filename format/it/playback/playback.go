@@ -51,6 +51,7 @@ func NewManager(song *layout.Song) (*Manager, error) {
 
 	m.PastNotes.SetMaxPerChannel(1)
 
+	m.Tracker.PreTickable = &m
 	m.Tracker.Tickable = &m
 	m.Tracker.Premixable = &m
 	m.Tracker.Traceable = &m

@@ -98,6 +98,10 @@ func (m *Manager) processPatternRow() error {
 
 	// generate effects and run prestart
 	nch := row.GetNumChannels()
+	if actual := m.GetNumChannels(); nch > actual {
+		nch = actual
+	}
+
 	for channelNum := 0; channelNum < nch; channelNum++ {
 		cdata := row.GetChannel(index.Channel(channelNum))
 

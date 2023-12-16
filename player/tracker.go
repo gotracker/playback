@@ -24,7 +24,9 @@ type Premixable interface {
 // Tracker is an extensible music tracker
 type Tracker struct {
 	BaseClockRate period.Frequency
+	PreTickable   PreTickable
 	Tickable      Tickable
+	PostTickable  PostTickable
 	Premixable    Premixable
 	Traceable     Traceable
 
@@ -111,7 +113,15 @@ func (t *Tracker) GetSampleRate() period.Frequency {
 }
 
 func (t *Tracker) renderTick() (*output.PremixData, error) {
+	if err := DoPreTick(t.PreTickable); err != nil {
+		return nil, err
+	}
+
 	if err := DoTick(t.Tickable); err != nil {
+		return nil, err
+	}
+
+	if err := DoPostTick(t.PostTickable); err != nil {
 		return nil, err
 	}
 
