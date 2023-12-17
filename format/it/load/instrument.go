@@ -459,6 +459,10 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		ii.C2Spd = 8363.0
 	}
 
+	if si.Header.Flags.IsStereo() {
+		ii.C2Spd /= 2.0
+	}
+
 	if !convSettings.linearFrequencySlides {
 		ii.Static.AutoVibrato.Depth /= 64.0
 	}

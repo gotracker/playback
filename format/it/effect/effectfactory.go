@@ -8,9 +8,7 @@ import (
 	"github.com/gotracker/playback/song"
 )
 
-type EffectIT interface {
-	playback.Effect
-}
+type EffectIT = playback.Effect
 
 // VolEff is a combined effect that includes a volume effect and a standard effect
 type VolEff struct {
@@ -37,7 +35,7 @@ func Factory(mem *channel.Memory, data song.ChannelData) EffectIT {
 		return nil
 	}
 
-	eff := VolEff{}
+	var eff VolEff
 	if d.What.HasVolPan() {
 		ve := volPanEffectFactory(mem, d.VolPan)
 		if ve != nil {

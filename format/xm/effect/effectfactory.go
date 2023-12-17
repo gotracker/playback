@@ -8,9 +8,7 @@ import (
 	"github.com/gotracker/playback/song"
 )
 
-type EffectXM interface {
-	playback.Effect
-}
+type EffectXM = playback.Effect
 
 // VolEff is a combined effect that includes a volume effect and a standard effect
 type VolEff struct {

@@ -29,9 +29,10 @@ func (p Amiga) AddDelta(delta period.Delta) period.Period {
 }
 
 // Compare returns:
-//  -1 if the current period is higher frequency than the `rhs` period
-//  0 if the current period is equal in frequency to the `rhs` period
-//  1 if the current period is lower frequency than the `rhs` period
+//
+//	-1 if the current period is higher frequency than the `rhs` period
+//	0 if the current period is equal in frequency to the `rhs` period
+//	1 if the current period is lower frequency than the `rhs` period
 func (p Amiga) Compare(rhs period.Period) comparison.Spaceship {
 	lf := p.GetFrequency()
 	rf := rhs.GetFrequency()
@@ -76,7 +77,7 @@ func ToAmigaPeriod(finetunes note.Finetune, c2spd period.Frequency) Amiga {
 	if finetunes < 0 {
 		finetunes = 0
 	}
-	pow := math.Pow(2, float64(finetunes)/semitonesPerOctave)
+	pow := math.Pow(2, 1.0+float64(finetunes)/semitonesPerOctave)
 	linFreq := float64(c2spd) * pow / float64(DefaultC2Spd)
 
 	period := Amiga(float64(semitonePeriodTable[0]) / linFreq)

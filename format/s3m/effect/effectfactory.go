@@ -6,9 +6,7 @@ import (
 	"github.com/gotracker/playback/song"
 )
 
-type EffectS3M interface {
-	playback.Effect
-}
+type EffectS3M = playback.Effect
 
 type ChannelCommand channel.DataEffect
 

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gotracker/playback/format/it/channel"
+	"github.com/gotracker/playback/format/it/effect"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
@@ -89,7 +90,7 @@ func (m *Manager) processPatternRow() error {
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
-		cs.AdvanceRow(&channelDataTransaction{})
+		cs.AdvanceRow(state.NewChannelDataTxn[channel.Memory](effect.Factory))
 		if resetMemory {
 			mem := cs.GetMemory()
 			mem.StartOrder()
