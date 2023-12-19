@@ -3,6 +3,7 @@ package pattern
 import (
 	"errors"
 
+	"github.com/gotracker/playback/format/s3m/channel"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/player/feature"
@@ -234,7 +235,7 @@ func (state *State) nextRow() error {
 }
 
 // GetRows returns all the rows in the pattern
-func (state *State) GetRows() (song.Rows, error) {
+func (state *State) GetRows() (*song.Pattern[channel.Data], error) {
 nextRow:
 	for loops := 0; loops < len(state.Patterns); loops++ {
 		var patNum = state.GetPatNum()
@@ -250,8 +251,8 @@ nextRow:
 			if int(patNum) >= len(state.Patterns) {
 				return nil, nil
 			}
-			pattern := state.Patterns[patNum]
-			return pattern.GetRows(), nil
+			pat := &state.Patterns[patNum]
+			return pat, nil
 		}
 	}
 	return nil, nil

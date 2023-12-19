@@ -7,7 +7,7 @@ import (
 )
 
 // Format is an interface to a music file format loader
-type Format[TChannelData any] interface {
+type Format interface {
 	Load(filename string, features []feature.Feature) (Playback, error)
 	LoadFromReader(r io.Reader, features []feature.Feature) (Playback, error)
 }

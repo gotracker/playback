@@ -44,8 +44,9 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd period.Frequ
 		c2spd = CalcFinetuneC2Spd(c2spd, ft)
 	}
 
-	p := Amiga(float64(floatDefaultC2Spd*semitonePeriodTable[key]) / float64(uint32(c2spd)<<octave))
-	return p
+	return Amiga{
+		Amiga: period.Amiga(float64(floatDefaultC2Spd*semitonePeriodTable[key]) / float64(uint32(c2spd)<<octave)),
+	}
 }
 
 // CalcFinetuneC2Spd calculates a new C2SPD after a finetune adjustment
@@ -56,7 +57,7 @@ func CalcFinetuneC2Spd(c2spd period.Frequency, finetune note.Finetune) period.Fr
 
 	nft := 5*semitonesPerOctave + int(finetune)
 	p := CalcSemitonePeriod(note.Semitone(nft/semitonesPerNote), note.Finetune(nft%semitonesPerNote), c2spd)
-	return period.Frequency(p.GetFrequency())
+	return p.GetFrequency()
 }
 
 // FrequencyFromSemitone returns the frequency from the semitone (and c2spd)

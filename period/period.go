@@ -11,6 +11,8 @@ type Period interface {
 	Lerp(float64, Period) Period
 	GetSamplerAdd(float64) float64
 	GetFrequency() Frequency
+	ToLinearPeriod() Period
+	ToAmigaPeriod() Period
 }
 
 // PeriodDelta is an amount of delta specific to the period type it modifies

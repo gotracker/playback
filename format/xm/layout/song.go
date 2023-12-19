@@ -25,7 +25,7 @@ func (s Song) GetOrderList() []index.Pattern {
 }
 
 // GetPattern returns an interface to a specific pattern indexed by `patNum`
-func (s Song) GetPattern(patNum index.Pattern) song.Pattern {
+func (s Song) GetPattern(patNum index.Pattern) *song.Pattern[channel.Data] {
 	if int(patNum) >= len(s.Patterns) {
 		return nil
 	}

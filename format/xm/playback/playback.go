@@ -315,7 +315,7 @@ func (m *Manager) SetOnEffect(fn func(playback.Effect)) {
 	m.OnEffect = fn
 }
 
-func (m Manager) GetOnEffect() func(playback.Effect) {
+func (m *Manager) GetOnEffect() func(playback.Effect) {
 	return m.OnEffect
 }
 

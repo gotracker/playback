@@ -51,11 +51,9 @@ func (m *Manager) processPatternRow() error {
 		}
 	}
 
-	rows := pat.GetRows()
-
 	myCurrentRow := m.pattern.GetCurrentRow()
 
-	row := rows.GetRow(myCurrentRow)
+	row := pat.GetRow(myCurrentRow)
 
 	preMixRowTxn := m.pattern.StartTransaction()
 	defer func() {

@@ -2,8 +2,13 @@ package song
 
 import "github.com/gotracker/playback/index"
 
-// Row is an interface to a row
-type Row interface {
-	GetNumChannels() int
-	GetChannel(index.Channel) ChannelData
+// Row is a structure containing a single row
+type Row[TChannelData ChannelData] []TChannelData
+
+func (r Row[TChannelData]) GetNumChannels() int {
+	return len(r)
+}
+
+func (r Row[TChannelData]) GetChannel(ch index.Channel) TChannelData {
+	return r[ch]
 }

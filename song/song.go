@@ -17,6 +17,6 @@ type Data interface {
 	GetName() string
 }
 
-type PatternData interface {
-	GetPattern(index.Pattern) Pattern
+type PatternData[TChannelData ChannelData] interface {
+	GetPattern(index.Pattern) Pattern[TChannelData]
 }

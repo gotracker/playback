@@ -1,8 +1,8 @@
 package pattern
 
 import (
-	"github.com/gotracker/playback/format/common"
 	"github.com/gotracker/playback/format/it/channel"
+	"github.com/gotracker/playback/song"
 )
 
-type Pattern = common.Pattern[channel.Data]
+type Pattern = song.Pattern[channel.Data]

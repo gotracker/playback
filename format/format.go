@@ -11,15 +11,14 @@ import (
 	"github.com/gotracker/playback/format/s3m"
 	"github.com/gotracker/playback/format/xm"
 	"github.com/gotracker/playback/player/feature"
-	"github.com/gotracker/playback/song"
 )
 
 var (
-	supportedFormats = make(map[string]playback.Format[song.ChannelData])
+	supportedFormats = make(map[string]playback.Format)
 )
 
 // Load loads the a file into a playback manager
-func Load(filename string, features ...feature.Feature) (playback.Playback, playback.Format[song.ChannelData], error) {
+func Load(filename string, features ...feature.Feature) (playback.Playback, playback.Format, error) {
 	for _, f := range supportedFormats {
 		if pb, err := f.Load(filename, features); err == nil {
 			return pb, f, nil
@@ -31,7 +30,7 @@ func Load(filename string, features ...feature.Feature) (playback.Playback, play
 }
 
 // LoadFromReader loads a song file on a reader into a playback manager
-func LoadFromReader(format string, r io.ReadSeeker, features ...feature.Feature) (playback.Playback, playback.Format[song.ChannelData], error) {
+func LoadFromReader(format string, r io.ReadSeeker, features ...feature.Feature) (playback.Playback, playback.Format, error) {
 	pos, _ := r.Seek(0, io.SeekCurrent)
 	if format != "" {
 		f, ok := supportedFormats[format]
