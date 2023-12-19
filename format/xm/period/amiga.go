@@ -12,7 +12,7 @@ import (
 
 // Amiga defines a sampler period that follows the Amiga-style approach of note
 // definition. Useful in calculating resampling.
-type Amiga period.AmigaPeriod
+type Amiga period.Amiga
 
 // AddInteger truncates the current period to an integer and adds the delta integer in
 // then returns the resulting period
@@ -29,9 +29,10 @@ func (p Amiga) AddDelta(delta period.Delta) period.Period {
 }
 
 // Compare returns:
-//  -1 if the current period is higher frequency than the `rhs` period
-//  0 if the current period is equal in frequency to the `rhs` period
-//  1 if the current period is lower frequency than the `rhs` period
+//
+//	-1 if the current period is higher frequency than the `rhs` period
+//	0 if the current period is equal in frequency to the `rhs` period
+//	1 if the current period is lower frequency than the `rhs` period
 func (p Amiga) Compare(rhs period.Period) comparison.Spaceship {
 	lf := p.GetFrequency()
 	rf := rhs.GetFrequency()
@@ -53,18 +54,18 @@ func (p Amiga) Lerp(t float64, rhs period.Period) period.Period {
 		right = r
 	}
 
-	p = Amiga(period.AmigaPeriod(p).Lerp(t, period.AmigaPeriod(right)))
+	p = Amiga(period.Amiga(p).Lerp(t, period.Amiga(right)))
 	return p
 }
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period
 func (p Amiga) GetSamplerAdd(samplerSpeed float64) float64 {
-	return float64(period.AmigaPeriod(p).GetFrequency(period.Frequency(samplerSpeed)))
+	return float64(period.Amiga(p).GetFrequency(period.Frequency(samplerSpeed)))
 }
 
 // GetFrequency returns the frequency defined by the period
 func (p Amiga) GetFrequency() period.Frequency {
-	return period.AmigaPeriod(p).GetFrequency(XMBaseClock)
+	return period.Amiga(p).GetFrequency(XMBaseClock)
 }
 
 func (p Amiga) String() string {
@@ -76,7 +77,7 @@ func ToAmigaPeriod(finetunes note.Finetune, c2spd period.Frequency) Amiga {
 	if finetunes < 0 {
 		finetunes = 0
 	}
-	pow := math.Pow(2, float64(finetunes)/semitonesPerOctave)
+	pow := math.Pow(2, float64(finetunes)/SlideFinesPerOctave)
 	linFreq := float64(c2spd) * pow / float64(DefaultC2Spd)
 
 	period := Amiga(float64(semitonePeriodTable[0]) / linFreq)

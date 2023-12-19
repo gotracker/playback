@@ -15,9 +15,13 @@ const (
 	// XMBaseClock is the base clock speed of xm files
 	XMBaseClock period.Frequency = DefaultC2Spd * c2Period
 
-	notesPerOctave     = 12
-	semitonesPerNote   = 64
-	semitonesPerOctave = notesPerOctave * semitonesPerNote
+	NotesPerOctave        = 12
+	SlideFinesPerSemitone = 4
+	SemitonesPerNote      = 16
+	SlideFinesPerNote     = SlideFinesPerSemitone * SemitonesPerNote
+	SlideFinesPerOctave   = SlideFinesPerNote * NotesPerOctave
+
+	C4SlideFines = 4 * SlideFinesPerOctave
 )
 
 var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
@@ -50,8 +54,7 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd period.Frequ
 		c2spd = CalcFinetuneC2Spd(c2spd, ft, linearFreqSlides)
 	}
 
-	period := (Amiga(floatDefaultC2Spd*semitonePeriodTable[key]) / Amiga(uint32(c2spd)<<octave))
-	period = period.AddInteger(0)
+	period := Amiga(float64(floatDefaultC2Spd*semitonePeriodTable[key]) / float64(uint32(c2spd)<<octave))
 	return period
 }
 
@@ -61,8 +64,8 @@ func CalcFinetuneC2Spd(c2spd period.Frequency, finetune note.Finetune, linearFre
 		return c2spd
 	}
 
-	nft := 5*semitonesPerOctave + int(finetune)
-	p := CalcSemitonePeriod(note.Semitone(nft/semitonesPerNote), note.Finetune(nft%semitonesPerNote), c2spd, linearFreqSlides)
+	nft := C4SlideFines + int(finetune)
+	p := CalcSemitonePeriod(note.Semitone(nft/SlideFinesPerNote), note.Finetune(nft%SlideFinesPerNote), c2spd, linearFreqSlides)
 	return period.Frequency(p.GetFrequency())
 }
 

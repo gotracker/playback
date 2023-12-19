@@ -12,7 +12,7 @@ import (
 
 // Amiga defines a sampler period that follows the Amiga-style approach of note
 // definition. Useful in calculating resampling.
-type Amiga period.AmigaPeriod
+type Amiga period.Amiga
 
 // AddInteger truncates the current period to an integer and adds the delta integer in
 // then returns the resulting period
@@ -54,22 +54,22 @@ func (p Amiga) Lerp(t float64, rhs period.Period) period.Period {
 		right = r
 	}
 
-	period := Amiga(period.AmigaPeriod(p).Lerp(t, period.AmigaPeriod(right)))
+	period := Amiga(period.Amiga(p).Lerp(t, period.Amiga(right)))
 	return period
 }
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period
 func (p Amiga) GetSamplerAdd(samplerSpeed float64) float64 {
-	return float64(period.AmigaPeriod(p).GetFrequency(period.Frequency(samplerSpeed)))
+	return float64(period.Amiga(p).GetFrequency(period.Frequency(samplerSpeed)))
 }
 
 // GetFrequency returns the frequency defined by the period
 func (p Amiga) GetFrequency() period.Frequency {
-	return period.AmigaPeriod(p).GetFrequency(period.Frequency(ITBaseClock))
+	return period.Amiga(p).GetFrequency(period.Frequency(ITBaseClock))
 }
 
 func (p Amiga) String() string {
-	return fmt.Sprintf("Amiga{ Period:%f }", float32(p))
+	return fmt.Sprintf("Amiga{ Period:%d }", p)
 }
 
 // ToAmigaPeriod calculates an amiga period for a linear finetune period
@@ -77,7 +77,7 @@ func ToAmigaPeriod(finetunes note.Finetune, c2spd period.Frequency) Amiga {
 	if finetunes < 0 {
 		finetunes = 0
 	}
-	pow := math.Pow(2, 1.0+float64(finetunes)/semitonesPerOctave)
+	pow := math.Pow(2, 1.0+float64(finetunes)/SlideFinesPerOctave)
 	linFreq := float64(c2spd) * pow / float64(DefaultC2Spd)
 
 	period := Amiga(float64(semitonePeriodTable[0]) / linFreq)
