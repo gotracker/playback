@@ -1,5 +1,5 @@
-github.com/gotracker/goaudiofile v1.0.14 h1:gbut0vivYxV0EWH/rzvqukmx6GjbtvMylLHQpZ//7d0=
-github.com/gotracker/goaudiofile v1.0.14/go.mod h1:+biBmTEKcFRF4hCR1flCtqOA76p6OReIAwqqV+07N8Y=
+github.com/gotracker/goaudiofile v1.0.15 h1:90MtPQB1i99DSTradMol49VZlV4smJ5iLYGrdecfIps=
+github.com/gotracker/goaudiofile v1.0.15/go.mod h1:+biBmTEKcFRF4hCR1flCtqOA76p6OReIAwqqV+07N8Y=
 github.com/gotracker/gomixing v1.3.0 h1:L0pOTsjIppAbSoo+yYRVghrfF2dcAywUTsk6Ig2Z/IM=
 github.com/gotracker/gomixing v1.3.0/go.mod h1:KSwLWBk4HMKTVZH+zq4Db7nlDVcRegIL4uStkat0ASg=
 github.com/gotracker/opl2 v1.0.1 h1:1PVNs0dXqEAQxdws7fz2WEE3nSKkMb1osTTT7KgEi5g=
@@ -10,7 +10,7 @@ github.com/heucuva/optional v0.0.1 h1:tLbVBMQBKzQVfe43bHQFSxjhTzYcRK8frnTBG6FLks
 github.com/heucuva/optional v0.0.1/go.mod h1:2AtE/X9279wzrHLkCNvKl0xP7AiEIj3RijGKwbO8R3M=
 github.com/pkg/errors v0.9.1 h1:FEBLx1zS214owpjy7qsBeixbURkuhQAwrK5UwLGTwt4=
 github.com/pkg/errors v0.9.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
-golang.org/x/exp v0.0.0-20231214170342-aacd6d4b4611 h1:qCEDpW1G+vcj3Y7Fy52pEM1AWm3abj8WimGYejI3SC4=
-golang.org/x/exp v0.0.0-20231214170342-aacd6d4b4611/go.mod h1:iRJReGqOEeBhDZGkGbynYwcHlctCvnjTYIamk7uXpHI=
+golang.org/x/exp v0.0.0-20231219160207-73b9e39aefca h1:+xQfFu/HO/82Wwg4zuJ5xiLp0yaOLJjBGnuafXp85YQ=
+golang.org/x/exp v0.0.0-20231219160207-73b9e39aefca/go.mod h1:iRJReGqOEeBhDZGkGbynYwcHlctCvnjTYIamk7uXpHI=
 gopkg.in/yaml.v2 v2.4.0 h1:D8xgwECY7CYvx+Y2n4sBz93Jn9JRvxdiyyo8CTfuKaY=
 gopkg.in/yaml.v2 v2.4.0/go.mod h1:RDklbk79AGWmwhnvt/jBztapEOGDOx6ZbXqjP6csGnQ=
