@@ -5,13 +5,14 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/channel"
+	"github.com/gotracker/playback/period"
 )
 
 // SetEnvelopePosition defines a set envelope position effect
-type SetEnvelopePosition channel.DataEffect // 'Lxx'
+type SetEnvelopePosition[TPeriod period.Period] channel.DataEffect // 'Lxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetEnvelopePosition) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e SetEnvelopePosition[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xx := channel.DataEffect(e)
@@ -20,6 +21,6 @@ func (e SetEnvelopePosition) Start(cs playback.Channel[channel.Memory], p playba
 	return nil
 }
 
-func (e SetEnvelopePosition) String() string {
+func (e SetEnvelopePosition[TPeriod]) String() string {
 	return fmt.Sprintf("L%0.2x", channel.DataEffect(e))
 }

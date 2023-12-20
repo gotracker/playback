@@ -2,25 +2,26 @@ package state
 
 import (
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
 	"github.com/heucuva/optional"
 )
 
-type pastNote struct {
+type pastNote[TPeriod period.Period] struct {
 	ch          int
-	activeState *Active
+	activeState *Active[TPeriod]
 }
 
-func (pn *pastNote) IsValid() bool {
+func (pn *pastNote[TPeriod]) IsValid() bool {
 	return pn.activeState.Voice != nil && !pn.activeState.Voice.IsDone()
 }
 
-type PastNotesProcessor struct {
-	order    []pastNote
+type PastNotesProcessor[TPeriod period.Period] struct {
+	order    []pastNote[TPeriod]
 	max      optional.Value[int]
 	maxPerCh optional.Value[int]
 }
 
-func (p *PastNotesProcessor) Add(ch int, data *Active) {
+func (p *PastNotesProcessor[TPeriod]) Add(ch int, data *Active[TPeriod]) {
 	if data == nil {
 		return
 	}
@@ -36,7 +37,7 @@ func (p *PastNotesProcessor) Add(ch int, data *Active) {
 		}
 	}
 
-	cl := pastNote{
+	cl := pastNote[TPeriod]{
 		ch:          ch,
 		activeState: data,
 	}
@@ -44,7 +45,7 @@ func (p *PastNotesProcessor) Add(ch int, data *Active) {
 	p.order = append(p.order, cl)
 }
 
-func (p *PastNotesProcessor) Do(ch int, action note.Action) {
+func (p *PastNotesProcessor[TPeriod]) Do(ch int, action note.Action) {
 	if action == note.ActionContinue {
 		return
 	}
@@ -70,8 +71,8 @@ func (p *PastNotesProcessor) Do(ch int, action note.Action) {
 	}
 }
 
-func (p *PastNotesProcessor) Update() {
-	var nl []pastNote
+func (p *PastNotesProcessor[TPeriod]) Update() {
+	var nl []pastNote[TPeriod]
 	for _, o := range p.order {
 		if !o.IsValid() {
 			o.activeState.Reset()
@@ -83,8 +84,8 @@ func (p *PastNotesProcessor) Update() {
 	p.order = nl
 }
 
-func (p *PastNotesProcessor) GetNotesForChannel(ch int) []*Active {
-	var pastNotes []*Active
+func (p *PastNotesProcessor[TPeriod]) GetNotesForChannel(ch int) []*Active[TPeriod] {
+	var pastNotes []*Active[TPeriod]
 	for _, pn := range p.order {
 		if pn.ch != ch {
 			continue
@@ -109,18 +110,18 @@ func (p *PastNotesProcessor) GetNotesForChannel(ch int) []*Active {
 	return pastNotes
 }
 
-func (p *PastNotesProcessor) SetMax(max int) {
+func (p *PastNotesProcessor[TPeriod]) SetMax(max int) {
 	p.max.Set(max)
 }
 
-func (p *PastNotesProcessor) ClearMax() {
+func (p *PastNotesProcessor[TPeriod]) ClearMax() {
 	p.max.Reset()
 }
 
-func (p *PastNotesProcessor) SetMaxPerChannel(max int) {
+func (p *PastNotesProcessor[TPeriod]) SetMaxPerChannel(max int) {
 	p.maxPerCh.Set(max)
 }
 
-func (p *PastNotesProcessor) ClearMaxPerChannel() {
+func (p *PastNotesProcessor[TPeriod]) ClearMaxPerChannel() {
 	p.maxPerCh.Reset()
 }

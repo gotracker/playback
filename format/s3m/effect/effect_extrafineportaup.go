@@ -11,7 +11,7 @@ import (
 type ExtraFinePortaUp ChannelCommand // 'FEx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e ExtraFinePortaUp) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e ExtraFinePortaUp) Start(cs S3MChannel, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 

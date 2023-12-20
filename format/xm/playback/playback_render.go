@@ -7,7 +7,7 @@ import (
 )
 
 // OnTick runs the XM tick processing
-func (m *Manager) OnTick() error {
+func (m *manager[TPeriod]) OnTick() error {
 	m.premix = nil
 
 	postMixRowTxn := m.pattern.StartTransaction()
@@ -54,7 +54,7 @@ func (m *Manager) OnTick() error {
 }
 
 // GetPremixData gets the current premix data from the manager
-func (m *Manager) GetPremixData() (*output.PremixData, error) {
+func (m *manager[TPeriod]) GetPremixData() (*output.PremixData, error) {
 	return m.premix, nil
 }
 
@@ -65,7 +65,7 @@ type rowRenderState struct {
 	currentTick  int
 }
 
-func (m *Manager) soundRenderTick(premix *output.PremixData) error {
+func (m *manager[TPeriod]) soundRenderTick(premix *output.PremixData) error {
 	tick := m.rowRenderState.currentTick
 	var lastTick = (tick+1 == m.rowRenderState.ticksThisRow)
 
@@ -92,7 +92,7 @@ func (m *Manager) soundRenderTick(premix *output.PremixData) error {
 }
 
 /** unused in XM, for now
-func (m *Manager) ensureOPL2() {
+func (m *manager[TPeriod]) ensureOPL2() {
 	if opl2 := m.GetOPL2Chip(); opl2 == nil {
 		if s := m.GetSampler(); s != nil {
 			opl2 = render.NewOPL2Chip(uint32(s.SampleRate))

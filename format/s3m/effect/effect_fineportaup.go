@@ -11,7 +11,7 @@ import (
 type FinePortaUp ChannelCommand // 'FFx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FinePortaUp) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e FinePortaUp) Start(cs S3MChannel, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 

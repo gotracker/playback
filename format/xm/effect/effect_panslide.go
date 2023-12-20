@@ -6,13 +6,14 @@ import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/channel"
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	"github.com/gotracker/playback/period"
 )
 
 // PanSlide defines a pan slide effect
-type PanSlide channel.DataEffect // 'Pxx'
+type PanSlide[TPeriod period.Period] channel.DataEffect // 'Pxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PanSlide) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e PanSlide[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	xx := channel.DataEffect(e)
 	x := xx >> 4
 	y := xx & 0x0F
@@ -37,6 +38,6 @@ func (e PanSlide) Start(cs playback.Channel[channel.Memory], p playback.Playback
 	return nil
 }
 
-func (e PanSlide) String() string {
+func (e PanSlide[TPeriod]) String() string {
 	return fmt.Sprintf("P%0.2x", channel.DataEffect(e))
 }

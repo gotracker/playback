@@ -5,18 +5,19 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
+	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/song"
 )
 
 type EffectIT = playback.Effect
 
 // VolEff is a combined effect that includes a volume effect and a standard effect
-type VolEff struct {
-	playback.CombinedEffect[channel.Memory]
+type VolEff[TPeriod period.Period] struct {
+	playback.CombinedEffect[TPeriod, channel.Memory]
 	eff EffectIT
 }
 
-func (e VolEff) String() string {
+func (e VolEff[TPeriod]) String() string {
 	if e.eff == nil {
 		return "..."
 	}
@@ -24,7 +25,7 @@ func (e VolEff) String() string {
 }
 
 // Factory produces an effect for the provided channel pattern data
-func Factory(mem *channel.Memory, data song.ChannelData) EffectIT {
+func Factory[TPeriod period.Period](mem *channel.Memory, data song.ChannelData) EffectIT {
 	if data == nil {
 		return nil
 	}
@@ -35,15 +36,15 @@ func Factory(mem *channel.Memory, data song.ChannelData) EffectIT {
 		return nil
 	}
 
-	var eff VolEff
+	var eff VolEff[TPeriod]
 	if d.What.HasVolPan() {
-		ve := volPanEffectFactory(mem, d.VolPan)
+		ve := volPanEffectFactory[TPeriod](mem, d.VolPan)
 		if ve != nil {
 			eff.Effects = append(eff.Effects, ve)
 		}
 	}
 
-	if e := standardEffectFactory(mem, d); e != nil {
+	if e := standardEffectFactory[TPeriod](mem, d); e != nil {
 		eff.Effects = append(eff.Effects, e)
 		eff.eff = e
 	}
@@ -58,165 +59,165 @@ func Factory(mem *channel.Memory, data song.ChannelData) EffectIT {
 	}
 }
 
-func standardEffectFactory(mem *channel.Memory, data channel.Data) EffectIT {
+func standardEffectFactory[TPeriod period.Period](mem *channel.Memory, data channel.Data) EffectIT {
 	switch data.Effect + '@' {
 	case '@': // unused
 		return nil
 	case 'A': // Set Speed
-		return SetSpeed(data.EffectParameter)
+		return SetSpeed[TPeriod](data.EffectParameter)
 	case 'B': // Pattern Jump
-		return OrderJump(data.EffectParameter)
+		return OrderJump[TPeriod](data.EffectParameter)
 	case 'C': // Pattern Break
-		return RowJump(data.EffectParameter)
+		return RowJump[TPeriod](data.EffectParameter)
 	case 'D': // Volume Slide / Fine Volume Slide
-		return volumeSlideFactory(mem, data.Effect, data.EffectParameter)
+		return volumeSlideFactory[TPeriod](mem, data.Effect, data.EffectParameter)
 	case 'E': // Porta Down/Fine Porta Down/Xtra Fine Porta
 		xx := mem.PortaDown(channel.DataEffect(data.EffectParameter))
 		x := xx >> 4
 		if x == 0x0F {
-			return FinePortaDown(xx)
+			return FinePortaDown[TPeriod](xx)
 		} else if x == 0x0E {
-			return ExtraFinePortaDown(xx)
+			return ExtraFinePortaDown[TPeriod](xx)
 		}
-		return PortaDown(data.EffectParameter)
+		return PortaDown[TPeriod](data.EffectParameter)
 	case 'F': // Porta Up/Fine Porta Up/Extra Fine Porta Down
 		xx := mem.PortaUp(channel.DataEffect(data.EffectParameter))
 		x := xx >> 4
 		if x == 0x0F {
-			return FinePortaUp(xx)
+			return FinePortaUp[TPeriod](xx)
 		} else if x == 0x0E {
-			return ExtraFinePortaUp(xx)
+			return ExtraFinePortaUp[TPeriod](xx)
 		}
-		return PortaUp(data.EffectParameter)
+		return PortaUp[TPeriod](data.EffectParameter)
 	case 'G': // Porta to note
-		return PortaToNote(data.EffectParameter)
+		return PortaToNote[TPeriod](data.EffectParameter)
 	case 'H': // Vibrato
-		return Vibrato(data.EffectParameter)
+		return Vibrato[TPeriod](data.EffectParameter)
 	case 'I': // Tremor
-		return Tremor(data.EffectParameter)
+		return Tremor[TPeriod](data.EffectParameter)
 	case 'J': // Arpeggio
-		return Arpeggio(data.EffectParameter)
+		return Arpeggio[TPeriod](data.EffectParameter)
 	case 'K': // Vibrato+Volume Slide
-		return NewVibratoVolumeSlide(mem, data.Effect, data.EffectParameter)
+		return NewVibratoVolumeSlide[TPeriod](mem, data.Effect, data.EffectParameter)
 	case 'L': // Porta+Volume Slide
-		return NewPortaVolumeSlide(mem, data.Effect, data.EffectParameter)
+		return NewPortaVolumeSlide[TPeriod](mem, data.Effect, data.EffectParameter)
 	case 'M': // Set Channel Volume
-		return SetChannelVolume(data.EffectParameter)
+		return SetChannelVolume[TPeriod](data.EffectParameter)
 	case 'N': // Channel Volume Slide
-		return ChannelVolumeSlide(data.EffectParameter)
+		return ChannelVolumeSlide[TPeriod](data.EffectParameter)
 	case 'O': // Sample Offset
-		return SampleOffset(data.EffectParameter)
+		return SampleOffset[TPeriod](data.EffectParameter)
 	case 'P': // Panning Slide
 		//return panningSlideFactory(mem, data.Effect, data.EffectParameter)
 	case 'Q': // Retrig + Volume Slide
-		return RetrigVolumeSlide(data.EffectParameter)
+		return RetrigVolumeSlide[TPeriod](data.EffectParameter)
 	case 'R': // Tremolo
-		return Tremolo(data.EffectParameter)
+		return Tremolo[TPeriod](data.EffectParameter)
 	case 'S': // Special
-		return specialEffect(data)
+		return specialEffect[TPeriod](data)
 	case 'T': // Set Tempo
-		return SetTempo(data.EffectParameter)
+		return SetTempo[TPeriod](data.EffectParameter)
 	case 'U': // Fine Vibrato
-		return FineVibrato(data.EffectParameter)
+		return FineVibrato[TPeriod](data.EffectParameter)
 	case 'V': // Global Volume
-		return SetGlobalVolume(data.EffectParameter)
+		return SetGlobalVolume[TPeriod](data.EffectParameter)
 	case 'W': // Global Volume Slide
-		return GlobalVolumeSlide(data.EffectParameter)
+		return GlobalVolumeSlide[TPeriod](data.EffectParameter)
 	case 'X': // Set Pan Position
-		return SetPanPosition(data.EffectParameter)
+		return SetPanPosition[TPeriod](data.EffectParameter)
 	case 'Y': // Panbrello
-		//return Panbrello(data.EffectParameter)
+		//return Panbrello[TPeriod](data.EffectParameter)
 	case 'Z': // MIDI Macro
 		return nil // TODO: MIDIMacro
 	default:
 	}
-	return UnhandledCommand{Command: data.Effect, Info: data.EffectParameter}
+	return UnhandledCommand[TPeriod]{Command: data.Effect, Info: data.EffectParameter}
 }
 
-func specialEffect(data channel.Data) EffectIT {
+func specialEffect[TPeriod period.Period](data channel.Data) EffectIT {
 	switch data.EffectParameter >> 4 {
 	case 0x0: // unused
 		return nil
 	//case 0x1: // Set Glissando on/off
 
 	case 0x2: // Set FineTune
-		return SetFinetune(data.EffectParameter)
+		return SetFinetune[TPeriod](data.EffectParameter)
 	case 0x3: // Set Vibrato Waveform
-		return SetVibratoWaveform(data.EffectParameter)
+		return SetVibratoWaveform[TPeriod](data.EffectParameter)
 	case 0x4: // Set Tremolo Waveform
-		return SetTremoloWaveform(data.EffectParameter)
+		return SetTremoloWaveform[TPeriod](data.EffectParameter)
 	case 0x5: // Set Panbrello Waveform
-		return SetPanbrelloWaveform(data.EffectParameter)
+		return SetPanbrelloWaveform[TPeriod](data.EffectParameter)
 	case 0x6: // Fine Pattern Delay
-		return FinePatternDelay(data.EffectParameter)
+		return FinePatternDelay[TPeriod](data.EffectParameter)
 	case 0x7: // special note operations
-		return specialNoteEffects(data)
+		return specialNoteEffects[TPeriod](data)
 	case 0x8: // Set Coarse Pan Position
-		return SetCoarsePanPosition(data.EffectParameter)
+		return SetCoarsePanPosition[TPeriod](data.EffectParameter)
 	case 0x9: // Sound Control
-		return soundControlEffect(data)
+		return soundControlEffect[TPeriod](data)
 	case 0xA: // High Offset
-		return HighOffset(data.EffectParameter)
+		return HighOffset[TPeriod](data.EffectParameter)
 	case 0xB: // Pattern Loop
-		return PatternLoop(data.EffectParameter)
+		return PatternLoop[TPeriod](data.EffectParameter)
 	case 0xC: // Note Cut
-		return NoteCut(data.EffectParameter)
+		return NoteCut[TPeriod](data.EffectParameter)
 	case 0xD: // Note Delay
-		return NoteDelay(data.EffectParameter)
+		return NoteDelay[TPeriod](data.EffectParameter)
 	case 0xE: // Pattern Delay
-		return PatternDelay(data.EffectParameter)
+		return PatternDelay[TPeriod](data.EffectParameter)
 	case 0xF: // Set Active Macro
 		return nil // TODO: SetActiveMacro
 	default:
 	}
-	return UnhandledCommand{Command: data.Effect, Info: data.EffectParameter}
+	return UnhandledCommand[TPeriod]{Command: data.Effect, Info: data.EffectParameter}
 }
 
-func specialNoteEffects(data channel.Data) EffectIT {
+func specialNoteEffects[TPeriod period.Period](data channel.Data) EffectIT {
 	switch data.EffectParameter & 0xf {
 	case 0x0: // Past Note Cut
-		return PastNoteCut(data.EffectParameter)
+		return PastNoteCut[TPeriod](data.EffectParameter)
 	case 0x1: // Past Note Off
-		return PastNoteOff(data.EffectParameter)
+		return PastNoteOff[TPeriod](data.EffectParameter)
 	case 0x2: // Past Note Fade
-		return PastNoteFade(data.EffectParameter)
+		return PastNoteFade[TPeriod](data.EffectParameter)
 	case 0x3: // New Note Action: Note Cut
-		return NewNoteActionNoteCut(data.EffectParameter)
+		return NewNoteActionNoteCut[TPeriod](data.EffectParameter)
 	case 0x4: // New Note Action: Note Continue
-		return NewNoteActionNoteContinue(data.EffectParameter)
+		return NewNoteActionNoteContinue[TPeriod](data.EffectParameter)
 	case 0x5: // New Note Action: Note Off
-		return NewNoteActionNoteOff(data.EffectParameter)
+		return NewNoteActionNoteOff[TPeriod](data.EffectParameter)
 	case 0x6: // New Note Action: Note Fade
-		return NewNoteActionNoteFade(data.EffectParameter)
+		return NewNoteActionNoteFade[TPeriod](data.EffectParameter)
 	case 0x7: // Volume Envelope Off
-		return VolumeEnvelopeOff(data.EffectParameter)
+		return VolumeEnvelopeOff[TPeriod](data.EffectParameter)
 	case 0x8: // Volume Envelope On
-		return VolumeEnvelopeOn(data.EffectParameter)
+		return VolumeEnvelopeOn[TPeriod](data.EffectParameter)
 	case 0x9: // Panning Envelope Off
-		return PanningEnvelopeOff(data.EffectParameter)
+		return PanningEnvelopeOff[TPeriod](data.EffectParameter)
 	case 0xA: // Panning Envelope On
-		return PanningEnvelopeOn(data.EffectParameter)
+		return PanningEnvelopeOn[TPeriod](data.EffectParameter)
 	case 0xB: // Pitch Envelope Off
-		return PitchEnvelopeOff(data.EffectParameter)
+		return PitchEnvelopeOff[TPeriod](data.EffectParameter)
 	case 0xC: // Pitch Envelope On
-		return PitchEnvelopeOn(data.EffectParameter)
+		return PitchEnvelopeOn[TPeriod](data.EffectParameter)
 	case 0xD, 0xE, 0xF: // unused
 		return nil
 	}
-	return UnhandledCommand{Command: data.Effect, Info: data.EffectParameter}
+	return UnhandledCommand[TPeriod]{Command: data.Effect, Info: data.EffectParameter}
 }
 
-func volumeSlideFactory(mem *channel.Memory, cd channel.Command, ce channel.DataEffect) EffectIT {
+func volumeSlideFactory[TPeriod period.Period](mem *channel.Memory, cd channel.Command, ce channel.DataEffect) EffectIT {
 	x, y := mem.VolumeSlide(channel.DataEffect(ce))
 	switch {
 	case x == 0:
-		return VolumeSlideDown(ce)
+		return VolumeSlideDown[TPeriod](ce)
 	case y == 0:
-		return VolumeSlideUp(ce)
+		return VolumeSlideUp[TPeriod](ce)
 	case x == 0x0f:
-		return FineVolumeSlideDown(ce)
+		return FineVolumeSlideDown[TPeriod](ce)
 	case y == 0x0f:
-		return FineVolumeSlideUp(ce)
+		return FineVolumeSlideUp[TPeriod](ce)
 	}
 	// There is a chance that a volume slide command is set with an invalid
 	// value or is 00, in which case the memory might have the invalid value,
@@ -225,7 +226,7 @@ func volumeSlideFactory(mem *channel.Memory, cd channel.Command, ce channel.Data
 	return nil
 }
 
-func soundControlEffect(data channel.Data) EffectIT {
+func soundControlEffect[TPeriod period.Period](data channel.Data) EffectIT {
 	switch data.EffectParameter & 0xF {
 	case 0x0: // Surround Off
 	case 0x1: // Surround On
@@ -240,5 +241,5 @@ func soundControlEffect(data channel.Data) EffectIT {
 	case 0xE: // Play Forward
 	case 0xF: // Play Backward
 	}
-	return UnhandledCommand{Command: data.Effect, Info: data.EffectParameter}
+	return UnhandledCommand[TPeriod]{Command: data.Effect, Info: data.EffectParameter}
 }

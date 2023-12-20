@@ -6,19 +6,20 @@ import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
 	effectIntf "github.com/gotracker/playback/format/it/effect/intf"
+	"github.com/gotracker/playback/period"
 )
 
 // GlobalVolumeSlide defines a global volume slide effect
-type GlobalVolumeSlide channel.DataEffect // 'W'
+type GlobalVolumeSlide[TPeriod period.Period] channel.DataEffect // 'W'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e GlobalVolumeSlide) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e GlobalVolumeSlide[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e GlobalVolumeSlide) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
+func (e GlobalVolumeSlide[TPeriod]) Tick(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, y := mem.GlobalVolumeSlide(channel.DataEffect(e))
 
@@ -38,6 +39,6 @@ func (e GlobalVolumeSlide) Tick(cs playback.Channel[channel.Memory], p playback.
 	return nil
 }
 
-func (e GlobalVolumeSlide) String() string {
+func (e GlobalVolumeSlide[TPeriod]) String() string {
 	return fmt.Sprintf("W%0.2x", channel.DataEffect(e))
 }

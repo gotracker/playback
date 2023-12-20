@@ -5,19 +5,20 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
+	"github.com/gotracker/playback/period"
 )
 
 // Tremolo defines a tremolo effect
-type Tremolo channel.DataEffect // 'R'
+type Tremolo[TPeriod period.Period] channel.DataEffect // 'R'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e Tremolo) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e Tremolo[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e Tremolo) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
+func (e Tremolo[TPeriod]) Tick(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, y := mem.Tremolo(channel.DataEffect(e))
 	// NOTE: JBC - IT dos not update on tick 0, but MOD does.
@@ -28,6 +29,6 @@ func (e Tremolo) Tick(cs playback.Channel[channel.Memory], p playback.Playback, 
 	return nil
 }
 
-func (e Tremolo) String() string {
+func (e Tremolo[TPeriod]) String() string {
 	return fmt.Sprintf("R%0.2x", channel.DataEffect(e))
 }

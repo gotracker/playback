@@ -12,7 +12,7 @@ import (
 type SetPanPosition ChannelCommand // 'S8x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetPanPosition) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e SetPanPosition) Start(cs S3MChannel, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := uint8(e) & 0xf

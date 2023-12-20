@@ -6,19 +6,20 @@ import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/channel"
 	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/period"
 )
 
 // RowJump defines a row jump effect
-type RowJump channel.DataEffect // 'D'
+type RowJump[TPeriod period.Period] channel.DataEffect // 'D'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e RowJump) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e RowJump[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e RowJump) Stop(cs playback.Channel[channel.Memory], p playback.Playback, lastTick int) error {
+func (e RowJump[TPeriod]) Stop(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback, lastTick int) error {
 	xy := channel.DataEffect(e)
 	x := xy >> 4
 	y := xy & 0x0f
@@ -29,6 +30,6 @@ func (e RowJump) Stop(cs playback.Channel[channel.Memory], p playback.Playback, 
 	return p.SetNextRow(row)
 }
 
-func (e RowJump) String() string {
+func (e RowJump[TPeriod]) String() string {
 	return fmt.Sprintf("D%0.2x", channel.DataEffect(e))
 }

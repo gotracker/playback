@@ -5,19 +5,20 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
+	"github.com/gotracker/playback/period"
 )
 
 // PatternLoop defines a pattern loop effect
-type PatternLoop channel.DataEffect // 'SBx'
+type PatternLoop[TPeriod period.Period] channel.DataEffect // 'SBx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PatternLoop) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e PatternLoop[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e PatternLoop) Stop(cs playback.Channel[channel.Memory], p playback.Playback, lastTick int) error {
+func (e PatternLoop[TPeriod]) Stop(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback, lastTick int) error {
 	x := uint8(e) & 0xF
 
 	mem := cs.GetMemory()
@@ -39,6 +40,6 @@ func (e PatternLoop) Stop(cs playback.Channel[channel.Memory], p playback.Playba
 	return nil
 }
 
-func (e PatternLoop) String() string {
+func (e PatternLoop[TPeriod]) String() string {
 	return fmt.Sprintf("S%0.2x", channel.DataEffect(e))
 }

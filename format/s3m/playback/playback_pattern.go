@@ -6,6 +6,7 @@ import (
 
 	"github.com/gotracker/playback/format/s3m/channel"
 	"github.com/gotracker/playback/format/s3m/effect"
+	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
@@ -15,7 +16,7 @@ const (
 	tickBaseDuration = time.Duration(2500) * time.Millisecond
 )
 
-func (m *Manager) processPatternRow() error {
+func (m *manager) processPatternRow() error {
 	patIdx, err := m.pattern.GetCurrentPatternIdx()
 	if err != nil {
 		return err
@@ -88,7 +89,7 @@ func (m *Manager) processPatternRow() error {
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
-		cs.AdvanceRow(state.NewChannelDataTxn[channel.Memory](effect.Factory))
+		cs.AdvanceRow(state.NewChannelDataTxn[s3mPeriod.Amiga, channel.Memory](effect.Factory))
 		if resetMemory {
 			mem := cs.GetMemory()
 			mem.StartOrder()
@@ -146,7 +147,7 @@ func (m *Manager) processPatternRow() error {
 	return nil
 }
 
-func (m *Manager) processRowForChannel(cs *state.ChannelState[channel.Memory]) error {
+func (m *manager) processRowForChannel(cs *channelState) error {
 	mem := cs.GetMemory()
 	mem.TremorMem().Reset()
 

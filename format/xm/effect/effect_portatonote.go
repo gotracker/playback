@@ -11,10 +11,10 @@ import (
 )
 
 // PortaToNote defines a portamento-to-note effect
-type PortaToNote channel.DataEffect // '3'
+type PortaToNote[TPeriod period.Period] channel.DataEffect // '3'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PortaToNote) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e PortaToNote[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 	if cmd := cs.GetData(); cmd != nil && cmd.HasNote() {
@@ -25,7 +25,7 @@ func (e PortaToNote) Start(cs playback.Channel[channel.Memory], p playback.Playb
 }
 
 // Tick is called on every tick
-func (e PortaToNote) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
+func (e PortaToNote[TPeriod]) Tick(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback, currentTick int) error {
 	if currentTick == 0 {
 		return nil
 	}
@@ -36,12 +36,12 @@ func (e PortaToNote) Tick(cs playback.Channel[channel.Memory], p playback.Playba
 	current := cs.GetPeriod()
 	target := cs.GetPortaTargetPeriod()
 	if period.ComparePeriods(current, target) == comparison.SpaceshipRightGreater {
-		return doPortaUpToNote(cs, float32(xx), 4, target, mem.Shared.LinearFreqSlides) // subtracts
+		return doPortaUpToNote(cs, float32(xx), 4, target) // subtracts
 	} else {
-		return doPortaDownToNote(cs, float32(xx), 4, target, mem.Shared.LinearFreqSlides) // adds
+		return doPortaDownToNote(cs, float32(xx), 4, target) // adds
 	}
 }
 
-func (e PortaToNote) String() string {
+func (e PortaToNote[TPeriod]) String() string {
 	return fmt.Sprintf("3%0.2x", channel.DataEffect(e))
 }

@@ -3,6 +3,7 @@ package effect
 import (
 	"fmt"
 
+	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice/oscillator"
 
 	"github.com/gotracker/playback"
@@ -10,10 +11,10 @@ import (
 )
 
 // SetTremoloWaveform defines a set tremolo waveform effect
-type SetTremoloWaveform channel.DataEffect // 'S4x'
+type SetTremoloWaveform[TPeriod period.Period] channel.DataEffect // 'S4x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetTremoloWaveform) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e SetTremoloWaveform[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := channel.DataEffect(e) & 0xf
@@ -24,6 +25,6 @@ func (e SetTremoloWaveform) Start(cs playback.Channel[channel.Memory], p playbac
 	return nil
 }
 
-func (e SetTremoloWaveform) String() string {
+func (e SetTremoloWaveform[TPeriod]) String() string {
 	return fmt.Sprintf("S%0.2x", channel.DataEffect(e))
 }

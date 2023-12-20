@@ -33,7 +33,7 @@ func ToPeriodDelta(delta Delta) PeriodDelta {
 }
 
 // ComparePeriods compares two periods, taking nil into account
-func ComparePeriods(lhs Period, rhs Period) comparison.Spaceship {
+func ComparePeriods[TPeriod Period](lhs *TPeriod, rhs *TPeriod) comparison.Spaceship {
 	if lhs == nil {
 		if rhs == nil {
 			return comparison.SpaceshipEqual
@@ -43,5 +43,5 @@ func ComparePeriods(lhs Period, rhs Period) comparison.Spaceship {
 		return comparison.SpaceshipLeftGreater
 	}
 
-	return lhs.Compare(rhs)
+	return (*lhs).Compare(*rhs)
 }

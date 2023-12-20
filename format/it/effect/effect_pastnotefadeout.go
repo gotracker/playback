@@ -6,17 +6,18 @@ import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
 )
 
 // PastNoteFade defines a past note fadeout effect
-type PastNoteFade channel.DataEffect // 'S72'
+type PastNoteFade[TPeriod period.Period] channel.DataEffect // 'S72'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PastNoteFade) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e PastNoteFade[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.DoPastNoteEffect(note.ActionFadeout)
 	return nil
 }
 
-func (e PastNoteFade) String() string {
+func (e PastNoteFade[TPeriod]) String() string {
 	return fmt.Sprintf("S%0.2x", channel.DataEffect(e))
 }

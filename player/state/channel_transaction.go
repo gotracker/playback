@@ -11,73 +11,69 @@ import (
 	"github.com/heucuva/optional"
 )
 
-type ChannelDataTransaction[TMemory any] interface {
+type ChannelDataTransaction[TPeriod period.Period, TMemory any] interface {
 	GetData() song.ChannelData
-	SetData(data song.ChannelData, s song.Data, cs *ChannelState[TMemory]) error
+	SetData(data song.ChannelData, s song.Data, cs *ChannelState[TPeriod, TMemory]) error
 
-	CommitPreRow(p playback.Playback, cs *ChannelState[TMemory], semitoneSetterFactory SemitoneSetterFactory[TMemory]) error
-	CommitRow(p playback.Playback, cs *ChannelState[TMemory], semitoneSetterFactory SemitoneSetterFactory[TMemory]) error
-	CommitPostRow(p playback.Playback, cs *ChannelState[TMemory], semitoneSetterFactory SemitoneSetterFactory[TMemory]) error
+	CommitPreRow(p playback.Playback, cs *ChannelState[TPeriod, TMemory], semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory]) error
+	CommitRow(p playback.Playback, cs *ChannelState[TPeriod, TMemory], semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory]) error
+	CommitPostRow(p playback.Playback, cs *ChannelState[TPeriod, TMemory], semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory]) error
 
-	CommitPreTick(p playback.Playback, cs *ChannelState[TMemory], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory]) error
-	CommitTick(p playback.Playback, cs *ChannelState[TMemory], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory]) error
-	CommitPostTick(p playback.Playback, cs *ChannelState[TMemory], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory]) error
+	CommitPreTick(p playback.Playback, cs *ChannelState[TPeriod, TMemory], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory]) error
+	CommitTick(p playback.Playback, cs *ChannelState[TPeriod, TMemory], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory]) error
+	CommitPostTick(p playback.Playback, cs *ChannelState[TPeriod, TMemory], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory]) error
 
-	AddVolOp(op VolOp[TMemory])
-	AddNoteOp(op NoteOp[TMemory])
+	AddVolOp(op VolOp[TPeriod, TMemory])
+	AddNoteOp(op NoteOp[TPeriod, TMemory])
 }
 
-type ChannelDataActions struct {
+type ChannelDataActions[TPeriod period.Period] struct {
 	NoteAction optional.Value[note.Action]
 	NoteCalcST optional.Value[note.Semitone]
 
 	TargetPos            optional.Value[sampling.Pos]
 	TargetInst           optional.Value[*instrument.Instrument]
-	TargetPeriod         optional.Value[period.Period]
+	TargetPeriod         optional.Value[TPeriod]
 	TargetStoredSemitone optional.Value[note.Semitone]
 	TargetNewNoteAction  optional.Value[note.Action]
 	TargetVolume         optional.Value[volume.Volume]
 }
 
-type ChannelDataConverter[TMemory any] func(out *ChannelDataActions, data song.ChannelData, s song.Data, cs *ChannelState[TMemory]) error
+type ChannelDataConverter[TPeriod period.Period, TMemory any] func(out *ChannelDataActions[TPeriod], data song.ChannelData, s song.Data, cs *ChannelState[TPeriod, TMemory]) error
 
-type channelDataTxnHelper[TMemory any] struct {
+type ChannelDataTxnHelper[TPeriod period.Period, TMemory any] struct {
 	Data          song.ChannelData
 	effectFactory func(*TMemory, song.ChannelData) playback.Effect
 
-	ChannelDataActions
+	ChannelDataActions[TPeriod]
 
-	VolOps  []VolOp[TMemory]
-	NoteOps []NoteOp[TMemory]
+	VolOps  []VolOp[TPeriod, TMemory]
+	NoteOps []NoteOp[TPeriod, TMemory]
 }
 
-func NewChannelDataTxn[TMemory any](effectFactory func(*TMemory, song.ChannelData) playback.Effect) ChannelDataTransaction[TMemory] {
-	return &channelDataTxnHelper[TMemory]{
+func NewChannelDataTxn[TPeriod period.Period, TMemory any](effectFactory func(*TMemory, song.ChannelData) playback.Effect) ChannelDataTransaction[TPeriod, TMemory] {
+	return &ChannelDataTxnHelper[TPeriod, TMemory]{
 		effectFactory: effectFactory,
 	}
 }
 
-func (d *channelDataTxnHelper[TMemory]) GetData() song.ChannelData {
+func (d *ChannelDataTxnHelper[TPeriod, TMemory]) GetData() song.ChannelData {
 	return d.Data
 }
 
-func (d *channelDataTxnHelper[TMemory]) SetData(cd song.ChannelData, s song.Data, cs *ChannelState[TMemory]) error {
+func (d *ChannelDataTxnHelper[TPeriod, TMemory]) SetData(cd song.ChannelData, s song.Data, cs *ChannelState[TPeriod, TMemory]) error {
 	d.Data = cd
-
-	if d.ProcessData != nil {
-		return d.ProcessData(&d.ChannelDataActions, cd, s, cs)
-	}
-	return nil
+	return d.ProcessData(&d.ChannelDataActions, cd, s, cs)
 }
 
-func (d *channelDataTxnHelper[TMemory]) CommitPreRow(p playback.Playback, cs *ChannelState[TMemory], semitoneSetterFactory SemitoneSetterFactory[TMemory]) error {
+func (d *ChannelDataTxnHelper[TPeriod, TMemory]) CommitPreRow(p playback.Playback, cs *ChannelState[TPeriod, TMemory], semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory]) error {
 	e := d.effectFactory(cs.GetMemory(), d.Data)
 	cs.SetActiveEffect(e)
 	if e != nil {
 		if onEff := p.GetOnEffect(); onEff != nil {
 			onEff(e)
 		}
-		if err := playback.EffectPreStart[TMemory](e, cs, p); err != nil {
+		if err := playback.EffectPreStart[TPeriod, TMemory](e, any(cs).(playback.Channel[TPeriod, TMemory]), p); err != nil {
 			return err
 		}
 	}
@@ -85,7 +81,7 @@ func (d *channelDataTxnHelper[TMemory]) CommitPreRow(p playback.Playback, cs *Ch
 	return nil
 }
 
-func (d *channelDataTxnHelper[TMemory]) CommitRow(p playback.Playback, cs *ChannelState[TMemory], semitoneSetterFactory SemitoneSetterFactory[TMemory]) error {
+func (d *ChannelDataTxnHelper[TPeriod, TMemory]) CommitRow(p playback.Playback, cs *ChannelState[TPeriod, TMemory], semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory]) error {
 	if pos, ok := d.TargetPos.Get(); ok {
 		cs.SetTargetPos(pos)
 	}
@@ -95,8 +91,8 @@ func (d *channelDataTxnHelper[TMemory]) CommitRow(p playback.Playback, cs *Chann
 	}
 
 	if period, ok := d.TargetPeriod.Get(); ok {
-		cs.SetTargetPeriod(period)
-		cs.SetPortaTargetPeriod(period)
+		cs.SetTargetPeriod(&period)
+		cs.SetPortaTargetPeriod(&period)
 	}
 
 	if st, ok := d.TargetStoredSemitone.Get(); ok {
@@ -122,11 +118,11 @@ func (d *channelDataTxnHelper[TMemory]) CommitRow(p playback.Playback, cs *Chann
 	return nil
 }
 
-func (d *channelDataTxnHelper[TMemory]) CommitPostRow(p playback.Playback, cs *ChannelState[TMemory], semitoneSetterFactory SemitoneSetterFactory[TMemory]) error {
+func (d *ChannelDataTxnHelper[TPeriod, TMemory]) CommitPostRow(p playback.Playback, cs *ChannelState[TPeriod, TMemory], semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory]) error {
 	return nil
 }
 
-func (d *channelDataTxnHelper[TMemory]) CommitPreTick(p playback.Playback, cs *ChannelState[TMemory], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory]) error {
+func (d *ChannelDataTxnHelper[TPeriod, TMemory]) CommitPreTick(p playback.Playback, cs *ChannelState[TPeriod, TMemory], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory]) error {
 	// pre-effect
 	if err := d.ProcessVolOps(p, cs); err != nil {
 		return err
@@ -138,15 +134,15 @@ func (d *channelDataTxnHelper[TMemory]) CommitPreTick(p playback.Playback, cs *C
 	return nil
 }
 
-func (d *channelDataTxnHelper[TMemory]) CommitTick(p playback.Playback, cs *ChannelState[TMemory], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory]) error {
-	if err := playback.DoEffect[TMemory](cs.ActiveEffect, cs, p, currentTick, lastTick); err != nil {
+func (d *ChannelDataTxnHelper[TPeriod, TMemory]) CommitTick(p playback.Playback, cs *ChannelState[TPeriod, TMemory], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory]) error {
+	if err := playback.DoEffect[TPeriod, TMemory](cs.ActiveEffect, cs, p, currentTick, lastTick); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (d *channelDataTxnHelper[TMemory]) CommitPostTick(p playback.Playback, cs *ChannelState[TMemory], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TMemory]) error {
+func (d *ChannelDataTxnHelper[TPeriod, TMemory]) CommitPostTick(p playback.Playback, cs *ChannelState[TPeriod, TMemory], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory]) error {
 	// post-effect
 	if err := d.ProcessVolOps(p, cs); err != nil {
 		return err
@@ -158,11 +154,11 @@ func (d *channelDataTxnHelper[TMemory]) CommitPostTick(p playback.Playback, cs *
 	return nil
 }
 
-func (d *channelDataTxnHelper[TMemory]) AddVolOp(op VolOp[TMemory]) {
+func (d *ChannelDataTxnHelper[TPeriod, TMemory]) AddVolOp(op VolOp[TPeriod, TMemory]) {
 	d.VolOps = append(d.VolOps, op)
 }
 
-func (d *channelDataTxnHelper[TMemory]) ProcessVolOps(p playback.Playback, cs *ChannelState[TMemory]) error {
+func (d *ChannelDataTxnHelper[TPeriod, TMemory]) ProcessVolOps(p playback.Playback, cs *ChannelState[TPeriod, TMemory]) error {
 	for _, op := range d.VolOps {
 		if op == nil {
 			continue
@@ -176,11 +172,11 @@ func (d *channelDataTxnHelper[TMemory]) ProcessVolOps(p playback.Playback, cs *C
 	return nil
 }
 
-func (d *channelDataTxnHelper[TMemory]) AddNoteOp(op NoteOp[TMemory]) {
+func (d *ChannelDataTxnHelper[TPeriod, TMemory]) AddNoteOp(op NoteOp[TPeriod, TMemory]) {
 	d.NoteOps = append(d.NoteOps, op)
 }
 
-func (d *channelDataTxnHelper[TMemory]) ProcessNoteOps(p playback.Playback, cs *ChannelState[TMemory]) error {
+func (d *ChannelDataTxnHelper[TPeriod, TMemory]) ProcessNoteOps(p playback.Playback, cs *ChannelState[TPeriod, TMemory]) error {
 	for _, op := range d.NoteOps {
 		if op == nil {
 			continue
@@ -194,7 +190,7 @@ func (d *channelDataTxnHelper[TMemory]) ProcessNoteOps(p playback.Playback, cs *
 	return nil
 }
 
-func (d *channelDataTxnHelper[TMemory]) ProcessData(out *ChannelDataActions, data song.ChannelData, s song.Data, cs *ChannelState[TMemory]) error {
+func (d *ChannelDataTxnHelper[TPeriod, TMemory]) ProcessData(out *ChannelDataActions[TPeriod], data song.ChannelData, s song.Data, cs *ChannelState[TPeriod, TMemory]) error {
 	if data == nil {
 		return nil
 	}
@@ -242,7 +238,7 @@ func (d *channelDataTxnHelper[TMemory]) ProcessData(out *ChannelDataActions, dat
 	}
 
 	if note.IsInvalid(n) {
-		out.TargetPeriod.Set(nil)
+		out.TargetPeriod.Reset()
 		out.NoteAction.Set(note.ActionCut)
 	} else if note.IsRelease(n) {
 		out.NoteAction.Set(note.ActionRelease)

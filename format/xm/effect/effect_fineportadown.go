@@ -5,13 +5,14 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/channel"
+	"github.com/gotracker/playback/period"
 )
 
 // FinePortaDown defines an fine portamento down effect
-type FinePortaDown channel.DataEffect // 'E2x'
+type FinePortaDown[TPeriod period.Period] channel.DataEffect // 'E2x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FinePortaDown) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e FinePortaDown[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 
@@ -19,9 +20,9 @@ func (e FinePortaDown) Start(cs playback.Channel[channel.Memory], p playback.Pla
 	xy := mem.FinePortaDown(channel.DataEffect(e))
 	y := xy & 0x0F
 
-	return doPortaDown(cs, float32(y), 4, mem.Shared.LinearFreqSlides)
+	return doPortaDown(cs, float32(y), 4)
 }
 
-func (e FinePortaDown) String() string {
+func (e FinePortaDown[TPeriod]) String() string {
 	return fmt.Sprintf("E%0.2x", channel.DataEffect(e))
 }

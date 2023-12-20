@@ -13,13 +13,13 @@ import (
 type RetrigVolumeSlide ChannelCommand // 'Q'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e RetrigVolumeSlide) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e RetrigVolumeSlide) Start(cs S3MChannel, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e RetrigVolumeSlide) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
+func (e RetrigVolumeSlide) Tick(cs S3MChannel, p playback.Playback, currentTick int) error {
 	x := channel.DataEffect(e) >> 4
 	y := channel.DataEffect(e) & 0x0F
 	if y == 0 {

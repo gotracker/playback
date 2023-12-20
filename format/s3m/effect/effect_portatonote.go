@@ -14,7 +14,7 @@ import (
 type PortaToNote ChannelCommand // 'G'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PortaToNote) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e PortaToNote) Start(cs S3MChannel, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 	if cmd := cs.GetData(); cmd != nil && cmd.HasNote() {
@@ -25,7 +25,7 @@ func (e PortaToNote) Start(cs playback.Channel[channel.Memory], p playback.Playb
 }
 
 // Tick is called on every tick
-func (e PortaToNote) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
+func (e PortaToNote) Tick(cs S3MChannel, p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	xx := mem.PortaToNote(channel.DataEffect(e))
 
@@ -34,7 +34,7 @@ func (e PortaToNote) Tick(cs playback.Channel[channel.Memory], p playback.Playba
 	if cur == nil {
 		return nil
 	}
-	cur = cur.AddDelta(cs.GetPeriodDelta())
+	cur = cur.Add(cs.GetPeriodDelta())
 	ptp := cs.GetPortaTargetPeriod()
 	if currentTick != 0 {
 		if period.ComparePeriods(cur, ptp) == comparison.SpaceshipRightGreater {

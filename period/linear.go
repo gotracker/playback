@@ -19,11 +19,10 @@ func (p Linear) AddDelta(delta Delta) Period {
 }
 
 // Add adds the current period to a delta value then returns the resulting period
-func AddLinearDelta(p Linear, delta Delta) Linear {
+func AddLinearDelta(p Linear, delta PeriodDelta) Linear {
 	// 0 means "not playing", so keep it that way
 	if p.Finetune > 0 {
-		d := ToPeriodDelta(delta)
-		p.Finetune += note.Finetune(d)
+		p.Finetune += note.Finetune(delta)
 		if p.Finetune < 1 {
 			p.Finetune = 1
 		}

@@ -3,7 +3,6 @@ package playback
 import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/filter"
-	"github.com/gotracker/playback/format/s3m/channel"
 	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/state"
@@ -11,10 +10,10 @@ import (
 
 type doNoteCalc struct {
 	Semitone   note.Semitone
-	UpdateFunc state.PeriodUpdateFunc
+	UpdateFunc state.PeriodUpdateFunc[s3mPeriod.Amiga]
 }
 
-func (o doNoteCalc) Process(p playback.Playback, cs *state.ChannelState[channel.Memory]) error {
+func (o doNoteCalc) Process(p playback.Playback, cs *channelState) error {
 	if o.UpdateFunc == nil {
 		return nil
 	}
@@ -27,7 +26,7 @@ func (o doNoteCalc) Process(p playback.Playback, cs *state.ChannelState[channel.
 	return nil
 }
 
-func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory], currentTick int, lastTick bool) error {
+func (m *manager) processEffect(ch int, cs *channelState, currentTick int, lastTick bool) error {
 	if txn := cs.GetTxn(); txn != nil {
 		if err := txn.CommitPreTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
 			return err
@@ -51,7 +50,7 @@ func (m *Manager) processEffect(ch int, cs *state.ChannelState[channel.Memory], 
 	return nil
 }
 
-func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory], currentTick int, lastTick bool) error {
+func (m *manager) processRowNote(ch int, cs *channelState, currentTick int, lastTick bool) error {
 	triggerTick, noteAction := cs.WillTriggerOn(currentTick)
 	if !triggerTick {
 		return nil
@@ -106,7 +105,7 @@ func (m *Manager) processRowNote(ch int, cs *state.ChannelState[channel.Memory],
 	return nil
 }
 
-func (m *Manager) processVoiceUpdates(ch int, cs *state.ChannelState[channel.Memory], currentTick int, lastTick bool) error {
+func (m *manager) processVoiceUpdates(ch int, cs *channelState, currentTick int, lastTick bool) error {
 	if cs.UsePeriodOverride {
 		cs.UsePeriodOverride = false
 		arpeggioPeriod := cs.GetPeriodOverride()
@@ -116,7 +115,7 @@ func (m *Manager) processVoiceUpdates(ch int, cs *state.ChannelState[channel.Mem
 }
 
 // SetFilterEnable activates or deactivates the amiga low-pass filter on the instruments
-func (m *Manager) SetFilterEnable(on bool) {
+func (m *manager) SetFilterEnable(on bool) {
 	for i := range m.song.ChannelSettings {
 		c := m.GetChannel(i)
 		if o := c.GetRenderChannel(); o != nil {
@@ -132,7 +131,7 @@ func (m *Manager) SetFilterEnable(on bool) {
 }
 
 // SetTicks sets the number of ticks the row expects to play for
-func (m *Manager) SetTicks(ticks int) error {
+func (m *manager) SetTicks(ticks int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.Ticks.Set(ticks)
 	} else {
@@ -149,7 +148,7 @@ func (m *Manager) SetTicks(ticks int) error {
 }
 
 // AddRowTicks increases the number of ticks the row expects to play for
-func (m *Manager) AddRowTicks(ticks int) error {
+func (m *manager) AddRowTicks(ticks int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.FinePatternDelay.Set(ticks)
 	} else {
@@ -167,7 +166,7 @@ func (m *Manager) AddRowTicks(ticks int) error {
 
 // SetPatternDelay sets the repeat number for the row to `rept`
 // NOTE: this may be set 1 time (first in wins) and will be reset only by the next row being read in
-func (m *Manager) SetPatternDelay(rept int) error {
+func (m *manager) SetPatternDelay(rept int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.SetPatternDelay(rept)
 	} else {

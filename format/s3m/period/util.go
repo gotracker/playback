@@ -24,7 +24,7 @@ const (
 var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
 
 // CalcSemitonePeriod calculates the semitone period for it notes
-func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd period.Frequency) period.Period {
+func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd period.Frequency) *Amiga {
 	if semi == note.UnchangedSemitone {
 		panic("how?")
 	}
@@ -44,7 +44,7 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd period.Frequ
 		c2spd = CalcFinetuneC2Spd(c2spd, ft)
 	}
 
-	return Amiga{
+	return &Amiga{
 		Amiga: period.Amiga(float64(floatDefaultC2Spd*semitonePeriodTable[key]) / float64(uint32(c2spd)<<octave)),
 	}
 }

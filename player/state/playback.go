@@ -10,16 +10,16 @@ import (
 )
 
 // Playback is the information needed to make an instrument play
-type Playback struct {
+type Playback[TPeriod period.Period] struct {
 	Instrument *instrument.Instrument
-	Period     period.Period
+	Period     *TPeriod
 	Volume     volume.Volume
 	Pos        sampling.Pos
 	Pan        panning.Position
 }
 
 // Reset sets the render state to defaults
-func (p *Playback) Reset() {
+func (p *Playback[TPeriod]) Reset() {
 	p.Instrument = nil
 	p.Period = nil
 	p.Pos = sampling.Pos{}

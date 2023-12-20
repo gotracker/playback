@@ -18,10 +18,15 @@ type Amiga struct {
 var _ period.Period = (*Amiga)(nil)
 
 // Add adds the current period to a delta value then returns the resulting period
+func (p Amiga) Add(delta period.PeriodDelta) *Amiga {
+	p.Amiga += period.Amiga(delta)
+	return &p
+}
+
+// AddDelta adds the current period to a delta value then returns the resulting period
 func (p Amiga) AddDelta(delta period.Delta) period.Period {
 	d := period.ToPeriodDelta(delta)
-	p.Amiga += period.Amiga(d)
-	return p
+	return p.Add(d)
 }
 
 // Compare returns:

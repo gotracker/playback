@@ -5,11 +5,12 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/s3m/channel"
+	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
 )
 
 // PortaVolumeSlide defines a portamento-to-note combined with a volume slide effect
 type PortaVolumeSlide struct { // 'L'
-	playback.CombinedEffect[channel.Memory]
+	playback.CombinedEffect[s3mPeriod.Amiga, channel.Memory]
 }
 
 // NewPortaVolumeSlide creates a new PortaVolumeSlide object

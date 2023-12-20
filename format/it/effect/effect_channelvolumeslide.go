@@ -7,13 +7,14 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
+	"github.com/gotracker/playback/period"
 )
 
 // ChannelVolumeSlide defines a set channel volume effect
-type ChannelVolumeSlide channel.DataEffect // 'Nxy'
+type ChannelVolumeSlide[TPeriod period.Period] channel.DataEffect // 'Nxy'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e ChannelVolumeSlide) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e ChannelVolumeSlide[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	mem := cs.GetMemory()
@@ -39,7 +40,7 @@ func (e ChannelVolumeSlide) Start(cs playback.Channel[channel.Memory], p playbac
 }
 
 // Tick is called on every tick
-func (e ChannelVolumeSlide) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
+func (e ChannelVolumeSlide[TPeriod]) Tick(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, y := mem.ChannelVolumeSlide(channel.DataEffect(e))
 
@@ -63,6 +64,6 @@ func (e ChannelVolumeSlide) Tick(cs playback.Channel[channel.Memory], p playback
 	return nil
 }
 
-func (e ChannelVolumeSlide) String() string {
+func (e ChannelVolumeSlide[TPeriod]) String() string {
 	return fmt.Sprintf("N%0.2x", channel.DataEffect(e))
 }

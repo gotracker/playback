@@ -8,13 +8,14 @@ import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
 	itPanning "github.com/gotracker/playback/format/it/panning"
+	"github.com/gotracker/playback/period"
 )
 
 // SetCoarsePanPosition defines a set coarse pan position effect
-type SetCoarsePanPosition channel.DataEffect // 'S8x'
+type SetCoarsePanPosition[TPeriod period.Period] channel.DataEffect // 'S8x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetCoarsePanPosition) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e SetCoarsePanPosition[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := channel.DataEffect(e) & 0xf
@@ -25,6 +26,6 @@ func (e SetCoarsePanPosition) Start(cs playback.Channel[channel.Memory], p playb
 	return nil
 }
 
-func (e SetCoarsePanPosition) String() string {
+func (e SetCoarsePanPosition[TPeriod]) String() string {
 	return fmt.Sprintf("S%0.2x", channel.DataEffect(e))
 }

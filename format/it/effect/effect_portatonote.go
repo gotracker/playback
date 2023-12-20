@@ -5,16 +5,17 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
+	itPeriod "github.com/gotracker/playback/format/it/period"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/heucuva/comparison"
 )
 
 // PortaToNote defines a portamento-to-note effect
-type PortaToNote channel.DataEffect // 'G'
+type PortaToNote[TPeriod period.Period] channel.DataEffect // 'G'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PortaToNote) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e PortaToNote[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 	if cmd := cs.GetData(); cmd != nil && cmd.HasNote() {
@@ -25,7 +26,7 @@ func (e PortaToNote) Start(cs playback.Channel[channel.Memory], p playback.Playb
 }
 
 // Tick is called on every tick
-func (e PortaToNote) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
+func (e PortaToNote[TPeriod]) Tick(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	xx := mem.PortaToNote(channel.DataEffect(e))
 
@@ -34,18 +35,25 @@ func (e PortaToNote) Tick(cs playback.Channel[channel.Memory], p playback.Playba
 	if cur == nil {
 		return nil
 	}
-	cur = cur.AddDelta(cs.GetPeriodDelta())
+	switch pc := any(cur).(type) {
+	case *itPeriod.Linear:
+		cur = any(pc.Add(cs.GetPeriodDelta())).(*TPeriod)
+	case *itPeriod.Amiga:
+		cur = any(pc.Add(cs.GetPeriodDelta())).(*TPeriod)
+	default:
+		panic("unhandled period type")
+	}
 	ptp := cs.GetPortaTargetPeriod()
 	if !mem.Shared.OldEffectMode || currentTick != 0 {
 		if period.ComparePeriods(cur, ptp) == comparison.SpaceshipRightGreater {
-			return doPortaUpToNote(cs, float32(xx), 4, ptp, mem.Shared.LinearFreqSlides) // subtracts
+			return doPortaUpToNote(cs, float32(xx), 4, ptp) // subtracts
 		} else {
-			return doPortaDownToNote(cs, float32(xx), 4, ptp, mem.Shared.LinearFreqSlides) // adds
+			return doPortaDownToNote(cs, float32(xx), 4, ptp) // adds
 		}
 	}
 	return nil
 }
 
-func (e PortaToNote) String() string {
+func (e PortaToNote[TPeriod]) String() string {
 	return fmt.Sprintf("G%0.2x", channel.DataEffect(e))
 }

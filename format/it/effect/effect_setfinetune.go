@@ -6,13 +6,14 @@ import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
 )
 
 // SetFinetune defines a mod-style set finetune effect
-type SetFinetune channel.DataEffect // 'S2x'
+type SetFinetune[TPeriod period.Period] channel.DataEffect // 'S2x'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e SetFinetune) PreStart(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e SetFinetune[TPeriod]) PreStart(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	x := channel.DataEffect(e) & 0xf
 
 	inst := cs.GetTargetInst()
@@ -24,11 +25,11 @@ func (e SetFinetune) PreStart(cs playback.Channel[channel.Memory], p playback.Pl
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetFinetune) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e SetFinetune[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
-func (e SetFinetune) String() string {
+func (e SetFinetune[TPeriod]) String() string {
 	return fmt.Sprintf("S%0.2x", channel.DataEffect(e))
 }

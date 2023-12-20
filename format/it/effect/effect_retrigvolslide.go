@@ -7,19 +7,20 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
+	"github.com/gotracker/playback/period"
 )
 
 // RetrigVolumeSlide defines a retriggering volume slide effect
-type RetrigVolumeSlide channel.DataEffect // 'Q'
+type RetrigVolumeSlide[TPeriod period.Period] channel.DataEffect // 'Q'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e RetrigVolumeSlide) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e RetrigVolumeSlide[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e RetrigVolumeSlide) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
+func (e RetrigVolumeSlide[TPeriod]) Tick(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, y := mem.RetrigVolumeSlide(channel.DataEffect(e))
 	if y == 0 {
@@ -66,6 +67,6 @@ func (e RetrigVolumeSlide) Tick(cs playback.Channel[channel.Memory], p playback.
 	return nil
 }
 
-func (e RetrigVolumeSlide) String() string {
+func (e RetrigVolumeSlide[TPeriod]) String() string {
 	return fmt.Sprintf("Q%0.2x", channel.DataEffect(e))
 }

@@ -5,7 +5,7 @@ import (
 	"github.com/gotracker/playback/player/render"
 )
 
-func (m *Manager) getRowText() *render.RowDisplay[channel.Data] {
+func (m *manager[TPeriod]) getRowText() *render.RowDisplay[channel.Data] {
 	nCh := 0
 	for ch := range m.channels {
 		if !m.song.IsChannelEnabled(ch) {

@@ -9,7 +9,7 @@ import (
 	"github.com/gotracker/playback/player"
 )
 
-func (m *Manager) OutputTraces(out chan<- func(w io.Writer)) {
+func (m *manager[TPeriod]) OutputTraces(out chan<- func(w io.Writer)) {
 	outputs := []func(w io.Writer){
 		m.outputGlobalTrace(),
 		m.outputRenderTrace(),
@@ -25,7 +25,7 @@ func (m *Manager) OutputTraces(out chan<- func(w io.Writer)) {
 	}
 }
 
-func (m *Manager) outputGlobalTrace() func(w io.Writer) {
+func (m *manager[TPeriod]) outputGlobalTrace() func(w io.Writer) {
 	gs := player.NewTracingTable("=== global ===",
 		"globalVolume",
 		"mixerVolume",
@@ -49,7 +49,7 @@ func (m *Manager) outputGlobalTrace() func(w io.Writer) {
 	}
 }
 
-func (m *Manager) outputRenderTrace() func(w io.Writer) {
+func (m *manager[TPeriod]) outputRenderTrace() func(w io.Writer) {
 	r := m.rowRenderState
 	if r == nil {
 		return func(w io.Writer) {}
@@ -80,7 +80,7 @@ func (m *Manager) outputRenderTrace() func(w io.Writer) {
 	}
 }
 
-func (m *Manager) outputChannelsTrace() func(w io.Writer) {
+func (m *manager[TPeriod]) outputChannelsTrace() func(w io.Writer) {
 	cs := player.NewTracingTable("=== channels ===",
 		"Channel",
 		"ChannelVolume",

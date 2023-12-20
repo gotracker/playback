@@ -6,13 +6,14 @@ import (
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/channel"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/period"
 )
 
 // SetVolume defines a volume slide effect
-type SetVolume channel.DataEffect // 'C'
+type SetVolume[TPeriod period.Period] channel.DataEffect // 'C'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetVolume) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e SetVolume[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xx := xmVolume.XmVolume(e)
@@ -21,6 +22,6 @@ func (e SetVolume) Start(cs playback.Channel[channel.Memory], p playback.Playbac
 	return nil
 }
 
-func (e SetVolume) String() string {
+func (e SetVolume[TPeriod]) String() string {
 	return fmt.Sprintf("C%0.2x", channel.DataEffect(e))
 }

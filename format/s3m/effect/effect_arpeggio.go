@@ -11,7 +11,7 @@ import (
 type Arpeggio ChannelCommand // 'J'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e Arpeggio) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e Arpeggio) Start(cs S3MChannel, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 	cs.SetPos(cs.GetTargetPos())
@@ -19,7 +19,7 @@ func (e Arpeggio) Start(cs playback.Channel[channel.Memory], p playback.Playback
 }
 
 // Tick is called on every tick
-func (e Arpeggio) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
+func (e Arpeggio) Tick(cs S3MChannel, p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, y := mem.LastNonZeroXY(channel.DataEffect(e))
 	return doArpeggio(cs, currentTick, int8(x), int8(y))

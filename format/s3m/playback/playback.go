@@ -21,13 +21,15 @@ import (
 	"github.com/gotracker/playback/song"
 )
 
-// Manager is a playback manager for S3M music
-type Manager struct {
+type channelState = state.ChannelState[s3mPeriod.Amiga, channel.Memory]
+
+// manager is a playback manager for S3M music
+type manager struct {
 	player.Tracker
 
 	song *layout.Song
 
-	channels []state.ChannelState[channel.Memory]
+	channels []channelState
 	pattern  pattern.State
 
 	preMixRowTxn  *playpattern.RowUpdateTransaction
@@ -37,12 +39,15 @@ type Manager struct {
 	rowRenderState *rowRenderState
 	OnEffect       func(playback.Effect)
 
-	chOrder [4][]*state.ChannelState[channel.Memory]
+	chOrder [4][]*channelState
 }
 
+var _ playback.Playback = (*manager)(nil)
+var _ playback.Channel[s3mPeriod.Amiga, channel.Memory] = (*state.ChannelState[s3mPeriod.Amiga, channel.Memory])(nil)
+
 // NewManager creates a new manager for an S3M song
-func NewManager(song *layout.Song) (*Manager, error) {
-	m := Manager{
+func NewManager(song *layout.Song) (playback.Playback, error) {
+	m := manager{
 		Tracker: player.Tracker{
 			BaseClockRate: s3mPeriod.S3MBaseClock,
 		},
@@ -111,7 +116,7 @@ func NewManager(song *layout.Song) (*Manager, error) {
 	return &m, nil
 }
 
-func (m *Manager) channelInit(ch int) *render.Channel {
+func (m *manager) channelInit(ch int) *render.Channel {
 	return &render.Channel{
 		ChannelNum:      ch,
 		Filter:          nil,
@@ -123,16 +128,16 @@ func (m *Manager) channelInit(ch int) *render.Channel {
 }
 
 // StartPatternTransaction returns a new row update transaction for the pattern system
-func (m *Manager) StartPatternTransaction() *playpattern.RowUpdateTransaction {
+func (m *manager) StartPatternTransaction() *playpattern.RowUpdateTransaction {
 	return m.pattern.StartTransaction()
 }
 
 // GetNumChannels returns the number of channels
-func (m *Manager) GetNumChannels() int {
+func (m *manager) GetNumChannels() int {
 	return len(m.channels)
 }
 
-func (m *Manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateFunc) state.NoteOp[channel.Memory] {
+func (m *manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateFunc[s3mPeriod.Amiga]) state.NoteOp[s3mPeriod.Amiga, channel.Memory] {
 	return doNoteCalc{
 		Semitone:   st,
 		UpdateFunc: fn,
@@ -140,8 +145,8 @@ func (m *Manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateF
 }
 
 // SetNumChannels updates the song to have the specified number of channels and resets their states
-func (m *Manager) SetNumChannels(num int) {
-	m.channels = make([]state.ChannelState[channel.Memory], num)
+func (m *manager) SetNumChannels(num int) {
+	m.channels = make([]channelState, num)
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
@@ -158,7 +163,7 @@ func (m *Manager) SetNumChannels(num int) {
 }
 
 // SetNextOrder sets the next order index
-func (m *Manager) SetNextOrder(order index.Order) error {
+func (m *manager) SetNextOrder(order index.Order) error {
 	if m.postMixRowTxn != nil {
 		m.postMixRowTxn.SetNextOrder(order)
 	} else {
@@ -175,7 +180,7 @@ func (m *Manager) SetNextOrder(order index.Order) error {
 }
 
 // SetNextRow sets the next row index
-func (m *Manager) SetNextRow(row index.Row) error {
+func (m *manager) SetNextRow(row index.Row) error {
 	if m.postMixRowTxn != nil {
 		m.postMixRowTxn.SetNextRow(row)
 	} else {
@@ -192,7 +197,7 @@ func (m *Manager) SetNextRow(row index.Row) error {
 }
 
 // SetNextRowWithBacktrack will set the next row index and backtracing allowance
-func (m *Manager) SetNextRowWithBacktrack(row index.Row, allowBacktrack bool) error {
+func (m *manager) SetNextRowWithBacktrack(row index.Row, allowBacktrack bool) error {
 	if m.postMixRowTxn != nil {
 		m.postMixRowTxn.SetNextRowWithBacktrack(row, allowBacktrack)
 	} else {
@@ -209,7 +214,7 @@ func (m *Manager) SetNextRowWithBacktrack(row index.Row, allowBacktrack bool) er
 }
 
 // BreakOrder breaks to the next pattern in the order
-func (m *Manager) BreakOrder() error {
+func (m *manager) BreakOrder() error {
 	if m.postMixRowTxn != nil {
 		m.postMixRowTxn.BreakOrder = true
 	} else {
@@ -226,7 +231,7 @@ func (m *Manager) BreakOrder() error {
 }
 
 // SetTempo sets the desired tempo for the song
-func (m *Manager) SetTempo(tempo int) error {
+func (m *manager) SetTempo(tempo int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.Tempo.Set(tempo)
 	} else {
@@ -243,7 +248,7 @@ func (m *Manager) SetTempo(tempo int) error {
 }
 
 // DecreaseTempo reduces the tempo by the `delta` value
-func (m *Manager) DecreaseTempo(delta int) error {
+func (m *manager) DecreaseTempo(delta int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.AccTempoDelta(-delta)
 	} else {
@@ -260,7 +265,7 @@ func (m *Manager) DecreaseTempo(delta int) error {
 }
 
 // IncreaseTempo increases the tempo by the `delta` value
-func (m *Manager) IncreaseTempo(delta int) error {
+func (m *manager) IncreaseTempo(delta int) error {
 	if m.preMixRowTxn != nil {
 		m.preMixRowTxn.AccTempoDelta(delta)
 	} else {
@@ -277,7 +282,7 @@ func (m *Manager) IncreaseTempo(delta int) error {
 }
 
 // Configure sets specified features
-func (m *Manager) Configure(features []feature.Feature) error {
+func (m *manager) Configure(features []feature.Feature) error {
 	if err := m.Tracker.Configure(features); err != nil {
 		return err
 	}
@@ -305,54 +310,54 @@ func (m *Manager) Configure(features []feature.Feature) error {
 }
 
 // CanOrderLoop returns true if the song is allowed to order loop
-func (m *Manager) CanOrderLoop() bool {
+func (m *manager) CanOrderLoop() bool {
 	return (m.pattern.SongLoop.Count != 0)
 }
 
 // GetSongData gets the song data object
-func (m *Manager) GetSongData() song.Data {
+func (m *manager) GetSongData() song.Data {
 	return m.song
 }
 
 // GetChannel returns the channel interface for the specified channel number
-func (m *Manager) GetChannel(ch int) *state.ChannelState[channel.Memory] {
+func (m *manager) GetChannel(ch int) *channelState {
 	return &m.channels[ch]
 }
 
 // GetCurrentOrder returns the current order
-func (m *Manager) GetCurrentOrder() index.Order {
+func (m *manager) GetCurrentOrder() index.Order {
 	return m.pattern.GetCurrentOrder()
 }
 
 // GetNumOrders returns the number of orders in the song
-func (m *Manager) GetNumOrders() int {
+func (m *manager) GetNumOrders() int {
 	return m.pattern.GetNumOrders()
 }
 
 // GetCurrentRow returns the current row
-func (m *Manager) GetCurrentRow() index.Row {
+func (m *manager) GetCurrentRow() index.Row {
 	return m.pattern.GetCurrentRow()
 }
 
 // GetName returns the current song's name
-func (m *Manager) GetName() string {
+func (m *manager) GetName() string {
 	return m.song.GetName()
 }
 
 // SetOnEffect sets the callback for an effect being generated for a channel
-func (m *Manager) SetOnEffect(fn func(playback.Effect)) {
+func (m *manager) SetOnEffect(fn func(playback.Effect)) {
 	m.OnEffect = fn
 }
 
-func (m *Manager) GetOnEffect() func(playback.Effect) {
+func (m *manager) GetOnEffect() func(playback.Effect) {
 	return m.OnEffect
 }
 
-func (m *Manager) SetEnvelopePosition(v int) {
+func (m *manager) SetEnvelopePosition(v int) {
 }
 
 // SetupSampler configures the internal sampler
-func (m *Manager) SetupSampler(samplesPerSecond int, channels int) error {
+func (m *manager) SetupSampler(samplesPerSecond int, channels int) error {
 	if err := m.Tracker.SetupSampler(samplesPerSecond, channels); err != nil {
 		return err
 	}

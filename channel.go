@@ -14,7 +14,7 @@ import (
 )
 
 // Channel is an interface for channel state
-type Channel[TMemory any] interface {
+type Channel[TPeriod period.Period, TMemory any] interface {
 	ResetRetriggerCount()
 	SetMemory(*TMemory)
 	GetMemory() *TMemory
@@ -23,13 +23,13 @@ type Channel[TMemory any] interface {
 	FreezePlayback()
 	UnfreezePlayback()
 	GetData() song.ChannelData
-	GetPortaTargetPeriod() period.Period
-	SetPortaTargetPeriod(period.Period)
-	GetTargetPeriod() period.Period
-	SetTargetPeriod(period.Period)
-	SetPeriodOverride(period.Period)
-	GetPeriod() period.Period
-	SetPeriod(period.Period)
+	GetPortaTargetPeriod() *TPeriod
+	SetPortaTargetPeriod(*TPeriod)
+	GetTargetPeriod() *TPeriod
+	SetTargetPeriod(*TPeriod)
+	SetPeriodOverride(*TPeriod)
+	GetPeriod() *TPeriod
+	SetPeriod(*TPeriod)
 	SetPeriodDelta(period.PeriodDelta)
 	GetPeriodDelta() period.PeriodDelta
 	SetInstrument(*instrument.Instrument)

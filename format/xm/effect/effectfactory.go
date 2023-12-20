@@ -5,18 +5,19 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/channel"
+	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/song"
 )
 
 type EffectXM = playback.Effect
 
 // VolEff is a combined effect that includes a volume effect and a standard effect
-type VolEff struct {
-	playback.CombinedEffect[channel.Memory]
+type VolEff[TPeriod period.Period] struct {
+	playback.CombinedEffect[TPeriod, channel.Memory]
 	eff EffectXM
 }
 
-func (e VolEff) String() string {
+func (e VolEff[TPeriod]) String() string {
 	if e.eff == nil {
 		return "..."
 	}
@@ -24,7 +25,7 @@ func (e VolEff) String() string {
 }
 
 // Factory produces an effect for the provided channel pattern data
-func Factory(mem *channel.Memory, data song.ChannelData) EffectXM {
+func Factory[TPeriod period.Period](mem *channel.Memory, data song.ChannelData) EffectXM {
 	if data == nil {
 		return nil
 	}
@@ -34,15 +35,15 @@ func Factory(mem *channel.Memory, data song.ChannelData) EffectXM {
 		return nil
 	}
 
-	eff := VolEff{}
+	var eff VolEff[TPeriod]
 	if d.What.HasVolume() {
-		ve := volumeEffectFactory(mem, d.Volume)
+		ve := volumeEffectFactory[TPeriod](mem, d.Volume)
 		if ve != nil {
 			eff.Effects = append(eff.Effects, ve)
 		}
 	}
 
-	if e := standardEffectFactory(mem, d); e != nil {
+	if e := standardEffectFactory[TPeriod](mem, d); e != nil {
 		eff.Effects = append(eff.Effects, e)
 		eff.eff = e
 	}

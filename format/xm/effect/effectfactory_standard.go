@@ -2,114 +2,115 @@ package effect
 
 import (
 	"github.com/gotracker/playback/format/xm/channel"
+	"github.com/gotracker/playback/period"
 )
 
-func standardEffectFactory(mem *channel.Memory, cd channel.Data) EffectXM {
+func standardEffectFactory[TPeriod period.Period](mem *channel.Memory, cd channel.Data) EffectXM {
 	if !cd.What.HasEffect() && !cd.What.HasEffectParameter() {
 		return nil
 	}
 
 	switch cd.Effect {
 	case 0x00: // Arpeggio
-		return Arpeggio(cd.EffectParameter)
+		return Arpeggio[TPeriod](cd.EffectParameter)
 	case 0x01: // Porta up
-		return PortaUp(cd.EffectParameter)
+		return PortaUp[TPeriod](cd.EffectParameter)
 	case 0x02: // Porta down
-		return PortaDown(cd.EffectParameter)
+		return PortaDown[TPeriod](cd.EffectParameter)
 	case 0x03: // Tone porta
-		return PortaToNote(cd.EffectParameter)
+		return PortaToNote[TPeriod](cd.EffectParameter)
 	case 0x04: // Vibrato
-		return Vibrato(cd.EffectParameter)
+		return Vibrato[TPeriod](cd.EffectParameter)
 	case 0x05: // Tone porta + Volume slide
-		return NewPortaVolumeSlide(cd.EffectParameter)
+		return NewPortaVolumeSlide[TPeriod](cd.EffectParameter)
 	case 0x06: // Vibrato + Volume slide
-		return NewVibratoVolumeSlide(cd.EffectParameter)
+		return NewVibratoVolumeSlide[TPeriod](cd.EffectParameter)
 	case 0x07: // Tremolo
-		return Tremolo(cd.EffectParameter)
+		return Tremolo[TPeriod](cd.EffectParameter)
 	case 0x08: // Set (fine) panning
-		return SetPanPosition(cd.EffectParameter)
+		return SetPanPosition[TPeriod](cd.EffectParameter)
 	case 0x09: // Sample offset
-		return SampleOffset(cd.EffectParameter)
+		return SampleOffset[TPeriod](cd.EffectParameter)
 	case 0x0A: // Volume slide
-		return VolumeSlide(cd.EffectParameter)
+		return VolumeSlide[TPeriod](cd.EffectParameter)
 	case 0x0B: // Position jump
-		return OrderJump(cd.EffectParameter)
+		return OrderJump[TPeriod](cd.EffectParameter)
 	case 0x0C: // Set volume
-		return SetVolume(cd.EffectParameter)
+		return SetVolume[TPeriod](cd.EffectParameter)
 	case 0x0D: // Pattern break
-		return RowJump(cd.EffectParameter)
+		return RowJump[TPeriod](cd.EffectParameter)
 	case 0x0E: // extra...
-		return specialEffectFactory(mem, cd.Effect, cd.EffectParameter)
+		return specialEffectFactory[TPeriod](mem, cd.Effect, cd.EffectParameter)
 	case 0x0F: // Set tempo/BPM
 		if cd.EffectParameter < 0x20 {
-			return SetSpeed(cd.EffectParameter)
+			return SetSpeed[TPeriod](cd.EffectParameter)
 		}
-		return SetTempo(cd.EffectParameter)
+		return SetTempo[TPeriod](cd.EffectParameter)
 	case 0x10: // Set global volume
-		return SetGlobalVolume(cd.EffectParameter)
+		return SetGlobalVolume[TPeriod](cd.EffectParameter)
 	case 0x11: // Global volume slide
-		return GlobalVolumeSlide(cd.EffectParameter)
+		return GlobalVolumeSlide[TPeriod](cd.EffectParameter)
 
 	case 0x15: // Set envelope position
-		return SetEnvelopePosition(cd.EffectParameter)
+		return SetEnvelopePosition[TPeriod](cd.EffectParameter)
 
 	case 0x19: // Panning slide
-		return PanSlide(cd.EffectParameter)
+		return PanSlide[TPeriod](cd.EffectParameter)
 
 	case 0x1B: // Multi retrig note
-		return RetrigVolumeSlide(cd.EffectParameter)
+		return RetrigVolumeSlide[TPeriod](cd.EffectParameter)
 
 	case 0x1D: // Tremor
-		return Tremor(cd.EffectParameter)
+		return Tremor[TPeriod](cd.EffectParameter)
 
 	case 0x21: // Extra fine porta commands
-		return extraFinePortaEffectFactory(mem, cd.Effect, cd.EffectParameter)
+		return extraFinePortaEffectFactory[TPeriod](mem, cd.Effect, cd.EffectParameter)
 	}
-	return UnhandledCommand{Command: cd.Effect, Info: cd.EffectParameter}
+	return UnhandledCommand[TPeriod]{Command: cd.Effect, Info: cd.EffectParameter}
 }
 
-func extraFinePortaEffectFactory(mem *channel.Memory, ce channel.Command, cp channel.DataEffect) EffectXM {
+func extraFinePortaEffectFactory[TPeriod period.Period](mem *channel.Memory, ce channel.Command, cp channel.DataEffect) EffectXM {
 	switch cp >> 4 {
 	case 0x0: // none
 		return nil
 	case 0x1: // Extra fine porta up
-		return ExtraFinePortaUp(cp)
+		return ExtraFinePortaUp[TPeriod](cp)
 	case 0x2: // Extra fine porta down
-		return ExtraFinePortaDown(cp)
+		return ExtraFinePortaDown[TPeriod](cp)
 	}
-	return UnhandledCommand{Command: ce, Info: cp}
+	return UnhandledCommand[TPeriod]{Command: ce, Info: cp}
 }
 
-func specialEffectFactory(mem *channel.Memory, ce channel.Command, cp channel.DataEffect) EffectXM {
+func specialEffectFactory[TPeriod period.Period](mem *channel.Memory, ce channel.Command, cp channel.DataEffect) EffectXM {
 	switch cp >> 4 {
 	case 0x1: // Fine porta up
-		return FinePortaUp(cp)
+		return FinePortaUp[TPeriod](cp)
 	case 0x2: // Fine porta down
-		return FinePortaDown(cp)
+		return FinePortaDown[TPeriod](cp)
 	//case 0x3: // Set glissando control
 
 	case 0x4: // Set vibrato control
-		return SetVibratoWaveform(cp)
+		return SetVibratoWaveform[TPeriod](cp)
 	case 0x5: // Set finetune
-		return SetFinetune(cp)
+		return SetFinetune[TPeriod](cp)
 	case 0x6: // Set loop begin/loop
-		return PatternLoop(cp)
+		return PatternLoop[TPeriod](cp)
 	case 0x7: // Set tremolo control
-		return SetTremoloWaveform(cp)
+		return SetTremoloWaveform[TPeriod](cp)
 	case 0x8: // Set coarse panning
-		return SetCoarsePanPosition(cp)
+		return SetCoarsePanPosition[TPeriod](cp)
 	case 0x9: // Retrig note
-		return RetriggerNote(cp)
+		return RetriggerNote[TPeriod](cp)
 	case 0xA: // Fine volume slide up
-		return FineVolumeSlideUp(cp)
+		return FineVolumeSlideUp[TPeriod](cp)
 	case 0xB: // Fine volume slide down
-		return FineVolumeSlideDown(cp)
+		return FineVolumeSlideDown[TPeriod](cp)
 	case 0xC: // Note cut
-		return NoteCut(cp)
+		return NoteCut[TPeriod](cp)
 	case 0xD: // Note delay
-		return NoteDelay(cp)
+		return NoteDelay[TPeriod](cp)
 	case 0xE: // Pattern delay
-		return PatternDelay(cp)
+		return PatternDelay[TPeriod](cp)
 	}
-	return UnhandledCommand{Command: ce, Info: cp}
+	return UnhandledCommand[TPeriod]{Command: ce, Info: cp}
 }

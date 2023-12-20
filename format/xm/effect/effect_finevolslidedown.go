@@ -5,13 +5,14 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/channel"
+	"github.com/gotracker/playback/period"
 )
 
 // FineVolumeSlideDown defines a volume slide effect
-type FineVolumeSlideDown channel.DataEffect // 'EAx'
+type FineVolumeSlideDown[TPeriod period.Period] channel.DataEffect // 'EAx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FineVolumeSlideDown) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e FineVolumeSlideDown[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	mem := cs.GetMemory()
@@ -21,6 +22,6 @@ func (e FineVolumeSlideDown) Start(cs playback.Channel[channel.Memory], p playba
 	return doVolSlide(cs, -float32(y), 1.0)
 }
 
-func (e FineVolumeSlideDown) String() string {
+func (e FineVolumeSlideDown[TPeriod]) String() string {
 	return fmt.Sprintf("E%0.2x", channel.DataEffect(e))
 }

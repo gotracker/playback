@@ -7,13 +7,14 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
+	"github.com/gotracker/playback/period"
 )
 
 // SampleOffset defines a sample offset effect
-type SampleOffset channel.DataEffect // 'O'
+type SampleOffset[TPeriod period.Period] channel.DataEffect // 'O'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SampleOffset) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e SampleOffset[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	mem := cs.GetMemory()
 	xx := mem.SampleOffset(channel.DataEffect(e))
@@ -29,6 +30,6 @@ func (e SampleOffset) Start(cs playback.Channel[channel.Memory], p playback.Play
 	return nil
 }
 
-func (e SampleOffset) String() string {
+func (e SampleOffset[TPeriod]) String() string {
 	return fmt.Sprintf("O%0.2x", channel.DataEffect(e))
 }

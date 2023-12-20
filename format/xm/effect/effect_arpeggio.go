@@ -5,13 +5,14 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/xm/channel"
+	"github.com/gotracker/playback/period"
 )
 
 // Arpeggio defines an arpeggio effect
-type Arpeggio channel.DataEffect // '0'
+type Arpeggio[TPeriod period.Period] channel.DataEffect // '0'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e Arpeggio) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e Arpeggio[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 	cs.SetPos(cs.GetTargetPos())
@@ -19,7 +20,7 @@ func (e Arpeggio) Start(cs playback.Channel[channel.Memory], p playback.Playback
 }
 
 // Tick is called on every tick
-func (e Arpeggio) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
+func (e Arpeggio[TPeriod]) Tick(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback, currentTick int) error {
 	xy := channel.DataEffect(e)
 	if xy == 0 {
 		return nil
@@ -30,6 +31,6 @@ func (e Arpeggio) Tick(cs playback.Channel[channel.Memory], p playback.Playback,
 	return doArpeggio(cs, currentTick, x, y)
 }
 
-func (e Arpeggio) String() string {
+func (e Arpeggio[TPeriod]) String() string {
 	return fmt.Sprintf("0%0.2x", channel.DataEffect(e))
 }

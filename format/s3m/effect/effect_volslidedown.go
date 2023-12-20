@@ -11,13 +11,13 @@ import (
 type VolumeSlideDown ChannelCommand // 'D0y'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e VolumeSlideDown) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e VolumeSlideDown) Start(cs S3MChannel, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e VolumeSlideDown) Tick(cs playback.Channel[channel.Memory], p playback.Playback, currentTick int) error {
+func (e VolumeSlideDown) Tick(cs S3MChannel, p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	y := channel.DataEffect(e) & 0x0F
 

@@ -8,13 +8,14 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/it/channel"
+	"github.com/gotracker/playback/period"
 )
 
 // SetChannelVolume defines a set channel volume effect
-type SetChannelVolume channel.DataEffect // 'Mxx'
+type SetChannelVolume[TPeriod period.Period] channel.DataEffect // 'Mxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetChannelVolume) Start(cs playback.Channel[channel.Memory], p playback.Playback) error {
+func (e SetChannelVolume[TPeriod]) Start(cs playback.Channel[TPeriod, channel.Memory], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xx := channel.DataEffect(e)
@@ -30,6 +31,6 @@ func (e SetChannelVolume) Start(cs playback.Channel[channel.Memory], p playback.
 	return nil
 }
 
-func (e SetChannelVolume) String() string {
+func (e SetChannelVolume[TPeriod]) String() string {
 	return fmt.Sprintf("M%0.2x", channel.DataEffect(e))
 }

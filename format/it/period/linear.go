@@ -15,9 +15,14 @@ type Linear struct {
 var _ period.Period = (*Linear)(nil)
 
 // Add adds the current period to a delta value then returns the resulting period
-func (p Linear) AddDelta(delta period.Delta) period.Period {
+func (p Linear) Add(delta period.PeriodDelta) *Linear {
 	p.Linear = period.AddLinearDelta(p.Linear, delta)
-	return p
+	return &p
+}
+
+// AddDelta adds the current period to a delta value then returns the resulting period
+func (p Linear) AddDelta(delta period.Delta) period.Period {
+	return p.Add(period.ToPeriodDelta(delta))
 }
 
 // Compare returns:
