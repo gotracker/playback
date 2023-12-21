@@ -22,7 +22,8 @@ func (o doNoteCalc[TPeriod]) Process(p playback.Playback, cs *state.ChannelState
 
 	if inst := cs.GetTargetInst(); inst != nil {
 		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
-		period := itPeriod.CalcSemitonePeriod[TPeriod](cs.Semitone, inst.GetFinetune(), inst.GetC2Spd())
+		ft := inst.GetFinetune()
+		period := itPeriod.CalcSemitonePeriod[TPeriod](cs.Semitone, ft, inst.GetC2Spd())
 		o.UpdateFunc(period)
 	}
 	return nil

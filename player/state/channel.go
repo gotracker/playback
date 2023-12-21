@@ -40,7 +40,7 @@ type ChannelState[TPeriod period.Period, TMemory any] struct {
 	targetState Playback[TPeriod]
 	prevState   Active[TPeriod]
 
-	ActiveEffect playback.Effect
+	ActiveEffects []playback.Effect
 
 	s       song.Data
 	txn     ChannelDataTransaction[TPeriod, TMemory]
@@ -106,12 +106,12 @@ func (cs *ChannelState[TPeriod, TMemory]) ResetStates() {
 	cs.prevState.Reset()
 }
 
-func (cs *ChannelState[TPeriod, TMemory]) GetActiveEffect() playback.Effect {
-	return cs.ActiveEffect
+func (cs *ChannelState[TPeriod, TMemory]) GetActiveEffects() []playback.Effect {
+	return cs.ActiveEffects
 }
 
-func (cs *ChannelState[TPeriod, TMemory]) SetActiveEffect(e playback.Effect) {
-	cs.ActiveEffect = e
+func (cs *ChannelState[TPeriod, TMemory]) SetActiveEffects(effects []playback.Effect) {
+	cs.ActiveEffects = effects
 }
 
 // FreezePlayback suspends mixer progression on the channel

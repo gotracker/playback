@@ -3,12 +3,12 @@ package instrument
 import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/voice"
+	"github.com/heucuva/optional"
 
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/note"
-	"github.com/heucuva/optional"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice"
 )
 
 // StaticValues are the static values associated with an instrument

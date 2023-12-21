@@ -7,10 +7,13 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/volume"
 
+	"github.com/gotracker/playback"
 	itNote "github.com/gotracker/playback/format/it/note"
+	itPeriod "github.com/gotracker/playback/format/it/period"
 	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
 )
 
 const MaxTotalChannels = 64
@@ -100,6 +103,22 @@ func (d Data) HasCommand() bool {
 // Channel returns the channel ID for the channel
 func (d Data) Channel() uint8 {
 	return 0
+}
+
+func (d Data) GetEffects(mem *Memory, periodType period.Period) []playback.Effect {
+	switch periodType.(type) {
+	case itPeriod.Linear:
+		if e := EffectFactory[itPeriod.Linear](mem, d); e != nil {
+			return []playback.Effect{e}
+		}
+	case itPeriod.Amiga:
+		if e := EffectFactory[itPeriod.Amiga](mem, d); e != nil {
+			return []playback.Effect{e}
+		}
+	default:
+		panic("unhandled period type")
+	}
+	return nil
 }
 
 func (Data) getNoteString(n note.Note) string {

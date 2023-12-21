@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"text/tabwriter"
 
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/player"
 )
 
@@ -95,30 +96,36 @@ func (m *manager[TPeriod]) outputChannelsTrace() func(w io.Writer) {
 	)
 
 	for c, ch := range m.channels {
-		var (
-			activeEffect     string
-			activeEffectType string
-			trackData        string
-		)
-		if effect := ch.GetActiveEffect(); effect != nil {
-			activeEffect = fmt.Sprint(effect)
-			activeEffectType = reflect.TypeOf(effect).Name()
+		var trackData string
+		effects := ch.GetActiveEffects()
+		if len(effects) == 0 {
+			effects = []playback.Effect{nil}
 		}
 		if cdata := ch.GetData(); cdata != nil {
 			trackData = fmt.Sprint(cdata)
 		}
-		cs.AddRow(
-			c+1,
-			ch.GetChannelVolume(),
-			activeEffect,
-			activeEffectType,
-			trackData,
-			ch.RetriggerCount,
-			ch.Semitone,
-			ch.UseTargetPeriod,
-			ch.PanEnabled,
-			ch.NewNoteAction,
-		)
+		for _, effect := range effects {
+			var (
+				activeEffect     string
+				activeEffectType string
+			)
+			if effect != nil {
+				activeEffect = fmt.Sprint(effect)
+				activeEffectType = reflect.TypeOf(effect).Name()
+			}
+			cs.AddRow(
+				c+1,
+				ch.GetChannelVolume(),
+				activeEffect,
+				activeEffectType,
+				trackData,
+				ch.RetriggerCount,
+				ch.Semitone,
+				ch.UseTargetPeriod,
+				ch.PanEnabled,
+				ch.NewNoteAction,
+			)
+		}
 	}
 
 	return func(w io.Writer) {

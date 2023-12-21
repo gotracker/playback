@@ -7,10 +7,13 @@ import (
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/volume"
 
+	"github.com/gotracker/playback"
 	xmNote "github.com/gotracker/playback/format/xm/note"
+	xmPeriod "github.com/gotracker/playback/format/xm/period"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
 )
 
 type Command uint8
@@ -99,6 +102,22 @@ func (d Data) HasCommand() bool {
 // Channel returns the channel ID for the channel
 func (d Data) Channel() uint8 {
 	return 0
+}
+
+func (d Data) GetEffects(mem *Memory, periodType period.Period) []playback.Effect {
+	switch periodType.(type) {
+	case xmPeriod.Linear:
+		if e := EffectFactory[xmPeriod.Linear](mem, d); e != nil {
+			return []playback.Effect{e}
+		}
+	case xmPeriod.Amiga:
+		if e := EffectFactory[xmPeriod.Amiga](mem, d); e != nil {
+			return []playback.Effect{e}
+		}
+	default:
+		panic("unhandled period type")
+	}
+	return nil
 }
 
 func (Data) getNoteString(n note.Note) string {

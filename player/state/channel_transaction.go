@@ -42,8 +42,7 @@ type ChannelDataActions[TPeriod period.Period] struct {
 type ChannelDataConverter[TPeriod period.Period, TMemory any] func(out *ChannelDataActions[TPeriod], data song.ChannelData, s song.Data, cs *ChannelState[TPeriod, TMemory]) error
 
 type ChannelDataTxnHelper[TPeriod period.Period, TMemory any] struct {
-	Data          song.ChannelData
-	effectFactory func(*TMemory, song.ChannelData) playback.Effect
+	Data song.ChannelData
 
 	ChannelDataActions[TPeriod]
 
@@ -51,10 +50,8 @@ type ChannelDataTxnHelper[TPeriod period.Period, TMemory any] struct {
 	NoteOps []NoteOp[TPeriod, TMemory]
 }
 
-func NewChannelDataTxn[TPeriod period.Period, TMemory any](effectFactory func(*TMemory, song.ChannelData) playback.Effect) ChannelDataTransaction[TPeriod, TMemory] {
-	return &ChannelDataTxnHelper[TPeriod, TMemory]{
-		effectFactory: effectFactory,
-	}
+func NewChannelDataTxn[TPeriod period.Period, TMemory any]() ChannelDataTransaction[TPeriod, TMemory] {
+	return &ChannelDataTxnHelper[TPeriod, TMemory]{}
 }
 
 func (d *ChannelDataTxnHelper[TPeriod, TMemory]) GetData() song.ChannelData {
@@ -67,13 +64,14 @@ func (d *ChannelDataTxnHelper[TPeriod, TMemory]) SetData(cd song.ChannelData, s 
 }
 
 func (d *ChannelDataTxnHelper[TPeriod, TMemory]) CommitPreRow(p playback.Playback, cs *ChannelState[TPeriod, TMemory], semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory]) error {
-	e := d.effectFactory(cs.GetMemory(), d.Data)
-	cs.SetActiveEffect(e)
-	if e != nil {
-		if onEff := p.GetOnEffect(); onEff != nil {
+	effects := playback.GetEffects[TPeriod, TMemory](cs.GetMemory(), d.Data)
+	cs.SetActiveEffects(effects)
+	onEff := p.GetOnEffect()
+	for _, e := range effects {
+		if onEff != nil {
 			onEff(e)
 		}
-		if err := playback.EffectPreStart[TPeriod, TMemory](e, any(cs).(playback.Channel[TPeriod, TMemory]), p); err != nil {
+		if err := playback.EffectPreStart[TPeriod, TMemory](e, cs, p); err != nil {
 			return err
 		}
 	}
@@ -135,8 +133,10 @@ func (d *ChannelDataTxnHelper[TPeriod, TMemory]) CommitPreTick(p playback.Playba
 }
 
 func (d *ChannelDataTxnHelper[TPeriod, TMemory]) CommitTick(p playback.Playback, cs *ChannelState[TPeriod, TMemory], currentTick int, lastTick bool, semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory]) error {
-	if err := playback.DoEffect[TPeriod, TMemory](cs.ActiveEffect, cs, p, currentTick, lastTick); err != nil {
-		return err
+	for _, e := range cs.GetActiveEffects() {
+		if err := playback.DoEffect[TPeriod, TMemory](e, cs, p, currentTick, lastTick); err != nil {
+			return err
+		}
 	}
 
 	return nil

@@ -7,7 +7,8 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/volume"
 
-	s3mNote "github.com/gotracker/playback/format/s3m/note"
+	"github.com/gotracker/playback"
+	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
@@ -33,7 +34,7 @@ func (d Data) HasNote() bool {
 
 // GetNote returns the note for the channel
 func (d Data) GetNote() note.Note {
-	return s3mNote.NoteFromS3MNote(d.Note)
+	return NoteFromS3MNote(d.Note)
 }
 
 // HasInstrument returns true if there exists an instrument on the channel
@@ -66,6 +67,29 @@ func (d Data) Channel() uint8 {
 	return d.What.Channel()
 }
 
+func (d Data) GetEffects(mem *Memory, p s3mPeriod.Amiga) []playback.Effect {
+	var effects []playback.Effect
+	if d.HasNote() || d.HasInstrument() {
+		if n := NoteFactory(mem, d.Note, d.Instrument); n != nil {
+			effects = append(effects, n)
+		}
+	}
+
+	if d.HasVolume() {
+		if v := VolumeFactory(mem, d.Volume); v != nil {
+			effects = append(effects, v)
+		}
+	}
+
+	if d.HasCommand() {
+		if e := EffectFactory(mem, d); e != nil {
+			effects = append(effects, e)
+		}
+	}
+
+	return effects
+}
+
 func (d Data) String() string {
 	pieces := []string{
 		"...", // note
@@ -93,4 +117,22 @@ func (d Data) ShortString() string {
 		return d.GetNote().String()
 	}
 	return "..."
+}
+
+// NoteFromS3MNote converts an S3M file note into a player note
+func NoteFromS3MNote(sn s3mfile.Note) note.Note {
+	switch {
+	case sn == s3mfile.EmptyNote:
+		return note.EmptyNote{}
+	case sn == s3mfile.StopNote:
+		return note.StopOrReleaseNote{}
+	default:
+		k := uint8(sn.Key()) & 0x0f
+		o := uint8(sn.Octave()) & 0x0f
+		if k < 12 && o < 10 {
+			s := note.Semitone(o*12 + k)
+			return note.Normal(s)
+		}
+	}
+	return note.InvalidNote{}
 }

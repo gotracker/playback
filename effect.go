@@ -2,8 +2,10 @@ package playback
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/song"
 )
 
 // Effect is an interface to command/effect
@@ -11,8 +13,34 @@ type Effect interface {
 	//fmt.Stringer
 }
 
+type Effecter[TMemory any] interface {
+	GetEffects(*TMemory, period.Period) []Effect
+}
+
+func GetEffects[TPeriod period.Period, TMemory any](mem *TMemory, d song.ChannelData) []Effect {
+	var e []Effect
+	if eff, ok := d.(Effecter[TMemory]); ok {
+		var p TPeriod
+		e = eff.GetEffects(mem, p)
+	}
+	return e
+}
+
+type EffectNamer interface {
+	Names() []string
+}
+
 type effectPreStartIntf[TPeriod period.Period, TMemory any] interface {
 	PreStart(Channel[TPeriod, TMemory], Playback) error
+}
+
+func GetEffectNames(e Effect) []string {
+	if namer, ok := e.(EffectNamer); ok {
+		return namer.Names()
+	} else {
+		typ := reflect.TypeOf(e)
+		return []string{typ.Name()}
+	}
 }
 
 // EffectPreStart triggers when the effect enters onto the channel state
@@ -121,6 +149,14 @@ func (e CombinedEffect[TPeriod, TMemory]) String() string {
 		}
 	}
 	return ""
+}
+
+func (e CombinedEffect[TPeriod, TMemory]) Names() []string {
+	var names []string
+	for _, eff := range e.Effects {
+		names = append(names, GetEffectNames(eff)...)
+	}
+	return names
 }
 
 // DoEffect runs the standard tick lifetime of an effect
