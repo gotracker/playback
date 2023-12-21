@@ -44,7 +44,7 @@ type RowStringer interface {
 	String(options ...any) string
 }
 
-//RowRender is the final output of a single row's data
+// RowRender is the final output of a single row's data
 type RowRender struct {
 	Order   int
 	Row     int
