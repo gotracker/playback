@@ -25,6 +25,14 @@ func (p Amiga) Add(d Delta) Amiga {
 	return p
 }
 
+func (p Amiga) PortaDown(amount int) Amiga {
+	return p.Add(Delta(-amount))
+}
+
+func (p Amiga) PortaUp(amount int) Amiga {
+	return p.Add(Delta(amount))
+}
+
 func (p Amiga) IsInvalid() bool {
 	return p == 0
 }

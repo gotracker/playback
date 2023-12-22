@@ -58,21 +58,16 @@ func doGlobalVolSlide(m XM, delta float32, multiplier float32) error {
 	return nil
 }
 
-func doPortaByDelta[TPeriod period.Period](cs playback.Channel[TPeriod, Memory], delta int) error {
+func doPortaUp[TPeriod period.Period](cs playback.Channel[TPeriod, Memory], amount float32, multiplier float32) error {
 	cur := cs.GetPeriod()
 	if cur.IsInvalid() {
 		return nil
 	}
 
-	d := period.Delta(delta)
-	cur = period.AddDelta(cur, d)
+	delta := int(amount * multiplier)
+	cur = period.PortaUp(cur, delta)
 	cs.SetPeriod(cur)
 	return nil
-}
-
-func doPortaUp[TPeriod period.Period](cs playback.Channel[TPeriod, Memory], amount float32, multiplier float32) error {
-	delta := int(amount * multiplier)
-	return doPortaByDelta(cs, delta)
 }
 
 func doPortaUpToNote[TPeriod period.Period](cs playback.Channel[TPeriod, Memory], amount float32, multiplier float32, target TPeriod) error {
@@ -86,8 +81,15 @@ func doPortaUpToNote[TPeriod period.Period](cs playback.Channel[TPeriod, Memory]
 }
 
 func doPortaDown[TPeriod period.Period](cs playback.Channel[TPeriod, Memory], amount float32, multiplier float32) error {
+	cur := cs.GetPeriod()
+	if cur.IsInvalid() {
+		return nil
+	}
+
 	delta := int(amount * multiplier)
-	return doPortaByDelta(cs, -delta)
+	cur = period.PortaDown(cur, delta)
+	cs.SetPeriod(cur)
+	return nil
 }
 
 func doPortaDownToNote[TPeriod period.Period](cs playback.Channel[TPeriod, Memory], amount float32, multiplier float32, target TPeriod) error {

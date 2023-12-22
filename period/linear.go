@@ -30,6 +30,14 @@ func (p Linear) Add(d Delta) Linear {
 	return p
 }
 
+func (p Linear) PortaDown(amount int) Linear {
+	return p.Add(Delta(-amount))
+}
+
+func (p Linear) PortaUp(amount int) Linear {
+	return p.Add(Delta(amount))
+}
+
 func (p Linear) IsInvalid() bool {
 	return p.Finetune == 0
 }
