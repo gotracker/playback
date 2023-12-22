@@ -56,8 +56,7 @@ func doPortaUp(cs S3MChannel, amount float32, multiplier float32) error {
 	}
 
 	delta := int(amount * multiplier)
-	d := period.Delta(delta)
-	cur = cur.Add(d)
+	cur = cur.PortaUp(delta)
 	cs.SetPeriod(cur)
 	return nil
 }
@@ -89,8 +88,7 @@ func doPortaDown(cs S3MChannel, amount float32, multiplier float32) error {
 	}
 
 	delta := int(amount * multiplier)
-	d := period.Delta(-delta)
-	cur = cur.Add(d)
+	cur = cur.PortaDown(delta)
 	cs.SetPeriod(cur)
 	return nil
 }
