@@ -7,8 +7,8 @@ import (
 )
 
 // FreqModulator is a frequency (pitch) modulator
-type FreqModulator struct {
-	period             period.Period
+type FreqModulator[TPeriod period.Period] struct {
+	period             TPeriod
 	delta              period.Delta
 	autoVibratoEnabled bool
 	autoVibrato        oscillator.Oscillator
@@ -19,39 +19,39 @@ type FreqModulator struct {
 }
 
 // SetPeriod sets the current period (before AutoVibrato and Delta calculation)
-func (a *FreqModulator) SetPeriod(period period.Period) {
+func (a *FreqModulator[TPeriod]) SetPeriod(period TPeriod) {
 	a.period = period
 }
 
 // GetPeriod returns the current period (before AutoVibrato and Delta calculation)
-func (a *FreqModulator) GetPeriod() period.Period {
+func (a *FreqModulator[TPeriod]) GetPeriod() TPeriod {
 	return a.period
 }
 
 // SetDelta sets the current period delta (before AutoVibrato calculation)
-func (a *FreqModulator) SetDelta(delta period.Delta) {
+func (a *FreqModulator[TPeriod]) SetDelta(delta period.Delta) {
 	a.delta = delta
 }
 
 // GetDelta returns the current period delta (before AutoVibrato calculation)
-func (a *FreqModulator) GetDelta() period.Delta {
+func (a *FreqModulator[TPeriod]) GetDelta() period.Delta {
 	return a.delta
 }
 
 // SetAutoVibratoEnabled sets the status of the AutoVibrato enablement flag
-func (a *FreqModulator) SetAutoVibratoEnabled(enabled bool) {
+func (a *FreqModulator[TPeriod]) SetAutoVibratoEnabled(enabled bool) {
 	a.autoVibratoEnabled = enabled
 }
 
 // ConfigureAutoVibrato sets the AutoVibrato oscillator settings
-func (a *FreqModulator) ConfigureAutoVibrato(av voice.AutoVibrato) {
+func (a *FreqModulator[TPeriod]) ConfigureAutoVibrato(av voice.AutoVibrato) {
 	a.autoVibrato = av.Generate()
 	a.autoVibratoRate = int(av.Rate)
 	a.autoVibratoDepth = av.Depth
 }
 
 // ResetAutoVibrato resets the current AutoVibrato
-func (a *FreqModulator) ResetAutoVibrato(sweep ...int) {
+func (a *FreqModulator[TPeriod]) ResetAutoVibrato(sweep ...int) {
 	if a.autoVibrato != nil {
 		a.autoVibrato.Reset(true)
 	}
@@ -64,27 +64,28 @@ func (a *FreqModulator) ResetAutoVibrato(sweep ...int) {
 }
 
 // IsAutoVibratoEnabled returns the status of the AutoVibrato enablement flag
-func (a *FreqModulator) IsAutoVibratoEnabled() bool {
+func (a *FreqModulator[TPeriod]) IsAutoVibratoEnabled() bool {
 	return a.autoVibratoEnabled
 }
 
 // GetFinalPeriod returns the current period (after AutoVibrato and Delta calculation)
-func (a *FreqModulator) GetFinalPeriod() period.Period {
-	p := a.period.AddDelta(a.delta)
+func (a *FreqModulator[TPeriod]) GetFinalPeriod() TPeriod {
+	p := period.AddDelta(a.period, a.delta)
 	if a.autoVibratoEnabled {
 		depth := a.autoVibratoDepth
 		if a.autoVibratoSweep > a.autoVibratoAge {
 			depth *= float32(a.autoVibratoAge) / float32(a.autoVibratoSweep)
 		}
 		avDelta := a.autoVibrato.GetWave(depth)
-		p = p.AddDelta(period.Delta(avDelta))
+		d := period.Delta(avDelta)
+		p = period.AddDelta(p, d)
 	}
 
 	return p
 }
 
 // Advance advances the autoVibrato value by 1 tick
-func (a *FreqModulator) Advance() {
+func (a *FreqModulator[TPeriod]) Advance() {
 	if !a.autoVibratoEnabled {
 		return
 	}

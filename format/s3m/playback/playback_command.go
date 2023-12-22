@@ -5,12 +5,13 @@ import (
 	"github.com/gotracker/playback/filter"
 	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/state"
 )
 
 type doNoteCalc struct {
 	Semitone   note.Semitone
-	UpdateFunc state.PeriodUpdateFunc[s3mPeriod.Amiga]
+	UpdateFunc state.PeriodUpdateFunc[period.Amiga]
 }
 
 func (o doNoteCalc) Process(p playback.Playback, cs *channelState) error {
@@ -96,10 +97,10 @@ func (m *manager) processRowNote(ch int, cs *channelState, currentTick int, last
 		} else if keyOff {
 			nc.Release()
 			nc.Fadeout()
-			cs.SetPeriod(nil)
+			cs.SetPeriod(0)
 		} else if stop {
 			cs.SetInstrument(nil)
-			cs.SetPeriod(nil)
+			cs.SetPeriod(0)
 		}
 	}
 	return nil

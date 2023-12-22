@@ -22,14 +22,14 @@ const (
 	playingModeRelease
 )
 
-type txn struct {
+type txn[TPeriod period.Period] struct {
 	cancelled bool
 	Voice     voice.Voice
 
 	active      optional.Value[bool]
 	playing     optional.Value[playingMode]
 	fadeout     optional.Value[struct{}]
-	period      optional.Value[period.Period]
+	period      optional.Value[TPeriod]
 	periodDelta optional.Value[period.Delta]
 	vol         optional.Value[volume.Volume]
 	pos         optional.Value[sampling.Pos]
@@ -40,148 +40,148 @@ type txn struct {
 	filterEnv   envSettings
 }
 
-func (t *txn) SetActive(active bool) {
+func (t *txn[TPeriod]) SetActive(active bool) {
 	t.active.Set(active)
 }
 
-func (t *txn) IsPendingActive() (bool, bool) {
+func (t *txn[TPeriod]) IsPendingActive() (bool, bool) {
 	return t.active.Get()
 }
 
-func (t *txn) IsCurrentlyActive() bool {
+func (t *txn[TPeriod]) IsCurrentlyActive() bool {
 	return t.Voice.IsActive()
 }
 
 // Attack sets the playing mode to Attack
-func (t *txn) Attack() {
+func (t *txn[TPeriod]) Attack() {
 	t.playing.Set(playingModeAttack)
 }
 
 // Release sets the playing mode to Release
-func (t *txn) Release() {
+func (t *txn[TPeriod]) Release() {
 	t.playing.Set(playingModeRelease)
 }
 
 // Fadeout activates the voice's fade-out function
-func (t *txn) Fadeout() {
+func (t *txn[TPeriod]) Fadeout() {
 	t.fadeout.Set(struct{}{})
 }
 
 // SetPeriod sets the period
-func (t *txn) SetPeriod(period period.Period) {
+func (t *txn[TPeriod]) SetPeriod(period TPeriod) {
 	t.period.Set(period)
 }
 
-func (t *txn) GetPendingPeriod() (period.Period, bool) {
+func (t *txn[TPeriod]) GetPendingPeriod() (TPeriod, bool) {
 	return t.period.Get()
 }
 
-func (t *txn) GetCurrentPeriod() period.Period {
-	return voice.GetPeriod(t.Voice)
+func (t *txn[TPeriod]) GetCurrentPeriod() TPeriod {
+	return voice.GetPeriod[TPeriod](t.Voice)
 }
 
 // SetPeriodDelta sets the period delta
-func (t *txn) SetPeriodDelta(delta period.Delta) {
+func (t *txn[TPeriod]) SetPeriodDelta(delta period.Delta) {
 	t.periodDelta.Set(delta)
 }
 
-func (t *txn) GetPendingPeriodDelta() (period.Delta, bool) {
+func (t *txn[TPeriod]) GetPendingPeriodDelta() (period.Delta, bool) {
 	return t.periodDelta.Get()
 }
 
-func (t *txn) GetCurrentPeriodDelta() period.Delta {
-	return voice.GetPeriodDelta(t.Voice)
+func (t *txn[TPeriod]) GetCurrentPeriodDelta() period.Delta {
+	return voice.GetPeriodDelta[TPeriod](t.Voice)
 }
 
 // SetVolume sets the volume
-func (t *txn) SetVolume(vol volume.Volume) {
+func (t *txn[TPeriod]) SetVolume(vol volume.Volume) {
 	t.vol.Set(vol)
 }
 
-func (t *txn) GetPendingVolume() (volume.Volume, bool) {
+func (t *txn[TPeriod]) GetPendingVolume() (volume.Volume, bool) {
 	return t.vol.Get()
 }
 
-func (t *txn) GetCurrentVolume() volume.Volume {
+func (t *txn[TPeriod]) GetCurrentVolume() volume.Volume {
 	return voice.GetVolume(t.Voice)
 }
 
 // SetPos sets the position
-func (t *txn) SetPos(pos sampling.Pos) {
+func (t *txn[TPeriod]) SetPos(pos sampling.Pos) {
 	t.pos.Set(pos)
 }
 
-func (t *txn) GetPendingPos() (sampling.Pos, bool) {
+func (t *txn[TPeriod]) GetPendingPos() (sampling.Pos, bool) {
 	return t.pos.Get()
 }
 
-func (t *txn) GetCurrentPos() sampling.Pos {
+func (t *txn[TPeriod]) GetCurrentPos() sampling.Pos {
 	return voice.GetPos(t.Voice)
 }
 
 // SetPan sets the panning position
-func (t *txn) SetPan(pan panning.Position) {
+func (t *txn[TPeriod]) SetPan(pan panning.Position) {
 	t.pan.Set(pan)
 }
 
-func (t *txn) GetPendingPan() (panning.Position, bool) {
+func (t *txn[TPeriod]) GetPendingPan() (panning.Position, bool) {
 	return t.pan.Get()
 }
 
-func (t *txn) GetCurrentPan() panning.Position {
+func (t *txn[TPeriod]) GetCurrentPan() panning.Position {
 	return voice.GetPan(t.Voice)
 }
 
 // SetVolumeEnvelopePosition sets the volume envelope position
-func (t *txn) SetVolumeEnvelopePosition(pos int) {
+func (t *txn[TPeriod]) SetVolumeEnvelopePosition(pos int) {
 	t.volEnv.pos.Set(pos)
 }
 
 // EnableVolumeEnvelope sets the volume envelope enable flag
-func (t *txn) EnableVolumeEnvelope(enabled bool) {
+func (t *txn[TPeriod]) EnableVolumeEnvelope(enabled bool) {
 	t.volEnv.enabled.Set(enabled)
 }
 
-func (t *txn) IsPendingVolumeEnvelopeEnabled() (bool, bool) {
+func (t *txn[TPeriod]) IsPendingVolumeEnvelopeEnabled() (bool, bool) {
 	return t.volEnv.enabled.Get()
 }
 
-func (t *txn) IsCurrentVolumeEnvelopeEnabled() bool {
+func (t *txn[TPeriod]) IsCurrentVolumeEnvelopeEnabled() bool {
 	return voice.IsVolumeEnvelopeEnabled(t.Voice)
 }
 
 // SetPitchEnvelopePosition sets the pitch envelope position
-func (t *txn) SetPitchEnvelopePosition(pos int) {
+func (t *txn[TPeriod]) SetPitchEnvelopePosition(pos int) {
 	t.pitchEnv.pos.Set(pos)
 }
 
 // EnablePitchEnvelope sets the pitch envelope enable flag
-func (t *txn) EnablePitchEnvelope(enabled bool) {
+func (t *txn[TPeriod]) EnablePitchEnvelope(enabled bool) {
 	t.pitchEnv.enabled.Set(enabled)
 }
 
 // SetPanEnvelopePosition sets the panning envelope position
-func (t *txn) SetPanEnvelopePosition(pos int) {
+func (t *txn[TPeriod]) SetPanEnvelopePosition(pos int) {
 	t.panEnv.pos.Set(pos)
 }
 
 // EnablePanEnvelope sets the pan envelope enable flag
-func (t *txn) EnablePanEnvelope(enabled bool) {
+func (t *txn[TPeriod]) EnablePanEnvelope(enabled bool) {
 	t.panEnv.enabled.Set(enabled)
 }
 
 // SetFilterEnvelopePosition sets the pitch envelope position
-func (t *txn) SetFilterEnvelopePosition(pos int) {
+func (t *txn[TPeriod]) SetFilterEnvelopePosition(pos int) {
 	t.filterEnv.pos.Set(pos)
 }
 
 // EnableFilterEnvelope sets the filter envelope enable flag
-func (t *txn) EnableFilterEnvelope(enabled bool) {
+func (t *txn[TPeriod]) EnableFilterEnvelope(enabled bool) {
 	t.filterEnv.enabled.Set(enabled)
 }
 
 // SetAllEnvelopePositions sets all the envelope positions to the same value
-func (t *txn) SetAllEnvelopePositions(pos int) {
+func (t *txn[TPeriod]) SetAllEnvelopePositions(pos int) {
 	t.volEnv.pos.Set(pos)
 	t.pitchEnv.pos.Set(pos)
 	t.panEnv.pos.Set(pos)
@@ -191,12 +191,12 @@ func (t *txn) SetAllEnvelopePositions(pos int) {
 // ======
 
 // Cancel cancels a pending transaction
-func (t *txn) Cancel() {
+func (t *txn[TPeriod]) Cancel() {
 	t.cancelled = true
 }
 
 // Commit commits the transaction by applying pending updates
-func (t *txn) Commit() {
+func (t *txn[TPeriod]) Commit() {
 	if t.cancelled {
 		return
 	}
@@ -215,7 +215,7 @@ func (t *txn) Commit() {
 	}
 
 	if delta, ok := t.periodDelta.Get(); ok {
-		voice.SetPeriodDelta(t.Voice, delta)
+		voice.SetPeriodDelta[TPeriod](t.Voice, delta)
 	}
 
 	if vol, ok := t.vol.Get(); ok {
@@ -239,11 +239,11 @@ func (t *txn) Commit() {
 	}
 
 	if pos, ok := t.pitchEnv.pos.Get(); ok {
-		voice.SetPitchEnvelopePosition(t.Voice, pos)
+		voice.SetPitchEnvelopePosition[TPeriod](t.Voice, pos)
 	}
 
 	if enabled, ok := t.pitchEnv.enabled.Get(); ok {
-		voice.EnablePitchEnvelope(t.Voice, enabled)
+		voice.EnablePitchEnvelope[TPeriod](t.Voice, enabled)
 	}
 
 	if pos, ok := t.panEnv.pos.Get(); ok {
@@ -276,11 +276,11 @@ func (t *txn) Commit() {
 	}
 }
 
-func (t *txn) GetVoice() voice.Voice {
+func (t *txn[TPeriod]) GetVoice() voice.Voice {
 	return t.Voice
 }
 
-func (t *txn) Clone() voice.Transaction {
+func (t *txn[TPeriod]) Clone() voice.Transaction[TPeriod] {
 	c := *t
 	return &c
 }

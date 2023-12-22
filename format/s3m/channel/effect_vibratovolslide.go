@@ -4,12 +4,12 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
-	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
+	"github.com/gotracker/playback/period"
 )
 
 // VibratoVolumeSlide defines a combination vibrato and volume slide effect
 type VibratoVolumeSlide struct { // 'K'
-	playback.CombinedEffect[s3mPeriod.Amiga, Memory]
+	playback.CombinedEffect[period.Amiga, Memory]
 }
 
 // NewVibratoVolumeSlide creates a new VibratoVolumeSlide object

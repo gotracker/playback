@@ -14,7 +14,7 @@ import (
 type Active[TPeriod period.Period] struct {
 	Playback[TPeriod]
 	Voice       voice.Voice
-	PeriodDelta period.PeriodDelta
+	PeriodDelta period.Delta
 }
 
 // Reset sets the active state to defaults
@@ -63,20 +63,20 @@ type RenderDetails struct {
 }
 
 // RenderStatesTogether renders a channel's series of sample data for a the provided number of samples
-func RenderStatesTogether[TPeriod period.Period](activeState *Active[TPeriod], pastNotes []*Active[TPeriod], details RenderDetails) []mixing.Data {
+func RenderStatesTogether[TPeriod period.Period](periodConverter period.PeriodConverter[TPeriod], activeState *Active[TPeriod], pastNotes []*Active[TPeriod], details RenderDetails) []mixing.Data {
 	var mixData []mixing.Data
 
 	centerAheadPan := details.Panmixer.GetMixingMatrix(panning.CenterAhead)
 
 	if activeState != nil {
-		if data := activeState.renderState(centerAheadPan, details); data != nil {
+		if data := activeState.renderState(periodConverter, centerAheadPan, details); data != nil {
 			mixData = append(mixData, *data)
 		}
 	}
 
 	for _, pn := range pastNotes {
 		if pn != nil {
-			if data := pn.renderState(centerAheadPan, details); data != nil {
+			if data := pn.renderState(periodConverter, centerAheadPan, details); data != nil {
 				mixData = append(mixData, *data)
 			}
 		}
@@ -85,8 +85,8 @@ func RenderStatesTogether[TPeriod period.Period](activeState *Active[TPeriod], p
 	return mixData
 }
 
-func (a *Active[TPeriod]) renderState(centerAheadPan volume.Matrix, details RenderDetails) *mixing.Data {
-	if a.Period == nil || a.Volume == 0 {
+func (a *Active[TPeriod]) renderState(periodConverter period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details RenderDetails) *mixing.Data {
+	if a.Period.IsInvalid() || a.Volume == 0 {
 		return nil
 	}
 
@@ -96,12 +96,12 @@ func (a *Active[TPeriod]) renderState(centerAheadPan volume.Matrix, details Rend
 	}
 
 	// Commit the playback settings to the note-control
-	voice.SetPeriod(ncv, any(a.Period).(period.Period))
+	voice.SetPeriod(ncv, a.Period)
 	voice.SetVolume(ncv, a.Volume)
 	voice.SetPos(ncv, a.Pos)
 	voice.SetPan(ncv, a.Pan)
 
-	voice.SetPeriodDelta(ncv, a.PeriodDelta)
+	voice.SetPeriodDelta[TPeriod](ncv, a.PeriodDelta)
 
 	// the period might be updated by the auto-vibrato system, here
 	ncv.Advance(details.Duration)
@@ -117,7 +117,7 @@ func (a *Active[TPeriod]) renderState(centerAheadPan volume.Matrix, details Rend
 	}
 
 	// ... so grab the new value now.
-	period := voice.GetFinalPeriod(ncv)
+	p := voice.GetFinalPeriod[TPeriod](ncv)
 	pan := voice.GetFinalPan(ncv)
 
 	// make a stand-alone data buffer for this channel for this tick
@@ -140,7 +140,7 @@ func (a *Active[TPeriod]) renderState(centerAheadPan volume.Matrix, details Rend
 	}
 
 	a.Pos = voice.GetPos(ncv)
-	samplerAdd := float32(period.GetSamplerAdd(float64(details.SamplerSpeed)))
+	samplerAdd := float32(periodConverter.GetSamplerAdd(p, float64(details.SamplerSpeed)))
 	a.Pos.Add(samplerAdd * float32(details.Samples))
 
 	return data

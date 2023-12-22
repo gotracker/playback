@@ -9,7 +9,6 @@ import (
 
 	"github.com/gotracker/playback"
 	xmNote "github.com/gotracker/playback/format/xm/note"
-	xmPeriod "github.com/gotracker/playback/format/xm/period"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
@@ -106,12 +105,12 @@ func (d Data) Channel() uint8 {
 
 func (d Data) GetEffects(mem *Memory, periodType period.Period) []playback.Effect {
 	switch periodType.(type) {
-	case xmPeriod.Linear:
-		if e := EffectFactory[xmPeriod.Linear](mem, d); e != nil {
+	case period.Linear:
+		if e := EffectFactory[period.Linear](mem, d); e != nil {
 			return []playback.Effect{e}
 		}
-	case xmPeriod.Amiga:
-		if e := EffectFactory[xmPeriod.Amiga](mem, d); e != nil {
+	case period.Amiga:
+		if e := EffectFactory[period.Amiga](mem, d); e != nil {
 			return []playback.Effect{e}
 		}
 	default:

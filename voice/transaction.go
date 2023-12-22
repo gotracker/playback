@@ -9,11 +9,11 @@ import (
 )
 
 // Transaction is an interface for updating Voice settings
-type Transaction interface {
+type Transaction[TPeriod period.Period] interface {
 	Cancel()
 	Commit()
 	GetVoice() Voice
-	Clone() Transaction
+	Clone() Transaction[TPeriod]
 
 	SetActive(active bool)
 	IsPendingActive() (bool, bool)
@@ -22,9 +22,9 @@ type Transaction interface {
 	Attack()
 	Release()
 	Fadeout()
-	SetPeriod(period period.Period)
-	GetPendingPeriod() (period.Period, bool)
-	GetCurrentPeriod() period.Period
+	SetPeriod(period TPeriod)
+	GetPendingPeriod() (TPeriod, bool)
+	GetCurrentPeriod() TPeriod
 	SetPeriodDelta(delta period.Delta)
 	GetPendingPeriodDelta() (period.Delta, bool)
 	GetCurrentPeriodDelta() period.Delta

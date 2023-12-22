@@ -8,7 +8,6 @@ import (
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice/oscillator"
 
-	itPeriod "github.com/gotracker/playback/format/it/period"
 	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/note"
 	"github.com/heucuva/comparison"
@@ -63,43 +62,24 @@ func doGlobalVolSlide(m IT, delta float32, multiplier float32) error {
 	return nil
 }
 
-func doPortaByDeltaAmiga(cs playback.Channel[itPeriod.Amiga, Memory], delta int) error {
+func doPortaByDelta[TPeriod period.Period](cs playback.Channel[TPeriod, Memory], delta period.Delta) error {
 	cur := cs.GetPeriod()
-	if cur == nil {
+	if cur.IsInvalid() {
 		return nil
 	}
 
-	d := period.PeriodDelta(delta)
-	cur = cur.Add(d)
-	cs.SetPeriod(cur)
-	return nil
-}
-
-func doPortaByDeltaLinear(cs playback.Channel[itPeriod.Linear, Memory], delta int) error {
-	cur := cs.GetPeriod()
-	if cur == nil {
-		return nil
-	}
-
-	finetune := period.PeriodDelta(delta)
-	cur = cur.Add(finetune)
+	cur = period.AddDelta(cur, delta)
 	cs.SetPeriod(cur)
 	return nil
 }
 
 func doPortaUp[TPeriod period.Period](cs playback.Channel[TPeriod, Memory], amount float32, multiplier float32) error {
 	delta := int(amount * multiplier)
-	switch csp := any(cs).(type) {
-	case playback.Channel[itPeriod.Linear, Memory]:
-		return doPortaByDeltaLinear(csp, delta)
-	case playback.Channel[itPeriod.Amiga, Memory]:
-		return doPortaByDeltaAmiga(csp, -delta)
-	default:
-		panic("unhandled channel type")
-	}
+	d := period.Delta(delta)
+	return doPortaByDelta(cs, d)
 }
 
-func doPortaUpToNote[TPeriod period.Period](cs playback.Channel[TPeriod, Memory], amount float32, multiplier float32, target *TPeriod) error {
+func doPortaUpToNote[TPeriod period.Period](cs playback.Channel[TPeriod, Memory], amount float32, multiplier float32, target TPeriod) error {
 	if err := doPortaUp[TPeriod](cs, amount, multiplier); err != nil {
 		return err
 	}
@@ -111,17 +91,11 @@ func doPortaUpToNote[TPeriod period.Period](cs playback.Channel[TPeriod, Memory]
 
 func doPortaDown[TPeriod period.Period](cs playback.Channel[TPeriod, Memory], amount float32, multiplier float32) error {
 	delta := int(amount * multiplier)
-	switch csp := any(cs).(type) {
-	case playback.Channel[itPeriod.Linear, Memory]:
-		return doPortaByDeltaLinear(csp, -delta)
-	case playback.Channel[itPeriod.Amiga, Memory]:
-		return doPortaByDeltaAmiga(csp, delta)
-	default:
-		panic("unhandled channel type")
-	}
+	d := period.Delta(-delta)
+	return doPortaByDelta(cs, d)
 }
 
-func doPortaDownToNote[TPeriod period.Period](cs playback.Channel[TPeriod, Memory], amount float32, multiplier float32, target *TPeriod) error {
+func doPortaDownToNote[TPeriod period.Period](cs playback.Channel[TPeriod, Memory], amount float32, multiplier float32, target TPeriod) error {
 	if err := doPortaDown(cs, amount, multiplier); err != nil {
 		return err
 	}
@@ -134,8 +108,8 @@ func doPortaDownToNote[TPeriod period.Period](cs playback.Channel[TPeriod, Memor
 func doVibrato[TPeriod period.Period](cs playback.Channel[TPeriod, Memory], currentTick int, speed DataEffect, depth DataEffect, multiplier float32) error {
 	mem := cs.GetMemory()
 	vib := calculateWaveTable(cs, currentTick, speed, depth, multiplier, mem.VibratoOscillator())
-	delta := period.PeriodDelta(vib)
-	cs.SetPeriodDelta(delta)
+	d := period.Delta(vib)
+	cs.SetPeriodDelta(d)
 	return nil
 }
 

@@ -30,10 +30,11 @@ func (e PortaToNote) Tick(cs S3MChannel, p playback.Playback, currentTick int) e
 
 	// vibrato modifies current period for portamento
 	cur := cs.GetPeriod()
-	if cur == nil {
+	if cur.IsInvalid() {
 		return nil
 	}
-	cur = cur.Add(cs.GetPeriodDelta())
+	d := cs.GetPeriodDelta()
+	cur = period.AddDelta(cur, d)
 	ptp := cs.GetPortaTargetPeriod()
 	if currentTick != 0 {
 		if period.ComparePeriods(cur, ptp) == comparison.SpaceshipRightGreater {

@@ -71,7 +71,7 @@ func (m *manager[TPeriod]) processRowNote(ch int, cs *state.ChannelState[TPeriod
 
 	wantAttack := false
 	targetPeriod := cs.GetTargetPeriod()
-	if targetPeriod != nil {
+	if !targetPeriod.IsInvalid() {
 		targetInst := cs.GetTargetInst()
 		if targetInst != nil {
 			keyOn = true
@@ -87,6 +87,7 @@ func (m *manager[TPeriod]) processRowNote(ch int, cs *state.ChannelState[TPeriod
 		cs.SetPos(cs.GetTargetPos())
 	}
 
+	var invalidPeriod TPeriod
 	if nc := cs.GetVoice(); nc != nil {
 		switch noteAction {
 		case note.ActionRetrigger:
@@ -99,7 +100,7 @@ func (m *manager[TPeriod]) processRowNote(ch int, cs *state.ChannelState[TPeriod
 			nc.Release()
 		case note.ActionCut:
 			cs.SetInstrument(nil)
-			cs.SetPeriod(nil)
+			cs.SetPeriod(invalidPeriod)
 		}
 	}
 

@@ -28,7 +28,10 @@ type Voice interface {
 	Advance(tickDuration time.Duration)
 	GetSampler(samplerRate float32) sampling.Sampler
 	Clone() Voice
-	StartTransaction() Transaction
+}
+
+type VoiceTransactioner[TPeriod period.Period] interface {
+	StartTransaction() Transaction[TPeriod]
 }
 
 // Controller is the instrument actuation control interface
@@ -63,41 +66,44 @@ func GetPos(v Voice) sampling.Pos {
 // == FreqModulator ==
 
 // SetPeriod sets the period into the frequency modulator, if the interface for it exists on the voice
-func SetPeriod(v Voice, period period.Period) {
-	if fm, ok := v.(FreqModulator); ok {
+func SetPeriod[TPeriod period.Period](v Voice, period TPeriod) {
+	if fm, ok := v.(FreqModulator[TPeriod]); ok {
 		fm.SetPeriod(period)
 	}
 }
 
 // GetPeriod gets the period from the frequency modulator, if the interface for it exists on the voice
-func GetPeriod(v Voice) period.Period {
-	if fm, ok := v.(FreqModulator); ok {
+func GetPeriod[TPeriod period.Period](v Voice) TPeriod {
+	if fm, ok := v.(FreqModulator[TPeriod]); ok {
 		return fm.GetPeriod()
 	}
-	return nil
+	var empty TPeriod
+	return empty
 }
 
 // SetPeriodDelta sets the period delta into the frequency modulator, if the interface for it exists on the voice
-func SetPeriodDelta(v Voice, delta period.Delta) {
-	if fm, ok := v.(FreqModulator); ok {
+func SetPeriodDelta[TPeriod period.Period](v Voice, delta period.Delta) {
+	if fm, ok := v.(FreqModulator[TPeriod]); ok {
 		fm.SetPeriodDelta(delta)
 	}
 }
 
 // GetPeriodDelta returns the period delta from the frequency modulator, if the interface for it exists on the voice
-func GetPeriodDelta(v Voice) period.Delta {
-	if fm, ok := v.(FreqModulator); ok {
+func GetPeriodDelta[TPeriod period.Period](v Voice) period.Delta {
+	if fm, ok := v.(FreqModulator[TPeriod]); ok {
 		return fm.GetPeriodDelta()
 	}
-	return period.Delta(0)
+	var empty period.Delta
+	return empty
 }
 
 // GetFinalPeriod returns the final period from the frequency modulator, if the interface for it exists on the voice
-func GetFinalPeriod(v Voice) period.Period {
-	if fm, ok := v.(FreqModulator); ok {
+func GetFinalPeriod[TPeriod period.Period](v Voice) TPeriod {
+	if fm, ok := v.(FreqModulator[TPeriod]); ok {
 		return fm.GetFinalPeriod()
 	}
-	return nil
+	var empty TPeriod
+	return empty
 }
 
 // == AmpModulator ==
@@ -193,15 +199,15 @@ func SetPanEnvelopePosition(v Voice, pos int) {
 // == PitchEnveloper ==
 
 // EnablePitchEnvelope sets the pitch envelope enable flag, if the interface for it exists on the voice
-func EnablePitchEnvelope(v Voice, enabled bool) {
-	if pe, ok := v.(PitchEnveloper); ok {
+func EnablePitchEnvelope[TPeriod period.Period](v Voice, enabled bool) {
+	if pe, ok := v.(PitchEnveloper[TPeriod]); ok {
 		pe.EnablePitchEnvelope(enabled)
 	}
 }
 
 // SetPitchEnvelopePosition sets the pitch envelope position, if the interface for it exists on the voice
-func SetPitchEnvelopePosition(v Voice, pos int) {
-	if pe, ok := v.(PitchEnveloper); ok {
+func SetPitchEnvelopePosition[TPeriod period.Period](v Voice, pos int) {
+	if pe, ok := v.(PitchEnveloper[TPeriod]); ok {
 		pe.SetPitchEnvelopePosition(pos)
 	}
 }
@@ -233,9 +239,9 @@ func GetCurrentFilterEnvelope(v Voice) int8 {
 // == Envelopes ==
 
 // SetEnvelopePosition sets the envelope position(s) on the voice
-func SetAllEnvelopePositions(v Voice, pos int) {
+func SetAllEnvelopePositions[TPeriod period.Period](v Voice, pos int) {
 	SetVolumeEnvelopePosition(v, pos)
 	SetPanEnvelopePosition(v, pos)
-	SetPitchEnvelopePosition(v, pos)
+	SetPitchEnvelopePosition[TPeriod](v, pos)
 	SetFilterEnvelopePosition(v, pos)
 }

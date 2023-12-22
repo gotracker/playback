@@ -1,6 +1,7 @@
 package voice
 
 import (
+	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice"
 
 	"github.com/gotracker/playback/filter"
@@ -9,7 +10,7 @@ import (
 )
 
 // New returns a new Voice from the instrument and output channel provided
-func New(inst *instrument.Instrument, output *render.Channel) voice.Voice {
+func New[TPeriod period.Period](periodConverter period.PeriodConverter[TPeriod], inst *instrument.Instrument, output *render.Channel) voice.Voice {
 	switch data := inst.GetData().(type) {
 	case *instrument.PCM:
 		var (
@@ -22,7 +23,7 @@ func New(inst *instrument.Instrument, output *render.Channel) voice.Voice {
 		if factory := inst.GetPluginFilterFactory(); factory != nil {
 			pluginFilter = factory(inst.C2Spd, output.GetSampleRate())
 		}
-		return NewPCM(PCMConfiguration{
+		return NewPCM[TPeriod](periodConverter, PCMConfiguration[TPeriod]{
 			C2SPD:         inst.GetC2Spd(),
 			InitialVolume: inst.GetDefaultVolume(),
 			AutoVibrato:   inst.GetAutoVibrato(),
@@ -32,7 +33,7 @@ func New(inst *instrument.Instrument, output *render.Channel) voice.Voice {
 			PluginFilter:  pluginFilter,
 		})
 	case *instrument.OPL2:
-		return NewOPL2(OPLConfiguration{
+		return NewOPL2[TPeriod](OPLConfiguration[TPeriod]{
 			Chip:          output.GetOPL2Chip(),
 			Channel:       output.ChannelNum,
 			C2SPD:         inst.GetC2Spd(),

@@ -5,7 +5,7 @@ import (
 )
 
 // PitchEnveloper is a pitch envelope interface
-type PitchEnveloper interface {
+type PitchEnveloper[TPeriod period.Period] interface {
 	EnablePitchEnvelope(enabled bool)
 	IsPitchEnvelopeEnabled() bool
 	GetCurrentPitchEnvelope() period.Delta

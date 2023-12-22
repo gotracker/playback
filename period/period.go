@@ -6,42 +6,37 @@ import (
 
 // Period is an interface that defines a sampler period
 type Period interface {
-	AddDelta(Delta) Period
-	Compare(Period) comparison.Spaceship // <=>
-	Lerp(float64, Period) Period
-	GetSamplerAdd(float64) float64
-	GetFrequency() Frequency
-	ToLinearPeriod() Period
-	ToAmigaPeriod() Period
+	IsInvalid() bool
 }
 
-// PeriodDelta is an amount of delta specific to the period type it modifies
-// it's intended to be non-specific unit type, so it's up to the implementer
-// to keep track of the expected unit type.
-type PeriodDelta float64
+type PeriodAdder[TPeriod Period] interface {
+	Add(d Delta) TPeriod
+}
 
-// ToPeriodDelta works as a conversion system for different types of 'delta' values to a single common one
-func ToPeriodDelta(delta Delta) PeriodDelta {
-	switch d := delta.(type) {
-	case PeriodDelta:
-		return d
-	case float32:
-		return PeriodDelta(d)
-	default:
-		panic("unknown type conversion for Delta")
+func AddDelta[TPeriod Period](p TPeriod, d Delta) TPeriod {
+	if pa, ok := any(p).(PeriodAdder[TPeriod]); ok {
+		return pa.Add(d)
 	}
+	return p
 }
 
 // ComparePeriods compares two periods, taking nil into account
-func ComparePeriods[TPeriod Period](lhs *TPeriod, rhs *TPeriod) comparison.Spaceship {
-	if lhs == nil {
-		if rhs == nil {
+func ComparePeriods[TPeriod Period](lhs TPeriod, rhs TPeriod) comparison.Spaceship {
+	if lhs.IsInvalid() {
+		if rhs.IsInvalid() {
 			return comparison.SpaceshipEqual
 		}
 		return comparison.SpaceshipRightGreater
-	} else if rhs == nil {
+	} else if rhs.IsInvalid() {
 		return comparison.SpaceshipLeftGreater
 	}
 
-	return (*lhs).Compare(*rhs)
+	switch p := any(lhs).(type) {
+	case Linear:
+		return p.Compare(any(rhs).(Linear))
+	case Amiga:
+		return p.Compare(any(rhs).(Amiga))
+	default:
+		panic("unhandled period type")
+	}
 }

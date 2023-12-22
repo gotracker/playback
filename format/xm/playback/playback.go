@@ -40,12 +40,12 @@ type manager[TPeriod period.Period] struct {
 	OnEffect       func(playback.Effect)
 }
 
-var _ playback.Playback = (*manager[xmPeriod.Linear])(nil)
-var _ playback.Playback = (*manager[xmPeriod.Amiga])(nil)
-var _ playback.Channel[xmPeriod.Linear, channel.Memory] = (*state.ChannelState[xmPeriod.Linear, channel.Memory])(nil)
-var _ playback.Channel[xmPeriod.Amiga, channel.Memory] = (*state.ChannelState[xmPeriod.Amiga, channel.Memory])(nil)
+var _ playback.Playback = (*manager[period.Linear])(nil)
+var _ playback.Playback = (*manager[period.Amiga])(nil)
+var _ playback.Channel[period.Linear, channel.Memory] = (*state.ChannelState[period.Linear, channel.Memory])(nil)
+var _ playback.Channel[period.Amiga, channel.Memory] = (*state.ChannelState[period.Amiga, channel.Memory])(nil)
 
-func (m *manager[TPeriod]) init(song *layout.Song) error {
+func (m *manager[TPeriod]) init(song *layout.Song, periodConverter period.PeriodConverter[TPeriod]) error {
 	m.Tracker.BaseClockRate = xmPeriod.XMBaseClock
 	m.song = song
 
@@ -59,7 +59,7 @@ func (m *manager[TPeriod]) init(song *layout.Song) error {
 	m.SetGlobalVolume(song.Head.GlobalVolume)
 	m.SetMixerVolume(song.Head.MixingVolume)
 
-	m.SetNumChannels(len(song.ChannelSettings))
+	m.SetNumChannels(len(song.ChannelSettings), periodConverter)
 	for i, ch := range song.ChannelSettings {
 		oc := m.GetRenderChannel(ch.OutputChannelNum, m.channelInit)
 
@@ -98,14 +98,14 @@ func NewManager(song *layout.Song) (playback.Playback, error) {
 	}
 
 	if linearFreqSlides {
-		var m manager[xmPeriod.Linear]
-		if err := m.init(song); err != nil {
+		var m manager[period.Linear]
+		if err := m.init(song, xmPeriod.LinearConverter); err != nil {
 			return nil, fmt.Errorf("could not initialize xm linear manager: %w", err)
 		}
 		return &m, nil
 	} else {
-		var m manager[xmPeriod.Amiga]
-		if err := m.init(song); err != nil {
+		var m manager[period.Amiga]
+		if err := m.init(song, xmPeriod.AmigaConverter); err != nil {
 			return nil, fmt.Errorf("could not initialize xm amiga manager: %w", err)
 		}
 		return &m, nil
@@ -141,12 +141,13 @@ func (m *manager[TPeriod]) semitoneSetterFactory(st note.Semitone, fn state.Peri
 }
 
 // SetNumChannels updates the song to have the specified number of channels and resets their states
-func (m *manager[TPeriod]) SetNumChannels(num int) {
+func (m *manager[TPeriod]) SetNumChannels(num int, periodConverter period.PeriodConverter[TPeriod]) {
 	m.channels = make([]state.ChannelState[TPeriod, channel.Memory], num)
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
 		cs.ResetStates()
+		cs.PeriodConverter = periodConverter
 		cs.SemitoneSetterFactory = m.semitoneSetterFactory
 
 		cs.PortaTargetPeriod.Reset()

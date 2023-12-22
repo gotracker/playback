@@ -14,6 +14,7 @@ import (
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/output"
 	playpattern "github.com/gotracker/playback/pattern"
+	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/player/render"
@@ -21,7 +22,7 @@ import (
 	"github.com/gotracker/playback/song"
 )
 
-type channelState = state.ChannelState[s3mPeriod.Amiga, channel.Memory]
+type channelState = state.ChannelState[period.Amiga, channel.Memory]
 
 // manager is a playback manager for S3M music
 type manager struct {
@@ -43,7 +44,7 @@ type manager struct {
 }
 
 var _ playback.Playback = (*manager)(nil)
-var _ playback.Channel[s3mPeriod.Amiga, channel.Memory] = (*state.ChannelState[s3mPeriod.Amiga, channel.Memory])(nil)
+var _ playback.Channel[period.Amiga, channel.Memory] = (*state.ChannelState[period.Amiga, channel.Memory])(nil)
 
 // NewManager creates a new manager for an S3M song
 func NewManager(song *layout.Song) (playback.Playback, error) {
@@ -70,6 +71,7 @@ func NewManager(song *layout.Song) (playback.Playback, error) {
 		oc := m.GetRenderChannel(ch.OutputChannelNum, m.channelInit)
 
 		cs := m.GetChannel(i)
+		cs.PeriodConverter = s3mPeriod.AmigaConverter
 		cs.SetSongDataInterface(song)
 		cs.SetRenderChannel(oc)
 		cs.SetGlobalVolume(m.GetGlobalVolume())
@@ -137,7 +139,7 @@ func (m *manager) GetNumChannels() int {
 	return len(m.channels)
 }
 
-func (m *manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateFunc[s3mPeriod.Amiga]) state.NoteOp[s3mPeriod.Amiga, channel.Memory] {
+func (m *manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateFunc[period.Amiga]) state.NoteOp[period.Amiga, channel.Memory] {
 	return doNoteCalc{
 		Semitone:   st,
 		UpdateFunc: fn,

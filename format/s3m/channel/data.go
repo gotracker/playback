@@ -8,10 +8,10 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/playback"
-	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
 )
 
 // DataEffect is the type of a channel's EffectParameter value
@@ -67,27 +67,14 @@ func (d Data) Channel() uint8 {
 	return d.What.Channel()
 }
 
-func (d Data) GetEffects(mem *Memory, p s3mPeriod.Amiga) []playback.Effect {
-	var effects []playback.Effect
-	if d.HasNote() || d.HasInstrument() {
-		if n := NoteFactory(mem, d.Note, d.Instrument); n != nil {
-			effects = append(effects, n)
-		}
-	}
-
-	if d.HasVolume() {
-		if v := VolumeFactory(mem, d.Volume); v != nil {
-			effects = append(effects, v)
-		}
-	}
-
+func (d Data) GetEffects(mem *Memory, p period.Period) []playback.Effect {
 	if d.HasCommand() {
 		if e := EffectFactory(mem, d); e != nil {
-			effects = append(effects, e)
+			return []playback.Effect{e}
 		}
 	}
 
-	return effects
+	return nil
 }
 
 func (d Data) String() string {

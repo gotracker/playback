@@ -5,10 +5,10 @@ import (
 )
 
 // FreqModulator is the instrument frequency control interface
-type FreqModulator interface {
-	SetPeriod(period period.Period)
-	GetPeriod() period.Period
+type FreqModulator[TPeriod period.Period] interface {
+	SetPeriod(period TPeriod)
+	GetPeriod() TPeriod
 	SetPeriodDelta(delta period.Delta)
 	GetPeriodDelta() period.Delta
-	GetFinalPeriod() period.Period
+	GetFinalPeriod() TPeriod
 }

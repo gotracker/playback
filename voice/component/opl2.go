@@ -25,16 +25,17 @@ type OPL2Registers struct {
 }
 
 // OPL2 is an OPL2 component
-type OPL2 struct {
-	chip     render.OPL2Chip
-	channel  int
-	reg      OPL2Registers
-	baseFreq period.Frequency
-	keyOn    bool
+type OPL2[TPeriod period.Period] struct {
+	chip            render.OPL2Chip
+	channel         int
+	reg             OPL2Registers
+	baseFreq        period.Frequency
+	periodConverter period.PeriodConverter[TPeriod]
+	keyOn           bool
 }
 
 // Setup sets up the OPL2 component
-func (o *OPL2) Setup(chip render.OPL2Chip, channel int, reg OPL2Registers, baseFreq period.Frequency) {
+func (o *OPL2[TPeriod]) Setup(chip render.OPL2Chip, channel int, reg OPL2Registers, baseFreq period.Frequency) {
 	o.chip = chip
 	o.channel = channel
 	o.reg = reg
@@ -43,7 +44,7 @@ func (o *OPL2) Setup(chip render.OPL2Chip, channel int, reg OPL2Registers, baseF
 }
 
 // Attack activates the key-on bit
-func (o *OPL2) Attack() {
+func (o *OPL2[TPeriod]) Attack() {
 	o.keyOn = true
 
 	// calculate the register addressing information
@@ -69,7 +70,7 @@ func (o *OPL2) Attack() {
 }
 
 // Release deactivates the key-on bit
-func (o *OPL2) Release() {
+func (o *OPL2[TPeriod]) Release() {
 	o.keyOn = false
 
 	// calculate the register addressing information
@@ -81,7 +82,7 @@ func (o *OPL2) Release() {
 }
 
 // Advance advances the playback
-func (o *OPL2) Advance(carVol volume.Volume, period period.Period) {
+func (o *OPL2[TPeriod]) Advance(carVol volume.Volume, period TPeriod) {
 	// calculate the register addressing information
 	index := uint32(o.channel)
 	mod := o.getChannelIndex(o.channel)
@@ -117,11 +118,11 @@ var twoOperatorMelodic = [...]uint32{
 	0x100, 0x101, 0x102, 0x108, 0x109, 0x10A, 0x110, 0x111, 0x112,
 }
 
-func (o *OPL2) getChannelIndex(channelIdx int) uint32 {
+func (o *OPL2[TPeriod]) getChannelIndex(channelIdx int) uint32 {
 	return twoOperatorMelodic[channelIdx%18]
 }
 
-func (o *OPL2) calc40(reg40 uint8, vol volume.Volume) uint8 {
+func (o *OPL2[TPeriod]) calc40(reg40 uint8, vol volume.Volume) uint8 {
 	oVol := volume.Volume(63-uint16(reg40&0x3f)) / 63
 	totalVol := oVol * vol * 63
 	if totalVol > 63 {
@@ -134,21 +135,21 @@ func (o *OPL2) calc40(reg40 uint8, vol volume.Volume) uint8 {
 	return result
 }
 
-func (o *OPL2) periodToFreqBlock(period period.Period, baseFreq period.Frequency) (uint16, uint8) {
-	modFreq := period.GetFrequency()
+func (o *OPL2[TPeriod]) periodToFreqBlock(p TPeriod, baseFreq period.Frequency) (uint16, uint8) {
+	modFreq := o.periodConverter.GetFrequency(p)
 	freq := float64(baseFreq) * float64(modFreq) / 261625
 
 	return o.freqToFnumBlock(freq)
 }
 
-func (o *OPL2) freqBlockToRegA0B0(freq uint16, block uint8) (uint8, uint8) {
+func (o *OPL2[TPeriod]) freqBlockToRegA0B0(freq uint16, block uint8) (uint8, uint8) {
 	regA0 := uint8(freq)
 	regB0 := uint8(uint16(freq)>>8) & 0x03
 	regB0 |= (block & 0x07) << 3
 	return regA0, regB0
 }
 
-func (o *OPL2) freqToFnumBlock(freq float64) (uint16, uint8) {
+func (o *OPL2[TPeriod]) freqToFnumBlock(freq float64) (uint16, uint8) {
 	if freq > 6208.431 {
 		return 0, 0
 	}

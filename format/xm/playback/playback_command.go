@@ -67,7 +67,7 @@ func (m *manager[TPeriod]) processRowNote(ch int, cs *state.ChannelState[TPeriod
 	stop := false
 	noteAction := note.ActionContinue
 	targetPeriod := cs.GetTargetPeriod()
-	if targetTick, na := cs.WillTriggerOn(currentTick); targetPeriod != nil && targetTick {
+	if targetTick, na := cs.WillTriggerOn(currentTick); !targetPeriod.IsInvalid() && targetTick {
 		if targetInst := cs.GetTargetInst(); targetInst != nil {
 			cs.SetInstrument(targetInst)
 			keyOn = true
@@ -93,6 +93,8 @@ func (m *manager[TPeriod]) processRowNote(ch int, cs *state.ChannelState[TPeriod
 		stop = inst.IsStopNote(n)
 	}
 
+	var invalidPeriod TPeriod
+
 	if nc := cs.GetVoice(); nc != nil {
 		if keyOn && noteAction == note.ActionRetrigger {
 			nc.Attack()
@@ -103,10 +105,10 @@ func (m *manager[TPeriod]) processRowNote(ch int, cs *state.ChannelState[TPeriod
 			if voice.IsVolumeEnvelopeEnabled(nc) {
 				nc.Fadeout()
 			}
-			cs.SetPeriod(nil)
+			cs.SetPeriod(invalidPeriod)
 		} else if stop {
 			cs.SetInstrument(nil)
-			cs.SetPeriod(nil)
+			cs.SetPeriod(invalidPeriod)
 		}
 	}
 	return nil

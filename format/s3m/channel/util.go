@@ -6,17 +6,15 @@ import (
 	"github.com/heucuva/comparison"
 
 	"github.com/gotracker/playback"
-	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
-	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice/oscillator"
 )
 
 type EffectS3M = playback.Effect
-type S3MChannel = playback.Channel[s3mPeriod.Amiga, Memory]
+type S3MChannel = playback.Channel[period.Amiga, Memory]
 
 // S3M is an interface to S3M effect operations
 type S3M interface {
@@ -33,9 +31,6 @@ type S3M interface {
 	DecreaseTempo(int) error                       // Txx
 	SetGlobalVolume(volume.Volume)                 // Vxx
 	IgnoreUnknownEffect() bool                     // Unhandled
-
-	GetInstrument(instrument.ID) (*instrument.Instrument, note.Semitone)
-	IsValidInstrumentID(instNum instrument.ID) bool
 }
 
 func doVolSlide(cs S3MChannel, delta float32, multiplier float32) error {
@@ -56,29 +51,29 @@ func doVolSlide(cs S3MChannel, delta float32, multiplier float32) error {
 
 func doPortaUp(cs S3MChannel, amount float32, multiplier float32) error {
 	cur := cs.GetPeriod()
-	if cur == nil {
+	if cur.IsInvalid() {
 		return nil
 	}
 
 	delta := int(amount * multiplier)
-	d := period.PeriodDelta(-delta)
+	d := period.Delta(delta)
 	cur = cur.Add(d)
 	cs.SetPeriod(cur)
 	return nil
 }
 
-func doPortaUpToNote(cs S3MChannel, amount float32, multiplier float32, target *s3mPeriod.Amiga) error {
-	if target == nil {
+func doPortaUpToNote(cs S3MChannel, amount float32, multiplier float32, target period.Amiga) error {
+	if target.IsInvalid() {
 		return nil
 	}
 
 	cur := cs.GetPeriod()
-	if cur == nil {
+	if cur.IsInvalid() {
 		return nil
 	}
 
 	delta := int(amount * multiplier)
-	d := period.PeriodDelta(-delta)
+	d := period.Delta(delta)
 	cur = cur.Add(d)
 	if period.ComparePeriods(cur, target) == comparison.SpaceshipLeftGreater {
 		cur = target
@@ -89,25 +84,25 @@ func doPortaUpToNote(cs S3MChannel, amount float32, multiplier float32, target *
 
 func doPortaDown(cs S3MChannel, amount float32, multiplier float32) error {
 	cur := cs.GetPeriod()
-	if cur == nil {
+	if cur.IsInvalid() {
 		return nil
 	}
 
 	delta := int(amount * multiplier)
-	d := period.PeriodDelta(delta)
+	d := period.Delta(-delta)
 	cur = cur.Add(d)
 	cs.SetPeriod(cur)
 	return nil
 }
 
-func doPortaDownToNote(cs S3MChannel, amount float32, multiplier float32, target *s3mPeriod.Amiga) error {
+func doPortaDownToNote(cs S3MChannel, amount float32, multiplier float32, target period.Amiga) error {
 	cur := cs.GetPeriod()
-	if cur == nil {
+	if cur.IsInvalid() {
 		return nil
 	}
 
 	delta := int(amount * multiplier)
-	d := period.PeriodDelta(delta)
+	d := period.Delta(-delta)
 	cur = cur.Add(d)
 	if period.ComparePeriods(cur, target) == comparison.SpaceshipRightGreater {
 		cur = target
@@ -119,7 +114,8 @@ func doPortaDownToNote(cs S3MChannel, amount float32, multiplier float32, target
 func doVibrato(cs S3MChannel, currentTick int, speed DataEffect, depth DataEffect, multiplier float32) error {
 	mem := cs.GetMemory()
 	delta := calculateWaveTable(cs, currentTick, DataEffect(speed), DataEffect(depth), multiplier, mem.VibratoOscillator())
-	cs.SetPeriodDelta(period.PeriodDelta(delta))
+	d := period.Delta(delta)
+	cs.SetPeriodDelta(d)
 	return nil
 }
 

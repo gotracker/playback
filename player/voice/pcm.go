@@ -17,23 +17,23 @@ import (
 )
 
 // PCM is a PCM voice interface
-type PCM interface {
+type PCM[TPeriod period.Period] interface {
 	voice.Voice
 	voice.Positioner
-	voice.FreqModulator
+	voice.FreqModulator[TPeriod]
 	voice.AmpModulator
 	voice.PanModulator
 	voice.VolumeEnveloper
-	voice.PitchEnveloper
+	voice.PitchEnveloper[TPeriod]
 	voice.PanEnveloper
 	voice.FilterEnveloper
 }
 
 // PCMConfiguration is the information needed to configure an PCM2 voice
-type PCMConfiguration struct {
+type PCMConfiguration[TPeriod period.Period] struct {
 	C2SPD         period.Frequency
 	InitialVolume volume.Volume
-	InitialPeriod period.Period
+	InitialPeriod TPeriod
 	AutoVibrato   voice.AutoVibrato
 	Data          instrument.Data
 	OutputFilter  voice.FilterApplier
@@ -43,7 +43,7 @@ type PCMConfiguration struct {
 
 // == the actual pcm voice ==
 
-type pcmVoice struct {
+type pcmVoice[TPeriod period.Period] struct {
 	c2spd         period.Frequency
 	initialVolume volume.Volume
 	outputFilter  voice.FilterApplier
@@ -61,25 +61,28 @@ type pcmVoice struct {
 
 	sampler   component.Sampler
 	amp       component.AmpModulator
-	freq      component.FreqModulator
+	freq      component.FreqModulator[TPeriod]
 	pan       component.PanModulator
 	volEnv    component.VolumeEnvelope
-	pitchEnv  component.PitchEnvelope
+	pitchEnv  component.PitchEnvelope[TPeriod]
 	panEnv    component.PanEnvelope
 	filterEnv component.FilterEnvelope
 	vol0ticks int
 	done      bool
+
+	periodConverter period.PeriodConverter[TPeriod]
 }
 
 // NewPCM creates a new PCM voice
-func NewPCM(config PCMConfiguration) voice.Voice {
-	v := pcmVoice{
-		c2spd:         config.C2SPD,
-		initialVolume: config.InitialVolume,
-		outputFilter:  config.OutputFilter,
-		voiceFilter:   config.VoiceFilter,
-		pluginFilter:  config.PluginFilter,
-		active:        true,
+func NewPCM[TPeriod period.Period](periodConverter period.PeriodConverter[TPeriod], config PCMConfiguration[TPeriod]) voice.Voice {
+	v := pcmVoice[TPeriod]{
+		c2spd:           config.C2SPD,
+		initialVolume:   config.InitialVolume,
+		outputFilter:    config.OutputFilter,
+		voiceFilter:     config.VoiceFilter,
+		pluginFilter:    config.PluginFilter,
+		active:          true,
+		periodConverter: periodConverter,
 	}
 
 	switch d := config.Data.(type) {
@@ -110,13 +113,12 @@ func NewPCM(config PCMConfiguration) voice.Voice {
 		v.freq.ResetAutoVibrato(config.AutoVibrato.Sweep)
 	}
 
-	var o PCM = &v
-	return o
+	return &v
 }
 
 // == Controller ==
 
-func (v *pcmVoice) Attack() {
+func (v *pcmVoice[TPeriod]) Attack() {
 	v.keyOn = true
 	v.vol0ticks = 0
 	v.done = false
@@ -129,13 +131,13 @@ func (v *pcmVoice) Attack() {
 	v.SetFilterEnvelopePosition(0)
 }
 
-func (v *pcmVoice) Release() {
+func (v *pcmVoice[TPeriod]) Release() {
 	v.keyOn = false
 	v.amp.Release()
 	v.sampler.Release()
 }
 
-func (v *pcmVoice) Fadeout() {
+func (v *pcmVoice[TPeriod]) Fadeout() {
 	switch v.fadeoutMode {
 	case fadeout.ModeAlwaysActive:
 		v.amp.Fadeout()
@@ -148,15 +150,15 @@ func (v *pcmVoice) Fadeout() {
 	v.sampler.Fadeout()
 }
 
-func (v *pcmVoice) IsKeyOn() bool {
+func (v *pcmVoice[TPeriod]) IsKeyOn() bool {
 	return v.keyOn
 }
 
-func (v *pcmVoice) IsFadeout() bool {
+func (v *pcmVoice[TPeriod]) IsFadeout() bool {
 	return v.amp.IsFadeoutEnabled()
 }
 
-func (v *pcmVoice) IsDone() bool {
+func (v *pcmVoice[TPeriod]) IsDone() bool {
 	if v.done {
 		return true
 	}
@@ -170,7 +172,7 @@ func (v *pcmVoice) IsDone() bool {
 
 // == SampleStream ==
 
-func (v *pcmVoice) GetSample(pos sampling.Pos) volume.Matrix {
+func (v *pcmVoice[TPeriod]) GetSample(pos sampling.Pos) volume.Matrix {
 	samp := v.sampler.GetSample(pos)
 	if samp.Channels == 0 {
 		v.done = true
@@ -189,55 +191,55 @@ func (v *pcmVoice) GetSample(pos sampling.Pos) volume.Matrix {
 
 // == Positioner ==
 
-func (v *pcmVoice) SetPos(pos sampling.Pos) {
+func (v *pcmVoice[TPeriod]) SetPos(pos sampling.Pos) {
 	v.sampler.SetPos(pos)
 }
 
-func (v *pcmVoice) GetPos() sampling.Pos {
+func (v *pcmVoice[TPeriod]) GetPos() sampling.Pos {
 	return v.sampler.GetPos()
 }
 
 // == FreqModulator ==
 
-func (v *pcmVoice) SetPeriod(period period.Period) {
+func (v *pcmVoice[TPeriod]) SetPeriod(period TPeriod) {
 	v.freq.SetPeriod(period)
 }
 
-func (v *pcmVoice) GetPeriod() period.Period {
+func (v *pcmVoice[TPeriod]) GetPeriod() TPeriod {
 	return v.freq.GetPeriod()
 }
 
-func (v *pcmVoice) SetPeriodDelta(delta period.Delta) {
+func (v *pcmVoice[TPeriod]) SetPeriodDelta(delta period.Delta) {
 	v.freq.SetDelta(delta)
 }
 
-func (v *pcmVoice) GetPeriodDelta() period.Delta {
+func (v *pcmVoice[TPeriod]) GetPeriodDelta() period.Delta {
 	return v.freq.GetDelta()
 }
 
-func (v *pcmVoice) GetFinalPeriod() period.Period {
+func (v *pcmVoice[TPeriod]) GetFinalPeriod() TPeriod {
 	p := v.freq.GetFinalPeriod()
 	if v.IsPitchEnvelopeEnabled() {
 		delta := v.GetCurrentPitchEnvelope()
-		p = p.AddDelta(delta)
+		p = period.AddDelta(p, delta)
 	}
 	return p
 }
 
 // == AmpModulator ==
 
-func (v *pcmVoice) SetVolume(vol volume.Volume) {
+func (v *pcmVoice[TPeriod]) SetVolume(vol volume.Volume) {
 	if vol == volume.VolumeUseInstVol {
 		vol = v.initialVolume
 	}
 	v.amp.SetVolume(vol)
 }
 
-func (v *pcmVoice) GetVolume() volume.Volume {
+func (v *pcmVoice[TPeriod]) GetVolume() volume.Volume {
 	return v.amp.GetVolume()
 }
 
-func (v *pcmVoice) GetFinalVolume() volume.Volume {
+func (v *pcmVoice[TPeriod]) GetFinalVolume() volume.Volume {
 	vol := v.amp.GetFinalVolume()
 	if v.IsVolumeEnvelopeEnabled() {
 		vol *= v.GetCurrentVolumeEnvelope()
@@ -247,15 +249,15 @@ func (v *pcmVoice) GetFinalVolume() volume.Volume {
 
 // == PanModulator ==
 
-func (v *pcmVoice) SetPan(pan panning.Position) {
+func (v *pcmVoice[TPeriod]) SetPan(pan panning.Position) {
 	v.pan.SetPan(pan)
 }
 
-func (v *pcmVoice) GetPan() panning.Position {
+func (v *pcmVoice[TPeriod]) GetPan() panning.Position {
 	return v.pan.GetPan()
 }
 
-func (v *pcmVoice) GetFinalPan() panning.Position {
+func (v *pcmVoice[TPeriod]) GetFinalPan() panning.Position {
 	p := v.pan.GetFinalPan()
 	if v.IsPanEnvelopeEnabled() {
 		p = pan.CalculateCombinedPanning(p, v.panEnv.GetCurrentValue())
@@ -265,22 +267,22 @@ func (v *pcmVoice) GetFinalPan() panning.Position {
 
 // == VolumeEnveloper ==
 
-func (v *pcmVoice) EnableVolumeEnvelope(enabled bool) {
+func (v *pcmVoice[TPeriod]) EnableVolumeEnvelope(enabled bool) {
 	v.volEnv.SetEnabled(enabled)
 }
 
-func (v *pcmVoice) IsVolumeEnvelopeEnabled() bool {
+func (v *pcmVoice[TPeriod]) IsVolumeEnvelopeEnabled() bool {
 	return v.volEnv.IsEnabled()
 }
 
-func (v *pcmVoice) GetCurrentVolumeEnvelope() volume.Volume {
+func (v *pcmVoice[TPeriod]) GetCurrentVolumeEnvelope() volume.Volume {
 	if v.volEnv.IsEnabled() {
 		return v.volEnv.GetCurrentValue()
 	}
 	return 1
 }
 
-func (v *pcmVoice) SetVolumeEnvelopePosition(pos int) {
+func (v *pcmVoice[TPeriod]) SetVolumeEnvelopePosition(pos int) {
 	if doneCB := v.volEnv.SetEnvelopePosition(pos); doneCB != nil {
 		doneCB(v)
 	}
@@ -288,25 +290,26 @@ func (v *pcmVoice) SetVolumeEnvelopePosition(pos int) {
 
 // == PitchEnveloper ==
 
-func (v *pcmVoice) EnablePitchEnvelope(enabled bool) {
+func (v *pcmVoice[TPeriod]) EnablePitchEnvelope(enabled bool) {
 	v.pitchEnv.SetEnabled(enabled)
 }
 
-func (v *pcmVoice) IsPitchEnvelopeEnabled() bool {
+func (v *pcmVoice[TPeriod]) IsPitchEnvelopeEnabled() bool {
 	if v.pitchAndFilterEnvShared && v.filterEnvActive {
 		return false
 	}
 	return v.pitchEnv.IsEnabled()
 }
 
-func (v *pcmVoice) GetCurrentPitchEnvelope() period.Delta {
+func (v *pcmVoice[TPeriod]) GetCurrentPitchEnvelope() period.Delta {
 	if v.pitchEnv.IsEnabled() {
 		return v.pitchEnv.GetCurrentValue()
 	}
-	return 0
+	var empty period.Delta
+	return empty
 }
 
-func (v *pcmVoice) SetPitchEnvelopePosition(pos int) {
+func (v *pcmVoice[TPeriod]) SetPitchEnvelopePosition(pos int) {
 	if !v.pitchAndFilterEnvShared || !v.filterEnvActive {
 		if doneCB := v.pitchEnv.SetEnvelopePosition(pos); doneCB != nil {
 			doneCB(v)
@@ -316,7 +319,7 @@ func (v *pcmVoice) SetPitchEnvelopePosition(pos int) {
 
 // == FilterEnveloper ==
 
-func (v *pcmVoice) EnableFilterEnvelope(enabled bool) {
+func (v *pcmVoice[TPeriod]) EnableFilterEnvelope(enabled bool) {
 	if !v.pitchAndFilterEnvShared {
 		v.filterEnv.SetEnabled(enabled)
 		return
@@ -330,18 +333,18 @@ func (v *pcmVoice) EnableFilterEnvelope(enabled bool) {
 	v.filterEnv.SetEnabled(enabled)
 }
 
-func (v *pcmVoice) IsFilterEnvelopeEnabled() bool {
+func (v *pcmVoice[TPeriod]) IsFilterEnvelopeEnabled() bool {
 	if v.pitchAndFilterEnvShared && !v.filterEnvActive {
 		return false
 	}
 	return v.filterEnv.IsEnabled()
 }
 
-func (v *pcmVoice) GetCurrentFilterEnvelope() int8 {
+func (v *pcmVoice[TPeriod]) GetCurrentFilterEnvelope() int8 {
 	return v.filterEnv.GetCurrentValue()
 }
 
-func (v *pcmVoice) SetFilterEnvelopePosition(pos int) {
+func (v *pcmVoice[TPeriod]) SetFilterEnvelopePosition(pos int) {
 	if !v.pitchAndFilterEnvShared || v.filterEnvActive {
 		if doneCB := v.filterEnv.SetEnvelopePosition(pos); doneCB != nil {
 			doneCB(v)
@@ -351,19 +354,19 @@ func (v *pcmVoice) SetFilterEnvelopePosition(pos int) {
 
 // == PanEnveloper ==
 
-func (v *pcmVoice) EnablePanEnvelope(enabled bool) {
+func (v *pcmVoice[TPeriod]) EnablePanEnvelope(enabled bool) {
 	v.panEnv.SetEnabled(enabled)
 }
 
-func (v *pcmVoice) IsPanEnvelopeEnabled() bool {
+func (v *pcmVoice[TPeriod]) IsPanEnvelopeEnabled() bool {
 	return v.panEnv.IsEnabled()
 }
 
-func (v *pcmVoice) GetCurrentPanEnvelope() panning.Position {
+func (v *pcmVoice[TPeriod]) GetCurrentPanEnvelope() panning.Position {
 	return v.panEnv.GetCurrentValue()
 }
 
-func (v *pcmVoice) SetPanEnvelopePosition(pos int) {
+func (v *pcmVoice[TPeriod]) SetPanEnvelopePosition(pos int) {
 	if doneCB := v.panEnv.SetEnvelopePosition(pos); doneCB != nil {
 		doneCB(v)
 	}
@@ -371,7 +374,7 @@ func (v *pcmVoice) SetPanEnvelopePosition(pos int) {
 
 // == required function interfaces ==
 
-func (v *pcmVoice) Advance(tickDuration time.Duration) {
+func (v *pcmVoice[TPeriod]) Advance(tickDuration time.Duration) {
 	defer func() {
 		v.prevKeyOn = v.keyOn
 	}()
@@ -411,9 +414,9 @@ func (v *pcmVoice) Advance(tickDuration time.Duration) {
 	}
 }
 
-func (v *pcmVoice) GetSampler(samplerRate float32) sampling.Sampler {
-	period := v.GetFinalPeriod()
-	samplerAdd := float32(period.GetSamplerAdd(float64(samplerRate)))
+func (v *pcmVoice[TPeriod]) GetSampler(samplerRate float32) sampling.Sampler {
+	p := v.GetFinalPeriod()
+	samplerAdd := float32(v.periodConverter.GetSamplerAdd(p, float64(samplerRate)))
 	o := component.OutputFilter{
 		Input:  v,
 		Output: v.outputFilter,
@@ -421,7 +424,7 @@ func (v *pcmVoice) GetSampler(samplerRate float32) sampling.Sampler {
 	return sampling.NewSampler(&o, v.GetPos(), samplerAdd)
 }
 
-func (v *pcmVoice) Clone() voice.Voice {
+func (v *pcmVoice[TPeriod]) Clone() voice.Voice {
 	p := *v
 	if p.voiceFilter != nil {
 		p.voiceFilter = p.voiceFilter.Clone()
@@ -432,17 +435,17 @@ func (v *pcmVoice) Clone() voice.Voice {
 	return &p
 }
 
-func (v *pcmVoice) StartTransaction() voice.Transaction {
-	t := txn{
+func (v *pcmVoice[TPeriod]) StartTransaction() voice.Transaction[TPeriod] {
+	t := txn[TPeriod]{
 		Voice: v,
 	}
 	return &t
 }
 
-func (v *pcmVoice) SetActive(active bool) {
+func (v *pcmVoice[TPeriod]) SetActive(active bool) {
 	v.active = active
 }
 
-func (v *pcmVoice) IsActive() bool {
+func (v *pcmVoice[TPeriod]) IsActive() bool {
 	return v.active
 }

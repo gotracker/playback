@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
-	itPeriod "github.com/gotracker/playback/format/it/period"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/heucuva/comparison"
@@ -31,17 +30,10 @@ func (e PortaToNote[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory], p playb
 
 	// vibrato modifies current period for portamento
 	cur := cs.GetPeriod()
-	if cur == nil {
+	if cur.IsInvalid() {
 		return nil
 	}
-	switch pc := any(cur).(type) {
-	case *itPeriod.Linear:
-		cur = any(pc.Add(cs.GetPeriodDelta())).(*TPeriod)
-	case *itPeriod.Amiga:
-		cur = any(pc.Add(cs.GetPeriodDelta())).(*TPeriod)
-	default:
-		panic("unhandled period type")
-	}
+	cur = period.AddDelta(cur, cs.GetPeriodDelta())
 	ptp := cs.GetPortaTargetPeriod()
 	if !mem.Shared.OldEffectMode || currentTick != 0 {
 		if period.ComparePeriods(cur, ptp) == comparison.SpaceshipRightGreater {

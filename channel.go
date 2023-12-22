@@ -23,15 +23,15 @@ type Channel[TPeriod period.Period, TMemory any] interface {
 	FreezePlayback()
 	UnfreezePlayback()
 	GetData() song.ChannelData
-	GetPortaTargetPeriod() *TPeriod
-	SetPortaTargetPeriod(*TPeriod)
-	GetTargetPeriod() *TPeriod
-	SetTargetPeriod(*TPeriod)
-	SetPeriodOverride(*TPeriod)
-	GetPeriod() *TPeriod
-	SetPeriod(*TPeriod)
-	SetPeriodDelta(period.PeriodDelta)
-	GetPeriodDelta() period.PeriodDelta
+	GetPortaTargetPeriod() TPeriod
+	SetPortaTargetPeriod(TPeriod)
+	GetTargetPeriod() TPeriod
+	SetTargetPeriod(TPeriod)
+	SetPeriodOverride(TPeriod)
+	GetPeriod() TPeriod
+	SetPeriod(TPeriod)
+	SetPeriodDelta(period.Delta)
+	GetPeriodDelta() period.Delta
 	SetInstrument(*instrument.Instrument)
 	GetInstrument() *instrument.Instrument
 	GetVoice() voice.Voice

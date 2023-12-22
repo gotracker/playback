@@ -89,8 +89,8 @@ func (d *ChannelDataTxnHelper[TPeriod, TMemory]) CommitRow(p playback.Playback, 
 	}
 
 	if period, ok := d.TargetPeriod.Get(); ok {
-		cs.SetTargetPeriod(&period)
-		cs.SetPortaTargetPeriod(&period)
+		cs.SetTargetPeriod(period)
+		cs.SetPortaTargetPeriod(period)
 	}
 
 	if st, ok := d.TargetStoredSemitone.Get(); ok {

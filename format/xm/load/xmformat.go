@@ -188,9 +188,9 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 
 		if si.Finetune != 0 {
 			if linearFrequencySlides {
-				sample.C2Spd = xmPeriod.CalcFinetuneC2Spd[xmPeriod.Linear](xmPeriod.DefaultC2Spd, note.Finetune(si.Finetune))
+				sample.C2Spd = xmPeriod.CalcFinetuneC2Spd[period.Linear](xmPeriod.LinearConverter, xmPeriod.DefaultC2Spd, note.Finetune(si.Finetune))
 			} else {
-				sample.C2Spd = xmPeriod.CalcFinetuneC2Spd[xmPeriod.Amiga](xmPeriod.DefaultC2Spd, note.Finetune(si.Finetune))
+				sample.C2Spd = xmPeriod.CalcFinetuneC2Spd[period.Amiga](xmPeriod.AmigaConverter, xmPeriod.DefaultC2Spd, note.Finetune(si.Finetune))
 			}
 		}
 		if sample.C2Spd == 0 {

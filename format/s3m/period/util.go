@@ -1,6 +1,8 @@
 package period
 
 import (
+	"math"
+
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
@@ -24,7 +26,7 @@ const (
 var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
 
 // CalcSemitonePeriod calculates the semitone period for it notes
-func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd period.Frequency) *Amiga {
+func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd period.Frequency) period.Amiga {
 	if semi == note.UnchangedSemitone {
 		panic("how?")
 	}
@@ -33,7 +35,8 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd period.Frequ
 	octave := uint32(semi.Octave())
 
 	if key >= len(semitonePeriodTable) {
-		return nil
+		var empty period.Amiga
+		return empty
 	}
 
 	if c2spd == 0 {
@@ -44,9 +47,7 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd period.Frequ
 		c2spd = CalcFinetuneC2Spd(c2spd, ft)
 	}
 
-	return &Amiga{
-		Amiga: period.Amiga(float64(floatDefaultC2Spd*semitonePeriodTable[key]) / float64(uint32(c2spd)<<octave)),
-	}
+	return period.Amiga(float64(floatDefaultC2Spd*semitonePeriodTable[key]) / float64(uint32(c2spd)<<octave))
 }
 
 // CalcFinetuneC2Spd calculates a new C2SPD after a finetune adjustment
@@ -64,4 +65,15 @@ func CalcFinetuneC2Spd(c2spd period.Frequency, finetune note.Finetune) period.Fr
 func FrequencyFromSemitone(semitone note.Semitone, c2spd period.Frequency) float32 {
 	p := CalcSemitonePeriod(semitone, 0, c2spd)
 	return float32(p.GetFrequency())
+}
+
+// ToAmigaPeriod calculates an amiga period for a linear finetune period
+func ToAmigaPeriod(finetunes note.Finetune, c2spd period.Frequency) period.Amiga {
+	if finetunes < 0 {
+		finetunes = 0
+	}
+	pow := math.Pow(2, float64(finetunes)/semitonesPerOctave)
+	linFreq := float64(c2spd) * pow / float64(DefaultC2Spd)
+
+	return period.Amiga(float64(semitonePeriodTable[0]) / linFreq)
 }

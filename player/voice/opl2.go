@@ -15,31 +15,31 @@ import (
 )
 
 // OPL2 is an OPL2 voice interface
-type OPL2 interface {
+type OPL2[TPeriod period.Period] interface {
 	voice.Voice
-	voice.FreqModulator
+	voice.FreqModulator[TPeriod]
 	voice.AmpModulator
 	voice.VolumeEnveloper
-	voice.PitchEnveloper
+	voice.PitchEnveloper[TPeriod]
 }
 
 // OPL2Registers is a set of OPL operator configurations
 type OPL2Registers component.OPL2Registers
 
 // OPLConfiguration is the information needed to configure an OPL2 voice
-type OPLConfiguration struct {
+type OPLConfiguration[TPeriod period.Period] struct {
 	Chip          render.OPL2Chip
 	Channel       int
 	C2SPD         period.Frequency
 	InitialVolume volume.Volume
-	InitialPeriod period.Period
+	InitialPeriod TPeriod
 	AutoVibrato   voice.AutoVibrato
 	Data          instrument.Data
 }
 
 // == the actual opl2 voice ==
 
-type opl2Voice struct {
+type opl2Voice[TPeriod period.Period] struct {
 	c2spd         period.Frequency
 	initialVolume volume.Volume
 
@@ -49,16 +49,16 @@ type opl2Voice struct {
 
 	fadeoutMode fadeout.Mode
 
-	o        component.OPL2
+	o        component.OPL2[TPeriod]
 	amp      component.AmpModulator
-	freq     component.FreqModulator
+	freq     component.FreqModulator[TPeriod]
 	volEnv   component.VolumeEnvelope
-	pitchEnv component.PitchEnvelope
+	pitchEnv component.PitchEnvelope[TPeriod]
 }
 
 // NewOPL2 creates a new OPL2 voice
-func NewOPL2(config OPLConfiguration) voice.Voice {
-	v := opl2Voice{
+func NewOPL2[TPeriod period.Period](config OPLConfiguration[TPeriod]) voice.Voice {
+	v := opl2Voice[TPeriod]{
 		c2spd:         config.C2SPD,
 		initialVolume: config.InitialVolume,
 		fadeoutMode:   fadeout.ModeDisabled,
@@ -99,13 +99,12 @@ func NewOPL2(config OPLConfiguration) voice.Voice {
 		v.freq.ResetAutoVibrato(config.AutoVibrato.Sweep)
 	}
 
-	var o OPL2 = &v
-	return o
+	return &v
 }
 
 // == Controller ==
 
-func (v *opl2Voice) Attack() {
+func (v *opl2Voice[TPeriod]) Attack() {
 	v.keyOn = true
 	v.amp.Attack()
 	v.freq.ResetAutoVibrato()
@@ -114,13 +113,13 @@ func (v *opl2Voice) Attack() {
 
 }
 
-func (v *opl2Voice) Release() {
+func (v *opl2Voice[TPeriod]) Release() {
 	v.keyOn = false
 	v.amp.Release()
 	v.o.Release()
 }
 
-func (v *opl2Voice) Fadeout() {
+func (v *opl2Voice[TPeriod]) Fadeout() {
 	switch v.fadeoutMode {
 	case fadeout.ModeAlwaysActive:
 		v.amp.Fadeout()
@@ -131,15 +130,15 @@ func (v *opl2Voice) Fadeout() {
 	}
 }
 
-func (v *opl2Voice) IsKeyOn() bool {
+func (v *opl2Voice[TPeriod]) IsKeyOn() bool {
 	return v.keyOn
 }
 
-func (v *opl2Voice) IsFadeout() bool {
+func (v *opl2Voice[TPeriod]) IsFadeout() bool {
 	return v.amp.IsFadeoutEnabled()
 }
 
-func (v *opl2Voice) IsDone() bool {
+func (v *opl2Voice[TPeriod]) IsDone() bool {
 	if !v.amp.IsFadeoutEnabled() {
 		return false
 	}
@@ -148,44 +147,45 @@ func (v *opl2Voice) IsDone() bool {
 
 // == FreqModulator ==
 
-func (v *opl2Voice) SetPeriod(period period.Period) {
+func (v *opl2Voice[TPeriod]) SetPeriod(period TPeriod) {
 	v.freq.SetPeriod(period)
 }
 
-func (v *opl2Voice) GetPeriod() period.Period {
+func (v *opl2Voice[TPeriod]) GetPeriod() TPeriod {
 	return v.freq.GetPeriod()
 }
 
-func (v *opl2Voice) SetPeriodDelta(delta period.Delta) {
+func (v *opl2Voice[TPeriod]) SetPeriodDelta(delta period.Delta) {
 	v.freq.SetDelta(delta)
 }
 
-func (v *opl2Voice) GetPeriodDelta() period.Delta {
+func (v *opl2Voice[TPeriod]) GetPeriodDelta() period.Delta {
 	return v.freq.GetDelta()
 }
 
-func (v *opl2Voice) GetFinalPeriod() period.Period {
+func (v *opl2Voice[TPeriod]) GetFinalPeriod() TPeriod {
 	p := v.freq.GetFinalPeriod()
 	if v.IsPitchEnvelopeEnabled() {
-		p = p.AddDelta(v.GetCurrentPitchEnvelope())
+		d := v.GetCurrentPitchEnvelope()
+		p = period.AddDelta(p, d)
 	}
 	return p
 }
 
 // == AmpModulator ==
 
-func (v *opl2Voice) SetVolume(vol volume.Volume) {
+func (v *opl2Voice[TPeriod]) SetVolume(vol volume.Volume) {
 	if vol == volume.VolumeUseInstVol {
 		vol = v.initialVolume
 	}
 	v.amp.SetVolume(vol)
 }
 
-func (v *opl2Voice) GetVolume() volume.Volume {
+func (v *opl2Voice[TPeriod]) GetVolume() volume.Volume {
 	return v.amp.GetVolume()
 }
 
-func (v *opl2Voice) GetFinalVolume() volume.Volume {
+func (v *opl2Voice[TPeriod]) GetFinalVolume() volume.Volume {
 	vol := v.amp.GetFinalVolume()
 	if v.IsVolumeEnvelopeEnabled() {
 		vol *= v.GetCurrentVolumeEnvelope()
@@ -195,22 +195,22 @@ func (v *opl2Voice) GetFinalVolume() volume.Volume {
 
 // == VolumeEnveloper ==
 
-func (v *opl2Voice) EnableVolumeEnvelope(enabled bool) {
+func (v *opl2Voice[TPeriod]) EnableVolumeEnvelope(enabled bool) {
 	v.volEnv.SetEnabled(enabled)
 }
 
-func (v *opl2Voice) IsVolumeEnvelopeEnabled() bool {
+func (v *opl2Voice[TPeriod]) IsVolumeEnvelopeEnabled() bool {
 	return v.volEnv.IsEnabled()
 }
 
-func (v *opl2Voice) GetCurrentVolumeEnvelope() volume.Volume {
+func (v *opl2Voice[TPeriod]) GetCurrentVolumeEnvelope() volume.Volume {
 	if v.volEnv.IsEnabled() {
 		return v.volEnv.GetCurrentValue()
 	}
 	return 1
 }
 
-func (v *opl2Voice) SetVolumeEnvelopePosition(pos int) {
+func (v *opl2Voice[TPeriod]) SetVolumeEnvelopePosition(pos int) {
 	if doneCB := v.volEnv.SetEnvelopePosition(pos); doneCB != nil {
 		doneCB(v)
 	}
@@ -218,22 +218,23 @@ func (v *opl2Voice) SetVolumeEnvelopePosition(pos int) {
 
 // == PitchEnveloper ==
 
-func (v *opl2Voice) EnablePitchEnvelope(enabled bool) {
+func (v *opl2Voice[TPeriod]) EnablePitchEnvelope(enabled bool) {
 	v.pitchEnv.SetEnabled(enabled)
 }
 
-func (v *opl2Voice) IsPitchEnvelopeEnabled() bool {
+func (v *opl2Voice[TPeriod]) IsPitchEnvelopeEnabled() bool {
 	return v.pitchEnv.IsEnabled()
 }
 
-func (v *opl2Voice) GetCurrentPitchEnvelope() period.Delta {
+func (v *opl2Voice[TPeriod]) GetCurrentPitchEnvelope() period.Delta {
 	if v.pitchEnv.IsEnabled() {
 		return v.pitchEnv.GetCurrentValue()
 	}
-	return 0
+	var empty period.Delta
+	return empty
 }
 
-func (v *opl2Voice) SetPitchEnvelopePosition(pos int) {
+func (v *opl2Voice[TPeriod]) SetPitchEnvelopePosition(pos int) {
 	if doneCB := v.pitchEnv.SetEnvelopePosition(pos); doneCB != nil {
 		doneCB(v)
 	}
@@ -241,7 +242,7 @@ func (v *opl2Voice) SetPitchEnvelopePosition(pos int) {
 
 // == required function interfaces ==
 
-func (v *opl2Voice) Advance(tickDuration time.Duration) {
+func (v *opl2Voice[TPeriod]) Advance(tickDuration time.Duration) {
 	defer func() {
 		v.prevKeyOn = v.keyOn
 	}()
@@ -270,30 +271,30 @@ func (v *opl2Voice) Advance(tickDuration time.Duration) {
 	v.o.Advance(v.GetFinalVolume(), v.GetFinalPeriod())
 }
 
-func (v *opl2Voice) GetSample(pos sampling.Pos) volume.Matrix {
+func (v *opl2Voice[TPeriod]) GetSample(pos sampling.Pos) volume.Matrix {
 	return volume.Matrix{}
 }
 
-func (v *opl2Voice) GetSampler(samplerRate float32) sampling.Sampler {
+func (v *opl2Voice[TPeriod]) GetSampler(samplerRate float32) sampling.Sampler {
 	return nil
 }
 
-func (v *opl2Voice) Clone() voice.Voice {
+func (v *opl2Voice[TPeriod]) Clone() voice.Voice {
 	o := *v
 	return &o
 }
 
-func (v *opl2Voice) StartTransaction() voice.Transaction {
-	t := txn{
+func (v *opl2Voice[TPeriod]) StartTransaction() voice.Transaction[TPeriod] {
+	t := txn[TPeriod]{
 		Voice: v,
 	}
 	return &t
 }
 
-func (v *opl2Voice) SetActive(active bool) {
+func (v *opl2Voice[TPeriod]) SetActive(active bool) {
 	v.active = active
 }
 
-func (v *opl2Voice) IsActive() bool {
+func (v *opl2Voice[TPeriod]) IsActive() bool {
 	return v.active
 }

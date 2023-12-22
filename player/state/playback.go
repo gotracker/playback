@@ -12,7 +12,7 @@ import (
 // Playback is the information needed to make an instrument play
 type Playback[TPeriod period.Period] struct {
 	Instrument *instrument.Instrument
-	Period     *TPeriod
+	Period     TPeriod
 	Volume     volume.Volume
 	Pos        sampling.Pos
 	Pan        panning.Position
@@ -21,7 +21,8 @@ type Playback[TPeriod period.Period] struct {
 // Reset sets the render state to defaults
 func (p *Playback[TPeriod]) Reset() {
 	p.Instrument = nil
-	p.Period = nil
+	var empty TPeriod
+	p.Period = empty
 	p.Pos = sampling.Pos{}
 	p.Pan = panning.CenterAhead
 }
