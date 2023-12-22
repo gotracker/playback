@@ -8,7 +8,7 @@ require (
 	github.com/gotracker/opl2 v1.0.1
 	github.com/heucuva/comparison v1.0.0
 	github.com/heucuva/optional v0.0.1
-	golang.org/x/exp v0.0.0-20231219160207-73b9e39aefca
+	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848
 )
 
 require github.com/pkg/errors v0.9.1 // indirect
