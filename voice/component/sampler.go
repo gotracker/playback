@@ -18,6 +18,17 @@ type Sampler struct {
 	sustainLoop  loop.Loop
 }
 
+func (s Sampler) Clone() Sampler {
+	return Sampler{
+		sample:       s.sample,
+		pos:          sampling.Pos{},
+		keyOn:        false,
+		loopsEnabled: s.loopsEnabled,
+		wholeLoop:    s.wholeLoop,
+		sustainLoop:  s.sustainLoop,
+	}
+}
+
 // Setup sets up the sampler
 func (s *Sampler) Setup(sample pcm.Sample, wholeLoop loop.Loop, sustainLoop loop.Loop) {
 	s.sample = sample

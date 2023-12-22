@@ -16,6 +16,16 @@ type VolumeEnvelope struct {
 	prevKeyOn bool
 }
 
+func (e VolumeEnvelope) Clone() VolumeEnvelope {
+	return VolumeEnvelope{
+		enabled:   e.enabled,
+		state:     e.state.Clone(),
+		vol:       e.vol,
+		keyOn:     false,
+		prevKeyOn: false,
+	}
+}
+
 // Reset resets the state to defaults based on the envelope provided
 func (e *VolumeEnvelope) Reset(env *envelope.Envelope[volume.Volume]) {
 	e.state.Reset(env)

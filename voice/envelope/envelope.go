@@ -12,6 +12,15 @@ type State[T any] struct {
 	env      *Envelope[T]
 }
 
+func (e State[T]) Clone() State[T] {
+	return State[T]{
+		position: 0,
+		length:   e.length,
+		stopped:  false,
+		env:      e.env,
+	}
+}
+
 // Stopped returns true if the envelope state is stopped
 func (e *State[T]) Stopped() bool {
 	return e.stopped

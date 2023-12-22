@@ -34,6 +34,13 @@ func NewProtrackerOscillator() oscillator.Oscillator {
 	return &protrackerOscillator{}
 }
 
+func (o protrackerOscillator) Clone() oscillator.Oscillator {
+	return &protrackerOscillator{
+		Table: o.Table,
+		Pos:   0,
+	}
+}
+
 // GetWave returns the wave amplitude for the current position
 func (o *protrackerOscillator) GetWave(depth float32) float32 {
 	var vib float32

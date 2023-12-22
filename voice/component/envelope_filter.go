@@ -14,6 +14,16 @@ type FilterEnvelope struct {
 	prevKeyOn bool
 }
 
+func (e FilterEnvelope) Clone() FilterEnvelope {
+	return FilterEnvelope{
+		enabled:   e.enabled,
+		state:     e.state.Clone(),
+		value:     e.value,
+		keyOn:     false,
+		prevKeyOn: false,
+	}
+}
+
 // Reset resets the state to defaults based on the envelope provided
 func (e *FilterEnvelope) Reset(env *envelope.Envelope[int8]) {
 	e.state.Reset(env)

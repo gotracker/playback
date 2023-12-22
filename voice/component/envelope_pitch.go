@@ -16,6 +16,16 @@ type PitchEnvelope[TPeriod period.Period] struct {
 	prevKeyOn bool
 }
 
+func (e PitchEnvelope[TPeriod]) Clone() PitchEnvelope[TPeriod] {
+	return PitchEnvelope[TPeriod]{
+		enabled:   e.enabled,
+		state:     e.state.Clone(),
+		delta:     e.delta,
+		keyOn:     false,
+		prevKeyOn: false,
+	}
+}
+
 // Reset resets the state to defaults based on the envelope provided
 func (e *PitchEnvelope[TPeriod]) Reset(env *envelope.Envelope[int8]) {
 	e.state.Reset(env)

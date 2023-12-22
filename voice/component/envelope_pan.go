@@ -16,6 +16,16 @@ type PanEnvelope struct {
 	prevKeyOn bool
 }
 
+func (e PanEnvelope) Clone() PanEnvelope {
+	return PanEnvelope{
+		enabled:   e.enabled,
+		state:     e.state.Clone(),
+		pan:       e.pan,
+		keyOn:     false,
+		prevKeyOn: false,
+	}
+}
+
 // Reset resets the state to defaults based on the envelope provided
 func (e *PanEnvelope) Reset(env *envelope.Envelope[panning.Position]) {
 	e.state.Reset(env)

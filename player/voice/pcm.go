@@ -90,6 +90,8 @@ func NewPCM[TPeriod period.Period](periodConverter period.PeriodConverter[TPerio
 		v.pitchAndFilterEnvShared = true
 		v.filterEnvActive = d.PitchFiltMode
 		v.sampler.Setup(d.Sample, d.Loop, d.SustainLoop)
+		v.fadeoutMode = d.FadeOut.Mode
+		v.amp.ResetFadeoutValue(d.FadeOut.Amount)
 		//v.sampler.SetPos(d.InitialPos)
 		v.amp.Setup(d.MixingVolume)
 		v.amp.ResetFadeoutValue(d.FadeOut.Amount)
@@ -103,6 +105,14 @@ func NewPCM[TPeriod period.Period](periodConverter period.PeriodConverter[TPerio
 		v.filterEnv.SetEnabled(d.PitchFiltEnv.Enabled)
 		v.filterEnv.Reset(&d.PitchFiltEnv)
 		v.channels = d.Sample.Channels()
+	}
+
+	switch v.fadeoutMode {
+	case fadeout.ModeAlwaysActive:
+		v.amp.SetFadeoutEnabled(true)
+	case fadeout.ModeOnlyIfVolEnvActive:
+		v.amp.SetFadeoutEnabled(v.volEnv.IsEnabled())
+	default:
 	}
 
 	v.amp.SetVolume(config.InitialVolume)
@@ -375,9 +385,6 @@ func (v *pcmVoice[TPeriod]) SetPanEnvelopePosition(pos int) {
 // == required function interfaces ==
 
 func (v *pcmVoice[TPeriod]) Advance(tickDuration time.Duration) {
-	defer func() {
-		v.prevKeyOn = v.keyOn
-	}()
 	v.amp.Advance()
 	v.freq.Advance()
 	v.pan.Advance()
@@ -412,6 +419,7 @@ func (v *pcmVoice[TPeriod]) Advance(tickDuration time.Duration) {
 	} else {
 		v.vol0ticks = 0
 	}
+	v.prevKeyOn = v.keyOn
 }
 
 func (v *pcmVoice[TPeriod]) GetSampler(samplerRate float32) sampling.Sampler {
@@ -425,12 +433,35 @@ func (v *pcmVoice[TPeriod]) GetSampler(samplerRate float32) sampling.Sampler {
 }
 
 func (v *pcmVoice[TPeriod]) Clone() voice.Voice {
-	p := *v
-	if p.voiceFilter != nil {
-		p.voiceFilter = p.voiceFilter.Clone()
+	p := pcmVoice[TPeriod]{
+		c2spd:                   v.c2spd,
+		initialVolume:           v.initialVolume,
+		outputFilter:            v.outputFilter,
+		fadeoutMode:             v.fadeoutMode,
+		channels:                v.channels,
+		active:                  true,
+		keyOn:                   false,
+		prevKeyOn:               false,
+		pitchAndFilterEnvShared: v.pitchAndFilterEnvShared,
+		filterEnvActive:         v.filterEnvActive,
+		sampler:                 v.sampler.Clone(),
+		amp:                     v.amp,
+		freq:                    v.freq,
+		pan:                     v.pan,
+		volEnv:                  v.volEnv.Clone(),
+		pitchEnv:                v.pitchEnv.Clone(),
+		panEnv:                  v.panEnv.Clone(),
+		filterEnv:               v.filterEnv.Clone(),
+		vol0ticks:               0,
+		done:                    false,
+		periodConverter:         v.periodConverter,
 	}
-	if p.pluginFilter != nil {
-		p.pluginFilter = p.pluginFilter.Clone()
+
+	if v.voiceFilter != nil {
+		p.voiceFilter = v.voiceFilter.Clone()
+	}
+	if v.pluginFilter != nil {
+		p.pluginFilter = v.pluginFilter.Clone()
 	}
 	return &p
 }

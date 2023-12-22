@@ -72,6 +72,14 @@ func NewImpulseTrackerOscillator(mul uint8) oscillator.Oscillator {
 	}
 }
 
+func (o impulseOscillator) Clone() oscillator.Oscillator {
+	return &impulseOscillator{
+		Table: o.Table,
+		Pos:   0,
+		Mul:   o.Mul,
+	}
+}
+
 // GetWave returns the wave amplitude for the current position
 func (o *impulseOscillator) GetWave(depth float32) float32 {
 	var vib float32

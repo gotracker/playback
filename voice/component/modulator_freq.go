@@ -18,6 +18,19 @@ type FreqModulator[TPeriod period.Period] struct {
 	autoVibratoAge     int // current age of oscillator (in ticks)
 }
 
+func (a FreqModulator[TPeriod]) Clone() FreqModulator[TPeriod] {
+	return FreqModulator[TPeriod]{
+		period:             a.period,
+		delta:              a.delta,
+		autoVibratoEnabled: a.autoVibratoEnabled,
+		autoVibrato:        a.autoVibrato.Clone(),
+		autoVibratoDepth:   a.autoVibratoDepth,
+		autoVibratoRate:    a.autoVibratoRate,
+		autoVibratoSweep:   a.autoVibratoSweep,
+		autoVibratoAge:     0,
+	}
+}
+
 // SetPeriod sets the current period (before AutoVibrato and Delta calculation)
 func (a *FreqModulator[TPeriod]) SetPeriod(period TPeriod) {
 	a.period = period
@@ -58,7 +71,7 @@ func (a *FreqModulator[TPeriod]) ResetAutoVibrato(sweep ...int) {
 
 	a.autoVibratoAge = 0
 
-	if sweep != nil {
+	if len(sweep) > 0 {
 		a.autoVibratoSweep = sweep[0]
 	}
 }
