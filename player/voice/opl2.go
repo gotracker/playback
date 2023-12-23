@@ -72,9 +72,9 @@ func NewOPL2[TPeriod period.Period](config OPLConfiguration[TPeriod]) voice.Voic
 		v.amp.Setup(1)
 		v.amp.ResetFadeoutValue(0)
 		v.volEnv.SetEnabled(false)
-		v.volEnv.Reset(nil)
+		v.volEnv.Reset()
 		v.pitchEnv.SetEnabled(false)
-		v.pitchEnv.Reset(nil)
+		v.pitchEnv.Reset()
 		regs.Mod.Reg20 = d.Modulator.GetReg20()
 		regs.Mod.Reg40 = d.Modulator.GetReg40()
 		regs.Mod.Reg60 = d.Modulator.GetReg60()
@@ -96,7 +96,7 @@ func NewOPL2[TPeriod period.Period](config OPLConfiguration[TPeriod]) voice.Voic
 	v.freq.SetAutoVibratoEnabled(config.AutoVibrato.Enabled)
 	if config.AutoVibrato.Enabled {
 		v.freq.ConfigureAutoVibrato(config.AutoVibrato)
-		v.freq.ResetAutoVibrato(config.AutoVibrato.Sweep)
+		v.freq.ResetAutoVibratoAndSweep(config.AutoVibrato.Sweep)
 	}
 
 	return &v

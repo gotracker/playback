@@ -234,6 +234,9 @@ func convertPitchEnvValue(v int8) int8 {
 func convertEnvelope[T any](outEnv *envelope.Envelope[T], inEnv *itfile.Envelope, convert func(int8) T) error {
 	outEnv.Enabled = (inEnv.Flags & itfile.EnvelopeFlagEnvelopeOn) != 0
 	if !outEnv.Enabled {
+		var disabled loop.Disabled
+		outEnv.Loop = &disabled
+		outEnv.Sustain = &disabled
 		return nil
 	}
 

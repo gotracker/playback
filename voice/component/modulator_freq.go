@@ -64,16 +64,17 @@ func (a *FreqModulator[TPeriod]) ConfigureAutoVibrato(av voice.AutoVibrato) {
 }
 
 // ResetAutoVibrato resets the current AutoVibrato
-func (a *FreqModulator[TPeriod]) ResetAutoVibrato(sweep ...int) {
+func (a *FreqModulator[TPeriod]) ResetAutoVibrato() {
 	if a.autoVibrato != nil {
-		a.autoVibrato.Reset(true)
+		a.autoVibrato.HardReset()
 	}
 
 	a.autoVibratoAge = 0
+}
 
-	if len(sweep) > 0 {
-		a.autoVibratoSweep = sweep[0]
-	}
+func (a *FreqModulator[TPeriod]) ResetAutoVibratoAndSweep(sweep int) {
+	a.ResetAutoVibrato()
+	a.autoVibratoSweep = sweep
 }
 
 // IsAutoVibratoEnabled returns the status of the AutoVibrato enablement flag

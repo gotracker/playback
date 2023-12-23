@@ -14,6 +14,11 @@ type FilterEnvelope struct {
 	prevKeyOn bool
 }
 
+func (e *FilterEnvelope) Init(env *envelope.Envelope[int8]) {
+	e.state.Init(env)
+	e.Reset()
+}
+
 func (e FilterEnvelope) Clone() FilterEnvelope {
 	return FilterEnvelope{
 		enabled:   e.enabled,
@@ -25,8 +30,8 @@ func (e FilterEnvelope) Clone() FilterEnvelope {
 }
 
 // Reset resets the state to defaults based on the envelope provided
-func (e *FilterEnvelope) Reset(env *envelope.Envelope[int8]) {
-	e.state.Reset(env)
+func (e *FilterEnvelope) Reset() {
+	e.state.Reset()
 	e.keyOn = false
 	e.prevKeyOn = false
 	e.update()
@@ -51,8 +56,7 @@ func (e *FilterEnvelope) GetCurrentValue() int8 {
 func (e *FilterEnvelope) SetEnvelopePosition(pos int) voice.Callback {
 	keyOn := e.keyOn
 	prevKeyOn := e.prevKeyOn
-	env := e.state.Envelope()
-	e.state.Reset(env)
+	e.state.Reset()
 	// TODO: this is gross, but currently the most optimal way to find the correct position
 	for i := 0; i < pos; i++ {
 		if doneCB := e.Advance(keyOn, prevKeyOn); doneCB != nil {

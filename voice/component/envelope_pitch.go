@@ -16,6 +16,11 @@ type PitchEnvelope[TPeriod period.Period] struct {
 	prevKeyOn bool
 }
 
+func (e *PitchEnvelope[TPeriod]) Init(env *envelope.Envelope[int8]) {
+	e.state.Init(env)
+	e.Reset()
+}
+
 func (e PitchEnvelope[TPeriod]) Clone() PitchEnvelope[TPeriod] {
 	return PitchEnvelope[TPeriod]{
 		enabled:   e.enabled,
@@ -27,8 +32,8 @@ func (e PitchEnvelope[TPeriod]) Clone() PitchEnvelope[TPeriod] {
 }
 
 // Reset resets the state to defaults based on the envelope provided
-func (e *PitchEnvelope[TPeriod]) Reset(env *envelope.Envelope[int8]) {
-	e.state.Reset(env)
+func (e *PitchEnvelope[TPeriod]) Reset() {
+	e.state.Reset()
 	e.keyOn = false
 	e.prevKeyOn = false
 	e.update()
@@ -53,8 +58,7 @@ func (e *PitchEnvelope[TPeriod]) GetCurrentValue() period.Delta {
 func (e *PitchEnvelope[TPeriod]) SetEnvelopePosition(pos int) voice.Callback {
 	keyOn := e.keyOn
 	prevKeyOn := e.prevKeyOn
-	env := e.state.Envelope()
-	e.state.Reset(env)
+	e.state.Reset()
 	// TODO: this is gross, but currently the most optimal way to find the correct position
 	for i := 0; i < pos; i++ {
 		if doneCB := e.Advance(keyOn, prevKeyOn); doneCB != nil {

@@ -91,19 +91,18 @@ func NewPCM[TPeriod period.Period](periodConverter period.PeriodConverter[TPerio
 		v.filterEnvActive = d.PitchFiltMode
 		v.sampler.Setup(d.Sample, d.Loop, d.SustainLoop)
 		v.fadeoutMode = d.FadeOut.Mode
-		v.amp.ResetFadeoutValue(d.FadeOut.Amount)
 		//v.sampler.SetPos(d.InitialPos)
 		v.amp.Setup(d.MixingVolume)
 		v.amp.ResetFadeoutValue(d.FadeOut.Amount)
 		v.pan.SetPan(d.Panning)
 		v.volEnv.SetEnabled(d.VolEnv.Enabled)
-		v.volEnv.Reset(&d.VolEnv)
+		v.volEnv.Init(&d.VolEnv)
 		v.pitchEnv.SetEnabled(d.PitchFiltEnv.Enabled)
-		v.pitchEnv.Reset(&d.PitchFiltEnv)
+		v.pitchEnv.Init(&d.PitchFiltEnv)
 		v.panEnv.SetEnabled(d.PanEnv.Enabled)
-		v.panEnv.Reset(&d.PanEnv)
+		v.panEnv.Init(&d.PanEnv)
 		v.filterEnv.SetEnabled(d.PitchFiltEnv.Enabled)
-		v.filterEnv.Reset(&d.PitchFiltEnv)
+		v.filterEnv.Init(&d.PitchFiltEnv)
 		v.channels = d.Sample.Channels()
 	}
 
@@ -120,7 +119,7 @@ func NewPCM[TPeriod period.Period](periodConverter period.PeriodConverter[TPerio
 	v.freq.SetAutoVibratoEnabled(config.AutoVibrato.Enabled)
 	if config.AutoVibrato.Enabled {
 		v.freq.ConfigureAutoVibrato(config.AutoVibrato)
-		v.freq.ResetAutoVibrato(config.AutoVibrato.Sweep)
+		v.freq.ResetAutoVibratoAndSweep(config.AutoVibrato.Sweep)
 	}
 
 	return &v

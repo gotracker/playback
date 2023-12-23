@@ -82,13 +82,17 @@ func (o *protrackerOscillator) SetWaveform(table oscillator.WaveTableSelect) {
 }
 
 // Reset resets the position of the oscillator
-func (o *protrackerOscillator) Reset(hard ...bool) {
-	hardReset := false
-	if len(hard) > 0 {
-		hardReset = hard[0]
-	}
+func (o *protrackerOscillator) Reset() {
+	o.reset(false)
+}
 
-	doReset := hardReset
+// HardReset resets the position of the oscillator regardless of how the wavetable operates
+func (o *protrackerOscillator) HardReset() {
+	o.reset(true)
+}
+
+func (o *protrackerOscillator) reset(hard bool) {
+	doReset := hard
 	switch o.Table {
 	case WaveTableSelectSineRetrigger, WaveTableSelectSawtoothRetrigger, WaveTableSelectSquareRetrigger, WaveTableSelectRandomRetrigger:
 		doReset = true

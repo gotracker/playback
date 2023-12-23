@@ -12,6 +12,16 @@ type State[T any] struct {
 	env      *Envelope[T]
 }
 
+func (e *State[T]) Init(env *Envelope[T]) {
+	e.env = env
+	if e.env == nil || !e.env.Enabled {
+		e.stopped = true
+		return
+	}
+
+	e.Reset()
+}
+
 func (e State[T]) Clone() State[T] {
 	return State[T]{
 		position: 0,
@@ -37,13 +47,7 @@ func (e *State[T]) Envelope() *Envelope[T] {
 }
 
 // Reset resets the envelope
-func (e *State[T]) Reset(env *Envelope[T]) {
-	e.env = env
-	if e.env == nil || !e.env.Enabled {
-		e.stopped = true
-		return
-	}
-
+func (e *State[T]) Reset() {
 	e.position = 0
 	pos, _, _ := e.calcLoopedPos(true)
 	if pos < len(e.env.Values) {

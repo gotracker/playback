@@ -16,6 +16,11 @@ type PanEnvelope struct {
 	prevKeyOn bool
 }
 
+func (e *PanEnvelope) Init(env *envelope.Envelope[panning.Position]) {
+	e.state.Init(env)
+	e.Reset()
+}
+
 func (e PanEnvelope) Clone() PanEnvelope {
 	return PanEnvelope{
 		enabled:   e.enabled,
@@ -27,8 +32,8 @@ func (e PanEnvelope) Clone() PanEnvelope {
 }
 
 // Reset resets the state to defaults based on the envelope provided
-func (e *PanEnvelope) Reset(env *envelope.Envelope[panning.Position]) {
-	e.state.Reset(env)
+func (e *PanEnvelope) Reset() {
+	e.state.Reset()
 	e.keyOn = false
 	e.prevKeyOn = false
 	e.update()
@@ -53,8 +58,7 @@ func (e *PanEnvelope) GetCurrentValue() panning.Position {
 func (e *PanEnvelope) SetEnvelopePosition(pos int) voice.Callback {
 	keyOn := e.keyOn
 	prevKeyOn := e.prevKeyOn
-	env := e.state.Envelope()
-	e.state.Reset(env)
+	e.state.Reset()
 	// TODO: this is gross, but currently the most optimal way to find the correct position
 	for i := 0; i < pos; i++ {
 		if doneCB := e.Advance(keyOn, prevKeyOn); doneCB != nil {
