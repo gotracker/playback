@@ -13,13 +13,13 @@ import (
 type RetriggerNote[TPeriod period.Period] DataEffect // 'E9x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e RetriggerNote[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e RetriggerNote[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e RetriggerNote[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory], p playback.Playback, currentTick int) error {
+func (e RetriggerNote[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
 	y := DataEffect(e) & 0x0F
 	if y == 0 {
 		return nil

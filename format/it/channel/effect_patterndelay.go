@@ -11,13 +11,13 @@ import (
 type PatternDelay[TPeriod period.Period] DataEffect // 'SEx'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e PatternDelay[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e PatternDelay[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	m := p.(IT)
 	return m.SetPatternDelay(int(DataEffect(e) & 0x0F))
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PatternDelay[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e PatternDelay[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }

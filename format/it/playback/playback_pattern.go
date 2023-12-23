@@ -87,7 +87,7 @@ func (m *manager[TPeriod]) processPatternRow() error {
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
-		cs.AdvanceRow(state.NewChannelDataTxn[TPeriod, channel.Memory]())
+		cs.AdvanceRow(state.NewChannelDataTxn[TPeriod, channel.Memory](channel.GetTargetsFromData[TPeriod]))
 		if resetMemory {
 			mem := cs.GetMemory()
 			mem.StartOrder()
@@ -142,7 +142,7 @@ func (m *manager[TPeriod]) processPatternRow() error {
 	return nil
 }
 
-func (m *manager[TPeriod]) processRowForChannel(cs *state.ChannelState[TPeriod, channel.Memory]) error {
+func (m *manager[TPeriod]) processRowForChannel(cs *state.ChannelState[TPeriod, channel.Memory, channel.Data]) error {
 	mem := cs.GetMemory()
 	mem.TremorMem().Reset()
 

@@ -11,13 +11,13 @@ import (
 type FineVolumeSlideUp[TPeriod period.Period] DataEffect // 'D'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FineVolumeSlideUp[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e FineVolumeSlideUp[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e FineVolumeSlideUp[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory], p playback.Playback, currentTick int) error {
+func (e FineVolumeSlideUp[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, _ := mem.VolumeSlide(DataEffect(e))
 
@@ -37,7 +37,7 @@ func (e FineVolumeSlideUp[TPeriod]) String() string {
 type VolChanFineVolumeSlideUp[TPeriod period.Period] DataEffect // 'd'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e VolChanFineVolumeSlideUp[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e VolChanFineVolumeSlideUp[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	mem := cs.GetMemory()
 	x := mem.VolChanVolumeSlide(DataEffect(e))
 

@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
+	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/playback"
@@ -13,6 +14,8 @@ import (
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/op"
+	"github.com/gotracker/playback/song"
 )
 
 type Command uint8
@@ -158,4 +161,75 @@ func (d Data) ShortString() string {
 		return d.getNoteString(d.GetNote())
 	}
 	return "..."
+}
+
+func GetTargetsFromData[TPeriod period.Period](out *op.ChannelTargets[TPeriod], d Data, s song.Data, cs playback.Channel[TPeriod, Memory, Data]) error {
+	var n note.Note = note.EmptyNote{}
+	inst := cs.GetInstrument()
+	prevInst := inst
+
+	if d.HasNote() || d.HasInstrument() {
+		instID := d.GetInstrument(cs.GetNoteSemitone())
+		n = d.GetNote()
+		var (
+			wantRetrigger    bool
+			wantRetriggerVol bool
+		)
+		if instID.IsEmpty() {
+			// use current
+			inst = prevInst
+			wantRetrigger = true
+		} else if !s.IsValidInstrumentID(instID) {
+			out.TargetInst.Set(nil)
+			n = note.InvalidNote{}
+		} else {
+			var str note.Semitone
+			inst, str = s.GetInstrument(instID)
+			n = note.CoalesceNoteSemitone(n, str)
+			if !note.IsEmpty(n) && inst == nil {
+				inst = prevInst
+			}
+			wantRetrigger = true
+			wantRetriggerVol = true
+		}
+
+		if wantRetrigger {
+			out.TargetInst.Set(inst)
+			out.TargetPos.Set(sampling.Pos{})
+			if inst != nil {
+				if wantRetriggerVol {
+					out.TargetVolume.Set(inst.GetDefaultVolume())
+				}
+				out.NoteAction.Set(note.ActionRetrigger)
+				out.TargetNewNoteAction.Set(inst.GetNewNoteAction())
+			}
+		}
+	}
+
+	if note.IsInvalid(n) {
+		out.TargetPeriod.Reset()
+		out.NoteAction.Set(note.ActionCut)
+	} else if note.IsRelease(n) {
+		out.NoteAction.Set(note.ActionRelease)
+	} else if !note.IsEmpty(n) {
+		if nn, ok := n.(note.Normal); ok {
+			st := note.Semitone(nn)
+			out.TargetStoredSemitone.Set(st)
+			out.NoteCalcST.Set(st)
+		} else {
+			out.NoteAction.Set(note.ActionCut)
+		}
+	}
+
+	if d.HasVolume() {
+		v := d.GetVolume()
+		if v == volume.VolumeUseInstVol {
+			if inst != nil {
+				v = inst.GetDefaultVolume()
+			}
+		}
+		out.TargetVolume.Set(v)
+	}
+
+	return nil
 }

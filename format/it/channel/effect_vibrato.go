@@ -11,14 +11,14 @@ import (
 type Vibrato[TPeriod period.Period] DataEffect // 'H'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e Vibrato[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e Vibrato[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 	return nil
 }
 
 // Tick is called on every tick
-func (e Vibrato[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory], p playback.Playback, currentTick int) error {
+func (e Vibrato[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, y := mem.Vibrato(DataEffect(e))
 	if mem.Shared.OldEffectMode {

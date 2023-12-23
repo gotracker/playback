@@ -12,7 +12,7 @@ import (
 type SetFinetune[TPeriod period.Period] DataEffect // 'E5x'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e SetFinetune[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e SetFinetune[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	x := DataEffect(e) & 0xf
 
 	inst := cs.GetTargetInst()
@@ -24,7 +24,7 @@ func (e SetFinetune[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory], p p
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetFinetune[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e SetFinetune[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }

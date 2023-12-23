@@ -11,7 +11,7 @@ import (
 type ExtraFinePortaUp[TPeriod period.Period] DataEffect // 'X1x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e ExtraFinePortaUp[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e ExtraFinePortaUp[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 

@@ -11,7 +11,7 @@ import (
 type PatternLoop[TPeriod period.Period] DataEffect // 'E6x'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PatternLoop[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e PatternLoop[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	x := DataEffect(e) & 0xF

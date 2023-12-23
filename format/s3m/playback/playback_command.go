@@ -56,10 +56,7 @@ func (m *manager) processRowNote(ch int, cs *channelState, currentTick int, last
 	if !triggerTick {
 		return nil
 	}
-	var n note.Note = note.EmptyNote{}
-	if cs.GetData() != nil {
-		n = cs.GetData().GetNote()
-	}
+	n := cs.GetChannelData().GetNote()
 	keyOn := false
 	keyOff := false
 	stop := false

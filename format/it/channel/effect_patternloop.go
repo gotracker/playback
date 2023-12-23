@@ -11,13 +11,13 @@ import (
 type PatternLoop[TPeriod period.Period] DataEffect // 'SBx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PatternLoop[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e PatternLoop[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Stop is called on the last tick of the row, but after the Tick() function is called
-func (e PatternLoop[TPeriod]) Stop(cs playback.Channel[TPeriod, Memory], p playback.Playback, lastTick int) error {
+func (e PatternLoop[TPeriod]) Stop(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, lastTick int) error {
 	x := uint8(e) & 0xF
 
 	mem := cs.GetMemory()

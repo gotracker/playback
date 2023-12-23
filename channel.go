@@ -5,6 +5,7 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/op"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice"
@@ -14,7 +15,7 @@ import (
 )
 
 // Channel is an interface for channel state
-type Channel[TPeriod period.Period, TMemory any] interface {
+type Channel[TPeriod period.Period, TMemory any, TChannelData song.ChannelData] interface {
 	ResetRetriggerCount()
 	SetMemory(*TMemory)
 	GetMemory() *TMemory
@@ -22,7 +23,7 @@ type Channel[TPeriod period.Period, TMemory any] interface {
 	SetActiveVolume(volume.Volume)
 	FreezePlayback()
 	UnfreezePlayback()
-	GetData() song.ChannelData
+	GetChannelData() TChannelData
 	GetPortaTargetPeriod() TPeriod
 	SetPortaTargetPeriod(TPeriod)
 	GetTargetPeriod() TPeriod
@@ -69,3 +70,5 @@ type Channel[TPeriod period.Period, TMemory any] interface {
 	SetPitchEnvelopeEnable(bool)
 	NoteCut()
 }
+
+type ChannelTargeter[TPeriod period.Period, TMemory any, TChannelData song.ChannelData] func(out *op.ChannelTargets[TPeriod], d TChannelData, s song.Data, cs Channel[TPeriod, TMemory, TChannelData]) error

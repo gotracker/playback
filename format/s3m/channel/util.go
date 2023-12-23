@@ -14,7 +14,7 @@ import (
 )
 
 type EffectS3M = playback.Effect
-type S3MChannel = playback.Channel[period.Amiga, Memory]
+type S3MChannel = playback.Channel[period.Amiga, Memory, Data]
 
 // S3M is an interface to S3M effect operations
 type S3M interface {

@@ -15,7 +15,7 @@ type doNoteCalc[TPeriod period.Period] struct {
 	UpdateFunc state.PeriodUpdateFunc[TPeriod]
 }
 
-func (o doNoteCalc[TPeriod]) Process(p playback.Playback, cs *state.ChannelState[TPeriod, channel.Memory]) error {
+func (o doNoteCalc[TPeriod]) Process(p playback.Playback, cs *state.ChannelState[TPeriod, channel.Memory, channel.Data]) error {
 	if o.UpdateFunc == nil {
 		return nil
 	}
@@ -29,7 +29,7 @@ func (o doNoteCalc[TPeriod]) Process(p playback.Playback, cs *state.ChannelState
 	return nil
 }
 
-func (m *manager[TPeriod]) processEffect(ch int, cs *state.ChannelState[TPeriod, channel.Memory], currentTick int, lastTick bool) error {
+func (m *manager[TPeriod]) processEffect(ch int, cs *state.ChannelState[TPeriod, channel.Memory, channel.Data], currentTick int, lastTick bool) error {
 	if txn := cs.GetTxn(); txn != nil {
 		if err := txn.CommitPreTick(m, cs, currentTick, lastTick, cs.SemitoneSetterFactory); err != nil {
 			return err
@@ -54,7 +54,7 @@ func (m *manager[TPeriod]) processEffect(ch int, cs *state.ChannelState[TPeriod,
 	return nil
 }
 
-func (m *manager[TPeriod]) processRowNote(ch int, cs *state.ChannelState[TPeriod, channel.Memory], currentTick int, lastTick bool) error {
+func (m *manager[TPeriod]) processRowNote(ch int, cs *state.ChannelState[TPeriod, channel.Memory, channel.Data], currentTick int, lastTick bool) error {
 	targetTick, noteAction := cs.WillTriggerOn(currentTick)
 	if !targetTick {
 		return nil
@@ -107,7 +107,7 @@ func (m *manager[TPeriod]) processRowNote(ch int, cs *state.ChannelState[TPeriod
 	return nil
 }
 
-func (m *manager[TPeriod]) processVoiceUpdates(ch int, cs *state.ChannelState[TPeriod, channel.Memory], currentTick int, lastTick bool) error {
+func (m *manager[TPeriod]) processVoiceUpdates(ch int, cs *state.ChannelState[TPeriod, channel.Memory, channel.Data], currentTick int, lastTick bool) error {
 	if cs.UsePeriodOverride {
 		cs.UsePeriodOverride = false
 		arpeggioPeriod := cs.GetPeriodOverride()

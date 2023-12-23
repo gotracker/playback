@@ -14,7 +14,7 @@ type UnhandledCommand[TPeriod period.Period] struct {
 }
 
 // PreStart triggers when the effect enters onto the channel state
-func (e UnhandledCommand[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory], m IT) error {
+func (e UnhandledCommand[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory, Data], m IT) error {
 	if !m.IgnoreUnknownEffect() {
 		panic(fmt.Sprintf("unhandled command: ce:%0.2X cp:%0.2X", e.Command, e.Info))
 	}
@@ -37,7 +37,7 @@ type UnhandledVolCommand[TPeriod period.Period] struct {
 }
 
 // PreStart triggers when the effect enters onto the channel state
-func (e UnhandledVolCommand[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory], m IT) error {
+func (e UnhandledVolCommand[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory, Data], m IT) error {
 	if !m.IgnoreUnknownEffect() {
 		panic(fmt.Sprintf("unhandled command: volCmd:%0.2X", e.Vol))
 	}

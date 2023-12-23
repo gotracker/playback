@@ -13,10 +13,10 @@ import (
 type PortaToNote[TPeriod period.Period] DataEffect // '3'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PortaToNote[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e PortaToNote[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
-	if cmd := cs.GetData(); cmd != nil && cmd.HasNote() {
+	if cmd := cs.GetChannelData(); cmd.HasNote() {
 		cs.SetPortaTargetPeriod(cs.GetTargetPeriod())
 		cs.SetNotePlayTick(false, note.ActionContinue, 0)
 	}
@@ -24,7 +24,7 @@ func (e PortaToNote[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p play
 }
 
 // Tick is called on every tick
-func (e PortaToNote[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory], p playback.Playback, currentTick int) error {
+func (e PortaToNote[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
 	if currentTick == 0 {
 		return nil
 	}

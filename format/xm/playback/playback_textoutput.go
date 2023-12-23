@@ -19,9 +19,7 @@ func (m *manager[TPeriod]) getRowText() *render.RowDisplay[channel.Data] {
 			continue
 		}
 
-		if data := cs.GetData(); data != nil {
-			rowText.Channels[ch], _ = data.(channel.Data)
-		}
+		rowText.Channels[ch] = cs.GetChannelData()
 	}
 	return &rowText
 }

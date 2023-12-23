@@ -11,7 +11,7 @@ import (
 type PitchEnvelopeOn[TPeriod period.Period] DataEffect // 'S7C'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PitchEnvelopeOn[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e PitchEnvelopeOn[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	cs.SetPitchEnvelopeEnable(true)

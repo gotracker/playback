@@ -11,7 +11,7 @@ import (
 type FineVolumeSlideUp[TPeriod period.Period] DataEffect // 'EAx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e FineVolumeSlideUp[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e FineVolumeSlideUp[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	mem := cs.GetMemory()

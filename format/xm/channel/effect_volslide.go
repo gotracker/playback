@@ -11,13 +11,13 @@ import (
 type VolumeSlide[TPeriod period.Period] DataEffect // 'A'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e VolumeSlide[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e VolumeSlide[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }
 
 // Tick is called on every tick
-func (e VolumeSlide[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory], p playback.Playback, currentTick int) error {
+func (e VolumeSlide[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
 	mem := cs.GetMemory()
 	x, y := mem.VolumeSlide(DataEffect(e))
 

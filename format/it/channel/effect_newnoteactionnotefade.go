@@ -12,7 +12,7 @@ import (
 type NewNoteActionNoteFade[TPeriod period.Period] DataEffect // 'S76'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e NewNoteActionNoteFade[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e NewNoteActionNoteFade[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.SetNewNoteAction(note.ActionFadeout)
 	return nil
 }

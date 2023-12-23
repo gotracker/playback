@@ -29,7 +29,7 @@ type manager[TPeriod period.Period] struct {
 
 	song *layout.Song
 
-	channels []state.ChannelState[TPeriod, channel.Memory]
+	channels []state.ChannelState[TPeriod, channel.Memory, channel.Data]
 	pattern  pattern.State
 
 	preMixRowTxn  *playpattern.RowUpdateTransaction
@@ -42,8 +42,8 @@ type manager[TPeriod period.Period] struct {
 
 var _ playback.Playback = (*manager[period.Linear])(nil)
 var _ playback.Playback = (*manager[period.Amiga])(nil)
-var _ playback.Channel[period.Linear, channel.Memory] = (*state.ChannelState[period.Linear, channel.Memory])(nil)
-var _ playback.Channel[period.Amiga, channel.Memory] = (*state.ChannelState[period.Amiga, channel.Memory])(nil)
+var _ playback.Channel[period.Linear, channel.Memory, channel.Data] = (*state.ChannelState[period.Linear, channel.Memory, channel.Data])(nil)
+var _ playback.Channel[period.Amiga, channel.Memory, channel.Data] = (*state.ChannelState[period.Amiga, channel.Memory, channel.Data])(nil)
 
 func (m *manager[TPeriod]) init(song *layout.Song, periodConverter period.PeriodConverter[TPeriod]) error {
 	m.Tracker.BaseClockRate = xmPeriod.XMBaseClock
@@ -133,7 +133,7 @@ func (m *manager[TPeriod]) GetNumChannels() int {
 	return len(m.channels)
 }
 
-func (m *manager[TPeriod]) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateFunc[TPeriod]) state.NoteOp[TPeriod, channel.Memory] {
+func (m *manager[TPeriod]) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateFunc[TPeriod]) state.NoteOp[TPeriod, channel.Memory, channel.Data] {
 	return doNoteCalc[TPeriod]{
 		Semitone:   st,
 		UpdateFunc: fn,
@@ -142,7 +142,7 @@ func (m *manager[TPeriod]) semitoneSetterFactory(st note.Semitone, fn state.Peri
 
 // SetNumChannels updates the song to have the specified number of channels and resets their states
 func (m *manager[TPeriod]) SetNumChannels(num int, periodConverter period.PeriodConverter[TPeriod]) {
-	m.channels = make([]state.ChannelState[TPeriod, channel.Memory], num)
+	m.channels = make([]state.ChannelState[TPeriod, channel.Memory, channel.Data], num)
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
@@ -153,7 +153,7 @@ func (m *manager[TPeriod]) SetNumChannels(num int, periodConverter period.Period
 		cs.PortaTargetPeriod.Reset()
 		cs.Trigger.Reset()
 		cs.RetriggerCount = 0
-		_ = cs.SetData(nil)
+		_ = cs.SetData(channel.Data{})
 		ocNum := m.song.GetRenderChannel(ch)
 		cs.RenderChannel = m.GetRenderChannel(ocNum, m.channelInit)
 	}
@@ -317,7 +317,7 @@ func (m *manager[TPeriod]) GetSongData() song.Data {
 }
 
 // GetChannel returns the channel interface for the specified channel number
-func (m *manager[TPeriod]) GetChannel(ch int) *state.ChannelState[TPeriod, channel.Memory] {
+func (m *manager[TPeriod]) GetChannel(ch int) *state.ChannelState[TPeriod, channel.Memory, channel.Data] {
 	return &m.channels[ch]
 }
 

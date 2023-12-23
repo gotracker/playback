@@ -88,7 +88,7 @@ func (m *manager) processPatternRow() error {
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]
-		cs.AdvanceRow(state.NewChannelDataTxn[period.Amiga, channel.Memory]())
+		cs.AdvanceRow(state.NewChannelDataTxn[period.Amiga, channel.Memory, channel.Data](channel.GetTargetsFromData))
 		if resetMemory {
 			mem := cs.GetMemory()
 			mem.StartOrder()

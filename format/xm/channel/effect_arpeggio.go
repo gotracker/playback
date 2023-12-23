@@ -11,7 +11,7 @@ import (
 type Arpeggio[TPeriod period.Period] DataEffect // '0'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e Arpeggio[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e Arpeggio[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 	cs.SetPos(cs.GetTargetPos())
@@ -19,7 +19,7 @@ func (e Arpeggio[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playbac
 }
 
 // Tick is called on every tick
-func (e Arpeggio[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory], p playback.Playback, currentTick int) error {
+func (e Arpeggio[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
 	xy := DataEffect(e)
 	if xy == 0 {
 		return nil

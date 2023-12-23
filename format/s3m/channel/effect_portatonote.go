@@ -16,7 +16,7 @@ type PortaToNote ChannelCommand // 'G'
 func (e PortaToNote) Start(cs S3MChannel, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
-	if cmd := cs.GetData(); cmd != nil && cmd.HasNote() {
+	if cmd := cs.GetChannelData(); cmd.HasNote() {
 		cs.SetPortaTargetPeriod(cs.GetTargetPeriod())
 		cs.SetNotePlayTick(false, note.ActionContinue, 0)
 	}

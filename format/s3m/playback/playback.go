@@ -24,7 +24,7 @@ import (
 	"github.com/gotracker/playback/system"
 )
 
-type channelState = state.ChannelState[period.Amiga, channel.Memory]
+type channelState = state.ChannelState[period.Amiga, channel.Memory, channel.Data]
 
 // manager is a playback manager for S3M music
 type manager struct {
@@ -46,7 +46,7 @@ type manager struct {
 }
 
 var _ playback.Playback = (*manager)(nil)
-var _ playback.Channel[period.Amiga, channel.Memory] = (*state.ChannelState[period.Amiga, channel.Memory])(nil)
+var _ playback.Channel[period.Amiga, channel.Memory, channel.Data] = (*state.ChannelState[period.Amiga, channel.Memory, channel.Data])(nil)
 var s3m system.System = s3mSystem.S3MSystem
 
 // NewManager creates a new manager for an S3M song
@@ -142,7 +142,7 @@ func (m *manager) GetNumChannels() int {
 	return len(m.channels)
 }
 
-func (m *manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateFunc[period.Amiga]) state.NoteOp[period.Amiga, channel.Memory] {
+func (m *manager) semitoneSetterFactory(st note.Semitone, fn state.PeriodUpdateFunc[period.Amiga]) state.NoteOp[period.Amiga, channel.Memory, channel.Data] {
 	return doNoteCalc{
 		Semitone:   st,
 		UpdateFunc: fn,
@@ -161,7 +161,7 @@ func (m *manager) SetNumChannels(num int) {
 		cs.PortaTargetPeriod.Reset()
 		cs.Trigger.Reset()
 		cs.RetriggerCount = 0
-		_ = cs.SetData(nil)
+		_ = cs.SetData(channel.Data{})
 		ocNum := m.song.GetRenderChannel(ch)
 		cs.RenderChannel = m.GetRenderChannel(ocNum, m.channelInit)
 	}

@@ -101,9 +101,7 @@ func (m *manager[TPeriod]) outputChannelsTrace() func(w io.Writer) {
 		if len(effects) == 0 {
 			effects = []playback.Effect{nil}
 		}
-		if cdata := ch.GetData(); cdata != nil {
-			trackData = fmt.Sprint(cdata)
-		}
+		trackData = fmt.Sprint(ch.GetChannelData())
 		for _, effect := range effects {
 			var (
 				activeEffect     string

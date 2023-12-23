@@ -12,7 +12,7 @@ import (
 type NewNoteActionNoteCut[TPeriod period.Period] DataEffect // 'S73'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e NewNoteActionNoteCut[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e NewNoteActionNoteCut[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.SetNewNoteAction(note.ActionCut)
 	return nil
 }

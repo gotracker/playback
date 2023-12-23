@@ -11,7 +11,7 @@ import (
 type SetSpeed[TPeriod period.Period] DataEffect // 'A'
 
 // PreStart triggers when the effect enters onto the channel state
-func (e SetSpeed[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e SetSpeed[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	if e != 0 {
 		m := p.(IT)
 		if err := m.SetTicks(int(e)); err != nil {
@@ -22,7 +22,7 @@ func (e SetSpeed[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory], p play
 }
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetSpeed[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e SetSpeed[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	return nil
 }

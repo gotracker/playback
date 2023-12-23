@@ -14,7 +14,7 @@ import (
 type SetChannelVolume[TPeriod period.Period] DataEffect // 'Mxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e SetChannelVolume[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e SetChannelVolume[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	xx := DataEffect(e)

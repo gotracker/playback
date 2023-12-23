@@ -12,7 +12,7 @@ import (
 type PanSlide[TPeriod period.Period] DataEffect // 'Pxx'
 
 // Start triggers on the first tick, but before the Tick() function is called
-func (e PanSlide[TPeriod]) Start(cs playback.Channel[TPeriod, Memory], p playback.Playback) error {
+func (e PanSlide[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	xx := DataEffect(e)
 	x := xx >> 4
 	y := xx & 0x0F
