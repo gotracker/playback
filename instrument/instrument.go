@@ -27,10 +27,10 @@ type StaticValues struct {
 
 // Instrument is the mildly-decoded instrument/sample header
 type Instrument struct {
-	Static   StaticValues
-	Inst     Data
-	C2Spd    period.Frequency
-	Finetune optional.Value[note.Finetune]
+	Static     StaticValues
+	Inst       Data
+	SampleRate period.Frequency
+	Finetune   optional.Value[note.Finetune]
 }
 
 // IsInvalid always returns false (valid)
@@ -38,15 +38,15 @@ func (inst Instrument) IsInvalid() bool {
 	return false
 }
 
-// GetC2Spd returns the C2SPD value for the instrument
+// GetSampleRate returns the central-note sample rate value for the instrument
 // This may get mutated if a finetune effect is processed
-func (inst Instrument) GetC2Spd() period.Frequency {
-	return inst.C2Spd
+func (inst Instrument) GetSampleRate() period.Frequency {
+	return inst.SampleRate
 }
 
-// SetC2Spd sets the C2SPD value for the instrument
-func (inst *Instrument) SetC2Spd(c2spd period.Frequency) {
-	inst.C2Spd = c2spd
+// SetSampleRate sets the central-note sample rate value for the instrument
+func (inst *Instrument) SetSampleRate(sampleRate period.Frequency) {
+	inst.SampleRate = sampleRate
 }
 
 // GetDefaultVolume returns the default volume value for the instrument

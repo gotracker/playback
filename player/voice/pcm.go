@@ -31,7 +31,7 @@ type PCM[TPeriod period.Period] interface {
 
 // PCMConfiguration is the information needed to configure an PCM2 voice
 type PCMConfiguration[TPeriod period.Period] struct {
-	C2SPD         period.Frequency
+	SampleRate    period.Frequency
 	InitialVolume volume.Volume
 	InitialPeriod TPeriod
 	AutoVibrato   voice.AutoVibrato
@@ -44,7 +44,7 @@ type PCMConfiguration[TPeriod period.Period] struct {
 // == the actual pcm voice ==
 
 type pcmVoice[TPeriod period.Period] struct {
-	c2spd         period.Frequency
+	sampleRate    period.Frequency
 	initialVolume volume.Volume
 	outputFilter  voice.FilterApplier
 	voiceFilter   filter.Filter
@@ -76,7 +76,7 @@ type pcmVoice[TPeriod period.Period] struct {
 // NewPCM creates a new PCM voice
 func NewPCM[TPeriod period.Period](periodConverter period.PeriodConverter[TPeriod], config PCMConfiguration[TPeriod]) voice.Voice {
 	v := pcmVoice[TPeriod]{
-		c2spd:           config.C2SPD,
+		sampleRate:      config.SampleRate,
 		initialVolume:   config.InitialVolume,
 		outputFilter:    config.OutputFilter,
 		voiceFilter:     config.VoiceFilter,
@@ -434,7 +434,7 @@ func (v *pcmVoice[TPeriod]) GetSampler(samplerRate float32) sampling.Sampler {
 
 func (v *pcmVoice[TPeriod]) Clone() voice.Voice {
 	p := pcmVoice[TPeriod]{
-		c2spd:                   v.c2spd,
+		sampleRate:              v.sampleRate,
 		initialVolume:           v.initialVolume,
 		outputFilter:            v.outputFilter,
 		fadeoutMode:             v.fadeoutMode,

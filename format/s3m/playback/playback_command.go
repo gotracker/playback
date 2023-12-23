@@ -21,7 +21,7 @@ func (o doNoteCalc) Process(p playback.Playback, cs *channelState) error {
 
 	if inst := cs.GetTargetInst(); inst != nil {
 		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
-		period := s3mPeriod.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetC2Spd())
+		period := s3mPeriod.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetSampleRate())
 		o.UpdateFunc(period)
 	}
 	return nil
@@ -122,7 +122,7 @@ func (m *manager) SetFilterEnable(on bool) {
 		if o := c.GetRenderChannel(); o != nil {
 			if on {
 				if o.Filter == nil {
-					o.Filter = filter.NewAmigaLPF(s3mPeriod.DefaultC2Spd, m.GetSampleRate())
+					o.Filter = filter.NewAmigaLPF(s3mPeriod.DefaultC4SampleRate, m.GetSampleRate())
 				}
 			} else {
 				o.Filter = nil

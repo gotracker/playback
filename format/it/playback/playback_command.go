@@ -23,7 +23,7 @@ func (o doNoteCalc[TPeriod]) Process(p playback.Playback, cs *state.ChannelState
 	if inst := cs.GetTargetInst(); inst != nil {
 		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
 		ft := inst.GetFinetune()
-		period := itPeriod.CalcSemitonePeriod[TPeriod](cs.Semitone, ft, inst.GetC2Spd())
+		period := itPeriod.CalcSemitonePeriod[TPeriod](cs.Semitone, ft, inst.GetSampleRate())
 		o.UpdateFunc(period)
 	}
 	return nil
@@ -123,7 +123,7 @@ func (m *manager[TPeriod]) SetFilterEnable(on bool) {
 		if o := c.GetRenderChannel(); o != nil {
 			if on {
 				if o.Filter == nil {
-					o.Filter = filter.NewAmigaLPF(period.Frequency(itPeriod.DefaultC2Spd), m.GetSampleRate())
+					o.Filter = filter.NewAmigaLPF(period.Frequency(itPeriod.DefaultC5SampleRate), m.GetSampleRate())
 				}
 			} else {
 				o.Filter = nil

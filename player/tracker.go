@@ -61,7 +61,7 @@ func (t *Tracker) Update(deltaTime time.Duration, out chan<- *output.PremixData)
 
 	t.OutputTraces()
 
-	if premix != nil && premix.Data != nil && len(premix.Data) != 0 {
+	if premix != nil && len(premix.Data) > 0 {
 		out <- premix
 	}
 

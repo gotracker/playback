@@ -1,9 +1,11 @@
 package period
 
+import "github.com/gotracker/playback/system"
+
 // AmigaConverter defines a sampler period that follows the AmigaConverter-style approach of note
 // definition. Useful in calculating resampling.
 type AmigaConverter struct {
-	BaseClock Frequency
+	System system.System
 }
 
 var _ PeriodConverter[Amiga] = (*AmigaConverter)(nil)
@@ -13,7 +15,7 @@ func (c AmigaConverter) GetFrequency(p Amiga) Frequency {
 	if p.IsInvalid() {
 		return 0
 	}
-	return c.BaseClock / Frequency(p)
+	return c.System.GetBaseClock() / Frequency(p)
 }
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period

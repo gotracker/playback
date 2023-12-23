@@ -52,7 +52,7 @@ func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*
 			Name:     si.GetSampleName(),
 			Volume:   s3mVolume.VolumeFromS3M(si.Volume),
 		},
-		C2Spd: period.Frequency(si.C2Spd.Lo),
+		SampleRate: period.Frequency(si.C2Spd.Lo),
 	}
 	return &sample, nil
 }
@@ -64,10 +64,10 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 			Name:     si.GetSampleName(),
 			Volume:   s3mVolume.VolumeFromS3M(si.Volume),
 		},
-		C2Spd: period.Frequency(si.C2Spd.Lo),
+		SampleRate: period.Frequency(si.C2Spd.Lo),
 	}
-	if sample.C2Spd == 0 {
-		sample.C2Spd = period.Frequency(s3mfile.DefaultC2Spd)
+	if sample.SampleRate == 0 {
+		sample.SampleRate = period.Frequency(s3mfile.DefaultC2Spd)
 	}
 
 	instLen := int(si.Length.Lo)
@@ -125,7 +125,7 @@ func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (
 			Name:     si.GetSampleName(),
 			Volume:   s3mVolume.VolumeFromS3M(si.Volume),
 		},
-		C2Spd: period.Frequency(si.C2Spd.Lo),
+		SampleRate: period.Frequency(si.C2Spd.Lo),
 	}
 
 	idata := instrument.OPL2{

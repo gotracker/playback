@@ -3,30 +3,16 @@ package period
 import (
 	"math"
 
-	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
+	"github.com/gotracker/playback/format/s3m/system"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 )
 
-const (
-	floatDefaultC2Spd = float32(DefaultC2Spd)
-	c2Period          = 1712
-
-	// DefaultC2Spd is the default C2SPD for S3M samples
-	DefaultC2Spd = period.Frequency(s3mfile.DefaultC2Spd)
-
-	// S3MBaseClock is the base clock speed of S3M files
-	S3MBaseClock period.Frequency = DefaultC2Spd * c2Period
-
-	notesPerOctave     = 12
-	semitonesPerNote   = 64
-	semitonesPerOctave = notesPerOctave * semitonesPerNote
-)
-
+var DefaultC4SampleRate = system.DefaultC4SampleRate
 var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
 
 // CalcSemitonePeriod calculates the semitone period for it notes
-func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd period.Frequency) period.Amiga {
+func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c4SampleRate period.Frequency) period.Amiga {
 	if semi == note.UnchangedSemitone {
 		panic("how?")
 	}
@@ -39,41 +25,41 @@ func CalcSemitonePeriod(semi note.Semitone, ft note.Finetune, c2spd period.Frequ
 		return empty
 	}
 
-	if c2spd == 0 {
-		c2spd = period.Frequency(DefaultC2Spd)
+	if c4SampleRate == 0 {
+		c4SampleRate = period.Frequency(system.DefaultC4SampleRate)
 	}
 
 	if ft != 0 {
-		c2spd = CalcFinetuneC2Spd(c2spd, ft)
+		c4SampleRate = CalcFinetuneC4SampleRate(c4SampleRate, ft)
 	}
 
-	return period.Amiga(float64(floatDefaultC2Spd*semitonePeriodTable[key]) / float64(uint32(c2spd)<<octave))
+	return period.Amiga(float64(semitonePeriodTable[key]*float32(system.DefaultC4SampleRate)) / float64(uint32(c4SampleRate)<<octave))
 }
 
-// CalcFinetuneC2Spd calculates a new C2SPD after a finetune adjustment
-func CalcFinetuneC2Spd(c2spd period.Frequency, finetune note.Finetune) period.Frequency {
+// CalcFinetuneC4SampleRate calculates a new frequency after a finetune adjustment
+func CalcFinetuneC4SampleRate(c4SampleRate period.Frequency, finetune note.Finetune) period.Frequency {
 	if finetune == 0 {
-		return c2spd
+		return c4SampleRate
 	}
 
-	nft := 5*semitonesPerOctave + int(finetune)
-	p := CalcSemitonePeriod(note.Semitone(nft/semitonesPerNote), note.Finetune(nft%semitonesPerNote), c2spd)
+	nft := system.C4SlideFines + int(finetune)
+	p := CalcSemitonePeriod(note.Semitone(nft/system.SlideFinesPerNote), note.Finetune(nft%system.SlideFinesPerNote), c4SampleRate)
 	return p.GetFrequency()
 }
 
-// FrequencyFromSemitone returns the frequency from the semitone (and c2spd)
-func FrequencyFromSemitone(semitone note.Semitone, c2spd period.Frequency) float32 {
-	p := CalcSemitonePeriod(semitone, 0, c2spd)
+// FrequencyFromSemitone returns the frequency from the semitone (and c4 sample rate)
+func FrequencyFromSemitone(semitone note.Semitone, c4SampleRate period.Frequency) float32 {
+	p := CalcSemitonePeriod(semitone, 0, c4SampleRate)
 	return float32(p.GetFrequency())
 }
 
 // ToAmigaPeriod calculates an amiga period for a linear finetune period
-func ToAmigaPeriod(finetunes note.Finetune, c2spd period.Frequency) period.Amiga {
+func ToAmigaPeriod(finetunes note.Finetune, c4SampleRate period.Frequency) period.Amiga {
 	if finetunes < 0 {
 		finetunes = 0
 	}
-	pow := math.Pow(2, float64(finetunes)/semitonesPerOctave)
-	linFreq := float64(c2spd) * pow / float64(DefaultC2Spd)
+	pow := math.Pow(2, float64(finetunes)/system.SlideFinesPerOctave)
+	linFreq := float64(c4SampleRate) * pow / float64(system.DefaultC4SampleRate)
 
 	return period.Amiga(float64(semitonePeriodTable[0]) / linFreq)
 }

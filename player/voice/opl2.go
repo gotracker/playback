@@ -30,7 +30,7 @@ type OPL2Registers component.OPL2Registers
 type OPLConfiguration[TPeriod period.Period] struct {
 	Chip          render.OPL2Chip
 	Channel       int
-	C2SPD         period.Frequency
+	SampleRate    period.Frequency
 	InitialVolume volume.Volume
 	InitialPeriod TPeriod
 	AutoVibrato   voice.AutoVibrato
@@ -40,7 +40,7 @@ type OPLConfiguration[TPeriod period.Period] struct {
 // == the actual opl2 voice ==
 
 type opl2Voice[TPeriod period.Period] struct {
-	c2spd         period.Frequency
+	sampleRate    period.Frequency
 	initialVolume volume.Volume
 
 	active    bool
@@ -59,7 +59,7 @@ type opl2Voice[TPeriod period.Period] struct {
 // NewOPL2 creates a new OPL2 voice
 func NewOPL2[TPeriod period.Period](config OPLConfiguration[TPeriod]) voice.Voice {
 	v := opl2Voice[TPeriod]{
-		c2spd:         config.C2SPD,
+		sampleRate:    config.SampleRate,
 		initialVolume: config.InitialVolume,
 		fadeoutMode:   fadeout.ModeDisabled,
 		active:        true,
@@ -90,7 +90,7 @@ func NewOPL2[TPeriod period.Period](config OPLConfiguration[TPeriod]) voice.Voic
 		_ = d
 	}
 
-	v.o.Setup(config.Chip, config.Channel, regs, config.C2SPD)
+	v.o.Setup(config.Chip, config.Channel, regs, config.SampleRate)
 	v.amp.SetVolume(config.InitialVolume)
 	v.freq.SetPeriod(config.InitialPeriod)
 	v.freq.SetAutoVibratoEnabled(config.AutoVibrato.Enabled)

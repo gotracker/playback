@@ -442,7 +442,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 
 	ii.Static.Filename = si.Header.GetFilename()
 	ii.Static.Name = si.Header.GetName()
-	ii.C2Spd = period.Frequency(si.Header.C5Speed)
+	ii.SampleRate = period.Frequency(si.Header.C5Speed)
 	ii.Static.AutoVibrato = voice.AutoVibrato{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
 		Sweep:             255,
@@ -455,12 +455,12 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	}
 	ii.Static.Volume = volume.Volume(si.Header.Volume.Value())
 
-	if ii.C2Spd == 0 {
-		ii.C2Spd = 8363.0
+	if ii.SampleRate == 0 {
+		ii.SampleRate = 8363.0
 	}
 
 	if si.Header.Flags.IsStereo() {
-		ii.C2Spd /= 2.0
+		ii.SampleRate /= 2.0
 	}
 
 	if !convSettings.linearFrequencySlides {

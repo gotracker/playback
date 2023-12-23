@@ -12,6 +12,7 @@ import (
 	"github.com/gotracker/playback/format/it/layout"
 	"github.com/gotracker/playback/format/it/pattern"
 	itPeriod "github.com/gotracker/playback/format/it/period"
+	itSystem "github.com/gotracker/playback/format/it/system"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/output"
@@ -22,6 +23,7 @@ import (
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
+	"github.com/gotracker/playback/system"
 )
 
 // manager is a playback manager for IT music
@@ -44,13 +46,15 @@ type manager[TPeriod period.Period] struct {
 	enableNewNoteActions bool
 }
 
+var it system.System = itSystem.ITSystem
+
 var _ playback.Playback = (*manager[period.Linear])(nil)
 var _ playback.Playback = (*manager[period.Amiga])(nil)
 var _ playback.Channel[period.Linear, channel.Memory] = (*state.ChannelState[period.Linear, channel.Memory])(nil)
 var _ playback.Channel[period.Amiga, channel.Memory] = (*state.ChannelState[period.Amiga, channel.Memory])(nil)
 
 func (m *manager[TPeriod]) init(song *layout.Song, periodConverter period.PeriodConverter[TPeriod]) error {
-	m.Tracker.BaseClockRate = itPeriod.ITBaseClock
+	m.Tracker.BaseClockRate = it.GetBaseClock()
 	m.song = song
 
 	m.PastNotes.SetMaxPerChannel(1)

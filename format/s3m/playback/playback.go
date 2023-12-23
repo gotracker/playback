@@ -10,6 +10,7 @@ import (
 	"github.com/gotracker/playback/format/s3m/layout"
 	"github.com/gotracker/playback/format/s3m/pattern"
 	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
+	s3mSystem "github.com/gotracker/playback/format/s3m/system"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/output"
@@ -20,6 +21,7 @@ import (
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
+	"github.com/gotracker/playback/system"
 )
 
 type channelState = state.ChannelState[period.Amiga, channel.Memory]
@@ -45,12 +47,13 @@ type manager struct {
 
 var _ playback.Playback = (*manager)(nil)
 var _ playback.Channel[period.Amiga, channel.Memory] = (*state.ChannelState[period.Amiga, channel.Memory])(nil)
+var s3m system.System = s3mSystem.S3MSystem
 
 // NewManager creates a new manager for an S3M song
 func NewManager(song *layout.Song) (playback.Playback, error) {
 	m := manager{
 		Tracker: player.Tracker{
-			BaseClockRate: s3mPeriod.S3MBaseClock,
+			BaseClockRate: s3m.GetBaseClock(),
 		},
 		song: song,
 	}

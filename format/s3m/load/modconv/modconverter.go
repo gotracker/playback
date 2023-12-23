@@ -211,7 +211,7 @@ func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error)
 }
 
 var (
-	finetuneC2Spds = [...]s3mfile.C2SPD{
+	finetuneC4SampleRates = [...]s3mfile.C2SPD{
 		8363, 8413, 8463, 8529, 8581, 8651, 8723, 8757,
 		7895, 7941, 7985, 8046, 8107, 8169, 8232, 8280,
 	}
@@ -254,7 +254,7 @@ func convertMODInstrumentToS3M(num int, inst *modfile.InstrumentHeader, samp []u
 			Lo: uint16(len(samp)),
 		},
 		C2Spd: s3mfile.HiLo32{
-			Lo: uint16(finetuneC2Spds[inst.FineTune&0xF]),
+			Lo: uint16(finetuneC4SampleRates[inst.FineTune&0xF]),
 		},
 		Volume: s3mfile.Volume(inst.Volume),
 		LoopBegin: s3mfile.HiLo32{

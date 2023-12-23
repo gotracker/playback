@@ -18,13 +18,13 @@ func New[TPeriod period.Period](periodConverter period.PeriodConverter[TPeriod],
 			pluginFilter filter.Filter
 		)
 		if factory := inst.GetFilterFactory(); factory != nil {
-			voiceFilter = factory(inst.C2Spd, output.GetSampleRate())
+			voiceFilter = factory(inst.SampleRate, output.GetSampleRate())
 		}
 		if factory := inst.GetPluginFilterFactory(); factory != nil {
-			pluginFilter = factory(inst.C2Spd, output.GetSampleRate())
+			pluginFilter = factory(inst.SampleRate, output.GetSampleRate())
 		}
 		return NewPCM[TPeriod](periodConverter, PCMConfiguration[TPeriod]{
-			C2SPD:         inst.GetC2Spd(),
+			SampleRate:    inst.GetSampleRate(),
 			InitialVolume: inst.GetDefaultVolume(),
 			AutoVibrato:   inst.GetAutoVibrato(),
 			Data:          data,
@@ -36,7 +36,7 @@ func New[TPeriod period.Period](periodConverter period.PeriodConverter[TPeriod],
 		return NewOPL2[TPeriod](OPLConfiguration[TPeriod]{
 			Chip:          output.GetOPL2Chip(),
 			Channel:       output.ChannelNum,
-			C2SPD:         inst.GetC2Spd(),
+			SampleRate:    inst.GetSampleRate(),
 			InitialVolume: inst.GetDefaultVolume(),
 			AutoVibrato:   inst.GetAutoVibrato(),
 			Data:          data,

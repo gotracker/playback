@@ -84,7 +84,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 					Factory:           oscillator.NewProtrackerOscillator,
 				},
 			},
-			C2Spd: period.Frequency(0), // uses si.Finetune, below
+			SampleRate: period.Frequency(0), // uses si.Finetune, below
 		}
 
 		if !linearFrequencySlides {
@@ -188,13 +188,13 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 
 		if si.Finetune != 0 {
 			if linearFrequencySlides {
-				sample.C2Spd = xmPeriod.CalcFinetuneC2Spd[period.Linear](xmPeriod.LinearConverter, xmPeriod.DefaultC2Spd, note.Finetune(si.Finetune))
+				sample.SampleRate = xmPeriod.CalcFinetuneC4SampleRate[period.Linear](xmPeriod.LinearConverter, xmPeriod.DefaultC4SampleRate, note.Finetune(si.Finetune))
 			} else {
-				sample.C2Spd = xmPeriod.CalcFinetuneC2Spd[period.Amiga](xmPeriod.AmigaConverter, xmPeriod.DefaultC2Spd, note.Finetune(si.Finetune))
+				sample.SampleRate = xmPeriod.CalcFinetuneC4SampleRate[period.Amiga](xmPeriod.AmigaConverter, xmPeriod.DefaultC4SampleRate, note.Finetune(si.Finetune))
 			}
 		}
-		if sample.C2Spd == 0 {
-			sample.C2Spd = period.Frequency(xmPeriod.DefaultC2Spd)
+		if sample.SampleRate == 0 {
+			sample.SampleRate = period.Frequency(xmPeriod.DefaultC4SampleRate)
 		}
 		if si.Flags.IsStereo() {
 			numChannels = 2
