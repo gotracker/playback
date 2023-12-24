@@ -1,6 +1,7 @@
 package component
 
 import (
+	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/util"
 	"github.com/gotracker/playback/voice"
@@ -10,13 +11,13 @@ import (
 // PitchEnvelope is an frequency modulation envelope
 type PitchEnvelope[TPeriod period.Period] struct {
 	enabled   bool
-	state     envelope.State[int8]
+	state     envelope.State[filter.PitchFiltValue]
 	delta     period.Delta
 	keyOn     bool
 	prevKeyOn bool
 }
 
-func (e *PitchEnvelope[TPeriod]) Init(env *envelope.Envelope[int8]) {
+func (e *PitchEnvelope[TPeriod]) Init(env *envelope.Envelope[filter.PitchFiltValue]) {
 	e.state.Init(env)
 	e.Reset()
 }
@@ -83,16 +84,15 @@ func (e *PitchEnvelope[TPeriod]) Advance(keyOn bool, prevKeyOn bool) voice.Callb
 func (e *PitchEnvelope[TPeriod]) update() {
 	cur, next, t := e.state.GetCurrentValue(e.keyOn)
 
-	var y0 period.Delta
+	var y0 filter.PitchFiltValue
 	if cur != nil {
-		y0 = period.Delta(cur.Value())
+		y0 = cur.Value()
 	}
 
-	var y1 period.Delta
+	var y1 filter.PitchFiltValue
 	if next != nil {
-		y1 = period.Delta(next.Value())
+		y1 = next.Value()
 	}
 
-	d := -util.Lerp(float64(t), y0, y1)
-	e.delta = d
+	e.delta = -period.Delta(util.Lerp(float64(t), y0.AsPitch(), y1.AsPitch()))
 }

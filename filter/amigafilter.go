@@ -88,5 +88,5 @@ func (f *AmigaLPF) recalculate() {
 }
 
 // UpdateEnv updates the filter with the value from the filter envelope
-func (f *AmigaLPF) UpdateEnv(v int8) {
+func (f *AmigaLPF) UpdateEnv(v uint8) {
 }

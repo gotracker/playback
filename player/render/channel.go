@@ -38,7 +38,7 @@ func (oc *Channel) GetPremixVolume() volume.Volume {
 }
 
 // SetFilterEnvelopeValue updates the filter on the channel with the new envelope value
-func (oc *Channel) SetFilterEnvelopeValue(envVal int8) {
+func (oc *Channel) SetFilterEnvelopeValue(envVal uint8) {
 	if oc.Filter != nil {
 		oc.Filter.UpdateEnv(envVal)
 	}

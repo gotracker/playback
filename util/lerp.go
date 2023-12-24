@@ -12,5 +12,5 @@ func Lerp[T Lerpable](t float64, a, b T) T {
 	} else if t >= 1 {
 		return b
 	}
-	return a + T(t*float64(b-a))
+	return a + T(t*(float64(b)-(float64(a))))
 }

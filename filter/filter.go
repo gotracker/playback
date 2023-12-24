@@ -8,7 +8,7 @@ import (
 // Filter is an interface to a filter
 type Filter interface {
 	Filter(volume.Matrix) volume.Matrix
-	UpdateEnv(int8)
+	UpdateEnv(uint8)
 	Clone() Filter
 }
 

@@ -47,7 +47,7 @@ func NewResonantFilter(cutoff uint8, resonance uint8, playbackRate period.Freque
 		rf.cutoff.Set(uint8(c))
 	}
 
-	rf.recalculate(int8(c))
+	rf.recalculate(c)
 	return rf
 }
 
@@ -77,6 +77,12 @@ func (f *ResonantFilter) Filter(dry volume.Matrix) volume.Matrix {
 		if f.enabled {
 			yn *= f.a0
 			yn += c.ynz1*f.b0 + c.ynz2*f.b1
+			if yn < -1 {
+				yn = -1
+			}
+			if yn > 1 {
+				yn = 1
+			}
 		}
 		c.ynz2 = c.ynz1
 		c.ynz1 = yn
@@ -88,7 +94,7 @@ func (f *ResonantFilter) Filter(dry volume.Matrix) volume.Matrix {
 	return wet
 }
 
-func (f *ResonantFilter) recalculate(v int8) {
+func (f *ResonantFilter) recalculate(v uint8) {
 	cutoff, useCutoff := f.cutoff.Get()
 	resonance, useResonance := f.resonance.Get()
 
@@ -99,17 +105,15 @@ func (f *ResonantFilter) recalculate(v int8) {
 	if !useCutoff {
 		cutoff = 127
 	} else {
-		cutoff = uint8(v)
-		if cutoff < 0 {
-			cutoff = 0
-		} else if cutoff > 127 {
+		cutoff = v
+		if cutoff > 127 {
 			cutoff = 127
 		}
 
-		f.cutoff.Set(uint8(cutoff))
+		f.cutoff.Set(cutoff)
 	}
 
-	computedCutoff := int(cutoff) * 2
+	computedCutoff := cutoff * 2
 
 	useFilter := true
 	if computedCutoff >= 254 && resonance == 0 {
@@ -136,14 +140,12 @@ func (f *ResonantFilter) recalculate(v int8) {
 
 	f2 := float64(f.playbackRate) / 2.0
 	freq := f2
-	if computedCutoff < 254 {
-		fcComputedCutoff := float64(computedCutoff)
-		freq = 110.0 * math.Pow(2.0, 0.25+(fcComputedCutoff/filterRange))
-		if freq < 120.0 {
-			freq = 120.0
-		} else if freq > 20000 {
-			freq = 20000
-		}
+	fcComputedCutoff := float64(computedCutoff)
+	freq = 110.0 * math.Pow(2.0, 0.25+(fcComputedCutoff/filterRange))
+	if freq < 120.0 {
+		freq = 120.0
+	} else if freq > 20000 {
+		freq = 20000
 	}
 	if freq > f2 {
 		freq = f2
@@ -187,6 +189,6 @@ func (f *ResonantFilter) recalculate(v int8) {
 }
 
 // UpdateEnv updates the filter with the value from the filter envelope
-func (f *ResonantFilter) UpdateEnv(cutoff int8) {
+func (f *ResonantFilter) UpdateEnv(cutoff uint8) {
 	f.recalculate(cutoff)
 }

@@ -349,7 +349,7 @@ func (v *pcmVoice[TPeriod]) IsFilterEnvelopeEnabled() bool {
 	return v.filterEnv.IsEnabled()
 }
 
-func (v *pcmVoice[TPeriod]) GetCurrentFilterEnvelope() int8 {
+func (v *pcmVoice[TPeriod]) GetCurrentFilterEnvelope() uint8 {
 	return v.filterEnv.GetCurrentValue()
 }
 

@@ -1,6 +1,8 @@
 package component
 
 import (
+	"github.com/gotracker/playback/filter"
+	"github.com/gotracker/playback/util"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/envelope"
 )
@@ -8,13 +10,13 @@ import (
 // FilterEnvelope is a filter frequency cutoff modulation envelope
 type FilterEnvelope struct {
 	enabled   bool
-	state     envelope.State[int8]
-	value     int8
+	state     envelope.State[filter.PitchFiltValue]
+	value     uint8
 	keyOn     bool
 	prevKeyOn bool
 }
 
-func (e *FilterEnvelope) Init(env *envelope.Envelope[int8]) {
+func (e *FilterEnvelope) Init(env *envelope.Envelope[filter.PitchFiltValue]) {
 	e.state.Init(env)
 	e.Reset()
 }
@@ -48,7 +50,7 @@ func (e *FilterEnvelope) IsEnabled() bool {
 }
 
 // GetCurrentValue returns the current cached envelope value
-func (e *FilterEnvelope) GetCurrentValue() int8 {
+func (e *FilterEnvelope) GetCurrentValue() uint8 {
 	return e.value
 }
 
@@ -81,15 +83,15 @@ func (e *FilterEnvelope) Advance(keyOn bool, prevKeyOn bool) voice.Callback {
 func (e *FilterEnvelope) update() {
 	cur, next, t := e.state.GetCurrentValue(e.keyOn)
 
-	var y0 float32
+	var y0 filter.PitchFiltValue
 	if cur != nil {
-		y0 = float32(cur.Value())
+		y0 = cur.Value()
 	}
 
-	var y1 float32
+	var y1 filter.PitchFiltValue
 	if next != nil {
-		y1 = float32(next.Value())
+		y1 = next.Value()
 	}
 
-	e.value = int8(y0 + t*(y1-y0))
+	e.value = util.Lerp(float64(t), y0.AsFilter(), y1.AsFilter())
 }

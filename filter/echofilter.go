@@ -126,6 +126,6 @@ func (e *EchoFilter) recalculate() {
 	}
 }
 
-func (e *EchoFilter) UpdateEnv(val int8) {
+func (e *EchoFilter) UpdateEnv(val uint8) {
 
 }
