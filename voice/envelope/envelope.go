@@ -48,6 +48,11 @@ func (e *State[T]) Envelope() *Envelope[T] {
 
 // Reset resets the envelope
 func (e *State[T]) Reset() {
+	if e.env == nil || !e.env.Enabled {
+		e.stopped = true
+		return
+	}
+
 	e.position = 0
 	pos, _, _ := e.calcLoopedPos(true)
 	if pos < len(e.env.Values) {
