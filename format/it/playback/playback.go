@@ -79,10 +79,11 @@ func (m *manager[TPeriod]) init(song *layout.Song, periodConverter period.Period
 		cs.SetSongDataInterface(song)
 		cs.SetRenderChannel(oc)
 		cs.SetGlobalVolume(m.GetGlobalVolume())
-		cs.SetActiveVolume(ch.InitialVolume)
+		active := cs.GetActiveState()
+		active.SetVolume(ch.InitialVolume)
 		cs.SetChannelVolume(ch.ChannelVolume)
 		cs.SetPanEnabled(true)
-		cs.SetPan(ch.InitialPanning)
+		active.Pan = ch.InitialPanning
 		cs.SetMemory(&song.ChannelSettings[i].Memory)
 		cs.SetStoredSemitone(note.UnchangedSemitone)
 	}

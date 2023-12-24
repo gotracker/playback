@@ -28,7 +28,7 @@ func (e RetriggerNote[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data],
 	rt := cs.GetRetriggerCount() + 1
 	cs.SetRetriggerCount(rt)
 	if DataEffect(rt) >= y {
-		cs.SetPos(sampling.Pos{})
+		cs.GetActiveState().Pos = sampling.Pos{}
 		cs.ResetRetriggerCount()
 	}
 	return nil

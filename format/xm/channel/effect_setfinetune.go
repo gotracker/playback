@@ -15,7 +15,7 @@ type SetFinetune[TPeriod period.Period] DataEffect // 'E5x'
 func (e SetFinetune[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	x := DataEffect(e) & 0xf
 
-	inst := cs.GetTargetInst()
+	inst := cs.GetTargetState().Instrument
 	if inst != nil {
 		ft := (note.Finetune(x) - 8) * 4
 		inst.SetFinetune(ft)

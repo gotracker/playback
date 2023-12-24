@@ -6,13 +6,14 @@ import (
 	"github.com/gotracker/gomixing/mixing"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice"
 )
 
 // Active is the active state of a channel
 type Active[TPeriod period.Period] struct {
-	Playback[TPeriod]
+	playback.ChannelState[TPeriod]
 	Voice       voice.Voice
 	PeriodDelta period.Delta
 }
@@ -24,7 +25,7 @@ func (a *Active[TPeriod]) Reset() {
 		a.Voice = nil
 	}
 	a.PeriodDelta = 0
-	a.Playback.Reset()
+	a.ChannelState.Reset()
 }
 
 // Clone clones the active state so that various interfaces do not collide
@@ -35,23 +36,6 @@ func (a *Active[TPeriod]) Clone() *Active[TPeriod] {
 	}
 
 	return &c
-}
-
-// Transitions the active state so that various interfaces do not collide
-func (a *Active[TPeriod]) Transition() *Active[TPeriod] {
-	var c *Active[TPeriod]
-	if a.Voice != nil && !a.Voice.IsDone() {
-		c = &Active[TPeriod]{
-			Playback:    a.Playback,
-			Voice:       a.Voice,
-			PeriodDelta: a.PeriodDelta,
-		}
-	}
-
-	a.Reset()
-	a.Voice = nil
-
-	return c
 }
 
 type RenderDetails struct {
@@ -86,7 +70,12 @@ func RenderStatesTogether[TPeriod period.Period](periodConverter period.PeriodCo
 }
 
 func (a *Active[TPeriod]) renderState(periodConverter period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details RenderDetails) *mixing.Data {
-	if a.Period.IsInvalid() || a.Volume == 0 {
+	if a.Period.IsInvalid() {
+		return nil
+	}
+
+	vol := a.GetVolume()
+	if vol == 0 {
 		return nil
 	}
 
@@ -97,7 +86,7 @@ func (a *Active[TPeriod]) renderState(periodConverter period.PeriodConverter[TPe
 
 	// Commit the playback settings to the note-control
 	voice.SetPeriod(ncv, a.Period)
-	voice.SetVolume(ncv, a.Volume)
+	voice.SetVolume(ncv, vol)
 	voice.SetPos(ncv, a.Pos)
 	voice.SetPan(ncv, a.Pan)
 

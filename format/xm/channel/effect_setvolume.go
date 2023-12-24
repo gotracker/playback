@@ -17,7 +17,8 @@ func (e SetVolume[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p 
 
 	xx := xmVolume.XmVolume(e)
 
-	cs.SetActiveVolume(xx.Volume())
+	active := cs.GetActiveState()
+	active.SetVolume(xx.Volume())
 	return nil
 }
 

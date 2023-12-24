@@ -16,10 +16,11 @@ func (e StereoControl) Start(cs S3MChannel, p playback.Playback) error {
 
 	x := uint8(e) & 0xf
 
+	active := cs.GetActiveState()
 	if x > 7 {
-		cs.SetPan(s3mPanning.PanningFromS3M(x - 8))
+		active.Pan = s3mPanning.PanningFromS3M(x - 8)
 	} else {
-		cs.SetPan(s3mPanning.PanningFromS3M(x + 8))
+		active.Pan = s3mPanning.PanningFromS3M(x + 8)
 	}
 	return nil
 }

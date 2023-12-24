@@ -16,7 +16,7 @@ func (e SetPanPosition) Start(cs S3MChannel, p playback.Playback) error {
 
 	x := uint8(e) & 0xf
 
-	cs.SetPan(s3mPanning.PanningFromS3M(x))
+	cs.GetActiveState().Pan = s3mPanning.PanningFromS3M(x)
 	return nil
 }
 

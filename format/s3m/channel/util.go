@@ -34,9 +34,10 @@ type S3M interface {
 }
 
 func doVolSlide(cs S3MChannel, delta float32, multiplier float32) error {
-	av := cs.GetActiveVolume()
+	active := cs.GetActiveState()
+	av := active.GetVolume()
 	v := s3mVolume.VolumeToS3M(av)
-	vol := int16((float32(v) + delta) * multiplier)
+	vol := int16(float32(v) + (delta * multiplier))
 	if vol >= 64 {
 		vol = 63
 	}
@@ -45,19 +46,20 @@ func doVolSlide(cs S3MChannel, delta float32, multiplier float32) error {
 	}
 	sv := s3mfile.Volume(vol)
 	nv := s3mVolume.VolumeFromS3M(sv)
-	cs.SetActiveVolume(nv)
+	active.SetVolume(nv)
 	return nil
 }
 
 func doPortaUp(cs S3MChannel, amount float32, multiplier float32) error {
-	cur := cs.GetPeriod()
+	active := cs.GetActiveState()
+	cur := active.Period
 	if cur.IsInvalid() {
 		return nil
 	}
 
 	delta := int(amount * multiplier)
 	cur = cur.PortaUp(delta)
-	cs.SetPeriod(cur)
+	active.Period = cur
 	return nil
 }
 
@@ -66,7 +68,8 @@ func doPortaUpToNote(cs S3MChannel, amount float32, multiplier float32, target p
 		return nil
 	}
 
-	cur := cs.GetPeriod()
+	active := cs.GetActiveState()
+	cur := active.Period
 	if cur.IsInvalid() {
 		return nil
 	}
@@ -77,24 +80,26 @@ func doPortaUpToNote(cs S3MChannel, amount float32, multiplier float32, target p
 	if period.ComparePeriods(cur, target) == comparison.SpaceshipLeftGreater {
 		cur = target
 	}
-	cs.SetPeriod(cur)
+	active.Period = cur
 	return nil
 }
 
 func doPortaDown(cs S3MChannel, amount float32, multiplier float32) error {
-	cur := cs.GetPeriod()
+	active := cs.GetActiveState()
+	cur := active.Period
 	if cur.IsInvalid() {
 		return nil
 	}
 
 	delta := int(amount * multiplier)
 	cur = cur.PortaDown(delta)
-	cs.SetPeriod(cur)
+	active.Period = cur
 	return nil
 }
 
 func doPortaDownToNote(cs S3MChannel, amount float32, multiplier float32, target period.Amiga) error {
-	cur := cs.GetPeriod()
+	active := cs.GetActiveState()
+	cur := active.Period
 	if cur.IsInvalid() {
 		return nil
 	}
@@ -105,7 +110,7 @@ func doPortaDownToNote(cs S3MChannel, amount float32, multiplier float32, target
 	if period.ComparePeriods(cur, target) == comparison.SpaceshipRightGreater {
 		cur = target
 	}
-	cs.SetPeriod(cur)
+	active.Period = cur
 	return nil
 }
 
@@ -145,7 +150,7 @@ func doArpeggio(cs S3MChannel, currentTick int, arpSemitoneADelta int8, arpSemit
 		arpSemitoneTarget = note.Semitone(int8(ns) + arpSemitoneBDelta)
 	}
 	cs.SetOverrideSemitone(arpSemitoneTarget)
-	cs.SetTargetPos(cs.GetPos())
+	cs.GetTargetState().Pos = cs.GetActiveState().Pos
 	return nil
 }
 
@@ -159,11 +164,12 @@ var (
 )
 
 func doVolSlideTwoThirds(cs S3MChannel) error {
-	vol := s3mVolume.VolumeToS3M(cs.GetActiveVolume())
+	active := cs.GetActiveState()
+	vol := s3mVolume.VolumeToS3M(active.GetVolume())
 	if vol >= 64 {
 		vol = 63
 	}
-	cs.SetActiveVolume(s3mVolume.VolumeFromS3M(volSlideTwoThirdsTable[vol]))
+	active.SetVolume(s3mVolume.VolumeFromS3M(volSlideTwoThirdsTable[vol]))
 	return nil
 }
 

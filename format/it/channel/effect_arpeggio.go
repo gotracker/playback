@@ -15,7 +15,7 @@ type Arpeggio[TPeriod period.Period] DataEffect // 'J'
 func (e Arpeggio[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
-	cs.SetPos(cs.GetTargetPos())
+	cs.GetActiveState().Pos = cs.GetTargetState().Pos
 	return nil
 }
 

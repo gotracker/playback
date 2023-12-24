@@ -17,7 +17,7 @@ func (e PortaToNote) Start(cs S3MChannel, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
 	if cmd := cs.GetChannelData(); cmd.HasNote() {
-		cs.SetPortaTargetPeriod(cs.GetTargetPeriod())
+		cs.SetPortaTargetPeriod(cs.GetTargetState().Period)
 		cs.SetNotePlayTick(false, note.ActionContinue, 0)
 	}
 	return nil
@@ -29,7 +29,8 @@ func (e PortaToNote) Tick(cs S3MChannel, p playback.Playback, currentTick int) e
 	xx := mem.PortaToNote(DataEffect(e))
 
 	// vibrato modifies current period for portamento
-	cur := cs.GetPeriod()
+	active := cs.GetActiveState()
+	cur := active.Period
 	if cur.IsInvalid() {
 		return nil
 	}

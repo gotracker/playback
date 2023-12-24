@@ -18,7 +18,7 @@ func (e SetCoarsePanPosition[TPeriod]) Start(cs playback.Channel[TPeriod, Memory
 	xy := DataEffect(e)
 	y := xy & 0x0F
 
-	cs.SetPan(xmPanning.PanningFromXm(uint8(y) << 4))
+	cs.GetActiveState().Pan = xmPanning.PanningFromXm(uint8(y) << 4)
 	return nil
 }
 

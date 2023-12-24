@@ -22,7 +22,7 @@ func (o doNoteCalc[TPeriod]) Process(p playback.Playback, cs *state.ChannelState
 		return nil
 	}
 
-	if inst := cs.GetTargetInst(); inst != nil {
+	if inst := cs.GetTargetState().Instrument; inst != nil {
 		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
 		period := xmPeriod.CalcSemitonePeriod[TPeriod](cs.Semitone, inst.GetFinetune(), inst.GetSampleRate())
 		o.UpdateFunc(period)
@@ -63,9 +63,10 @@ func (m *manager[TPeriod]) processRowNote(ch int, cs *state.ChannelState[TPeriod
 	}
 	stop := false
 	noteAction := note.ActionContinue
-	targetPeriod := cs.GetTargetPeriod()
-	if targetTick, na := cs.WillTriggerOn(currentTick); !targetPeriod.IsInvalid() && targetTick {
-		if targetInst := cs.GetTargetInst(); targetInst != nil {
+	active := cs.GetActiveState()
+	target := cs.GetTargetState()
+	if targetTick, na := cs.WillTriggerOn(currentTick); !target.Period.IsInvalid() && targetTick {
+		if targetInst := target.Instrument; targetInst != nil {
 			cs.SetInstrument(targetInst)
 			keyOn = true
 			noteAction = na
@@ -80,14 +81,14 @@ func (m *manager[TPeriod]) processRowNote(ch int, cs *state.ChannelState[TPeriod
 					nc.Fadeout()
 				}
 			}
-			cs.SetPeriod(targetPeriod)
-			cs.SetPortaTargetPeriod(targetPeriod)
+			active.Period = target.Period
+			cs.SetPortaTargetPeriod(target.Period)
 		}
-		cs.SetPos(cs.GetTargetPos())
+		active.Pos = target.Pos
 	}
-	if inst := cs.GetInstrument(); inst != nil {
-		keyOff = inst.IsReleaseNote(n)
-		stop = inst.IsStopNote(n)
+	if active.Instrument != nil {
+		keyOff = active.Instrument.IsReleaseNote(n)
+		stop = active.Instrument.IsStopNote(n)
 	}
 
 	var invalidPeriod TPeriod
@@ -102,10 +103,10 @@ func (m *manager[TPeriod]) processRowNote(ch int, cs *state.ChannelState[TPeriod
 			if voice.IsVolumeEnvelopeEnabled(nc) {
 				nc.Fadeout()
 			}
-			cs.SetPeriod(invalidPeriod)
+			active.Period = invalidPeriod
 		} else if stop {
 			cs.SetInstrument(nil)
-			cs.SetPeriod(invalidPeriod)
+			active.Period = invalidPeriod
 		}
 	}
 	return nil
@@ -115,7 +116,7 @@ func (m *manager[TPeriod]) processVoiceUpdates(ch int, cs *state.ChannelState[TP
 	if cs.UsePeriodOverride {
 		cs.UsePeriodOverride = false
 		arpeggioPeriod := cs.GetPeriodOverride()
-		cs.SetPeriod(arpeggioPeriod)
+		cs.GetActiveState().Period = arpeggioPeriod
 	}
 	return nil
 }

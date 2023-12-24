@@ -17,7 +17,8 @@ func (e PanSlide[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p p
 	x := xx >> 4
 	y := xx & 0x0F
 
-	xp := DataEffect(xmPanning.PanningToXm(cs.GetPan()))
+	active := cs.GetActiveState()
+	xp := DataEffect(xmPanning.PanningToXm(active.Pan))
 	if x == 0 {
 		// slide left y units
 		if xp < y {
@@ -33,7 +34,7 @@ func (e PanSlide[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p p
 			xp += x
 		}
 	}
-	cs.SetPan(xmPanning.PanningFromXm(uint8(xp)))
+	active.Pan = xmPanning.PanningFromXm(uint8(xp))
 	return nil
 }
 

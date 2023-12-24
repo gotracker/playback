@@ -19,12 +19,13 @@ func (e SampleOffset[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data],
 	xx := mem.SampleOffset(DataEffect(e))
 
 	pos := sampling.Pos{Pos: mem.HighOffset + int(xx)*0x100}
+	target := cs.GetTargetState()
 	if mem.Shared.OldEffectMode {
-		if inst := cs.GetInstrument(); inst != nil && inst.GetLength().Pos < pos.Pos {
-			cs.SetTargetPos(pos)
+		if inst := cs.GetActiveState().Instrument; inst != nil && inst.GetLength().Pos < pos.Pos {
+			target.Pos = pos
 		}
 	} else {
-		cs.SetTargetPos(pos)
+		target.Pos = pos
 	}
 	return nil
 }

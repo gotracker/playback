@@ -17,7 +17,7 @@ func (e SetPanPosition[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data
 
 	xx := uint8(e)
 
-	cs.SetPan(xmPanning.PanningFromXm(xx))
+	cs.GetActiveState().Pan = xmPanning.PanningFromXm(xx)
 	return nil
 }
 

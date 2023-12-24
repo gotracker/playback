@@ -16,7 +16,7 @@ func (e SampleOffset) Start(cs S3MChannel, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	mem := cs.GetMemory()
 	xx := mem.SampleOffset(DataEffect(e))
-	cs.SetTargetPos(sampling.Pos{Pos: int(xx) * 0x100})
+	cs.GetTargetState().Pos = sampling.Pos{Pos: int(xx) * 0x100}
 	return nil
 }
 

@@ -29,7 +29,8 @@ type XM interface {
 }
 
 func doVolSlide[TPeriod period.Period](cs playback.Channel[TPeriod, Memory, Data], delta float32, multiplier float32) error {
-	av := cs.GetActiveVolume()
+	active := cs.GetActiveState()
+	av := active.GetVolume()
 	v := xmVolume.ToVolumeXM(av)
 	vol := int16((float32(v) + delta) * multiplier)
 	if vol >= 0x40 {
@@ -39,7 +40,7 @@ func doVolSlide[TPeriod period.Period](cs playback.Channel[TPeriod, Memory, Data
 		vol = 0x00
 	}
 	v = xmVolume.XmVolume(DataEffect(vol))
-	cs.SetActiveVolume(v.Volume())
+	active.SetVolume(v.Volume())
 	return nil
 }
 
@@ -59,14 +60,15 @@ func doGlobalVolSlide(m XM, delta float32, multiplier float32) error {
 }
 
 func doPortaUp[TPeriod period.Period](cs playback.Channel[TPeriod, Memory, Data], amount float32, multiplier float32) error {
-	cur := cs.GetPeriod()
+	active := cs.GetActiveState()
+	cur := active.Period
 	if cur.IsInvalid() {
 		return nil
 	}
 
 	delta := int(amount * multiplier)
 	cur = period.PortaUp(cur, delta)
-	cs.SetPeriod(cur)
+	active.Period = cur
 	return nil
 }
 
@@ -74,21 +76,23 @@ func doPortaUpToNote[TPeriod period.Period](cs playback.Channel[TPeriod, Memory,
 	if err := doPortaUp(cs, amount, multiplier); err != nil {
 		return err
 	}
-	if cur := cs.GetPeriod(); period.ComparePeriods(cur, target) == comparison.SpaceshipLeftGreater {
-		cs.SetPeriod(target)
+
+	if active := cs.GetActiveState(); period.ComparePeriods(active.Period, target) == comparison.SpaceshipLeftGreater {
+		active.Period = target
 	}
 	return nil
 }
 
 func doPortaDown[TPeriod period.Period](cs playback.Channel[TPeriod, Memory, Data], amount float32, multiplier float32) error {
-	cur := cs.GetPeriod()
+	active := cs.GetActiveState()
+	cur := active.Period
 	if cur.IsInvalid() {
 		return nil
 	}
 
 	delta := int(amount * multiplier)
 	cur = period.PortaDown(cur, delta)
-	cs.SetPeriod(cur)
+	active.Period = cur
 	return nil
 }
 
@@ -96,8 +100,8 @@ func doPortaDownToNote[TPeriod period.Period](cs playback.Channel[TPeriod, Memor
 	if err := doPortaDown(cs, amount, multiplier); err != nil {
 		return err
 	}
-	if cur := cs.GetPeriod(); period.ComparePeriods(cur, target) == comparison.SpaceshipRightGreater {
-		cs.SetPeriod(target)
+	if active := cs.GetActiveState(); period.ComparePeriods(active.Period, target) == comparison.SpaceshipRightGreater {
+		active.Period = target
 	}
 	return nil
 }
@@ -138,7 +142,7 @@ func doArpeggio[TPeriod period.Period](cs playback.Channel[TPeriod, Memory, Data
 		arpSemitoneTarget = note.Semitone(int8(ns) + arpSemitoneBDelta)
 	}
 	cs.SetOverrideSemitone(arpSemitoneTarget)
-	cs.SetTargetPos(cs.GetPos())
+	cs.GetTargetState().Pos = cs.GetActiveState().Pos
 	return nil
 }
 
@@ -152,7 +156,8 @@ var (
 )
 
 func doVolSlideTwoThirds[TPeriod period.Period](cs playback.Channel[TPeriod, Memory, Data]) error {
-	vol := xmVolume.ToVolumeXM(cs.GetActiveVolume())
+	active := cs.GetActiveState()
+	vol := xmVolume.ToVolumeXM(active.GetVolume())
 	if vol >= 64 {
 		vol = 63
 	}
@@ -162,7 +167,7 @@ func doVolSlideTwoThirds[TPeriod period.Period](cs playback.Channel[TPeriod, Mem
 		v = 0x40
 	}
 
-	cs.SetActiveVolume(v.Volume())
+	active.SetVolume(v.Volume())
 	return nil
 }
 

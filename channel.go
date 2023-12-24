@@ -1,8 +1,6 @@
 package playback
 
 import (
-	"github.com/gotracker/gomixing/panning"
-	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/op"
@@ -19,41 +17,25 @@ type Channel[TPeriod period.Period, TMemory any, TChannelData song.ChannelData] 
 	ResetRetriggerCount()
 	SetMemory(*TMemory)
 	GetMemory() *TMemory
-	GetActiveVolume() volume.Volume
-	SetActiveVolume(volume.Volume)
 	FreezePlayback()
 	UnfreezePlayback()
 	GetChannelData() TChannelData
 	GetPortaTargetPeriod() TPeriod
 	SetPortaTargetPeriod(TPeriod)
-	GetTargetPeriod() TPeriod
-	SetTargetPeriod(TPeriod)
 	SetPeriodOverride(TPeriod)
-	GetPeriod() TPeriod
-	SetPeriod(TPeriod)
 	SetPeriodDelta(period.Delta)
 	GetPeriodDelta() period.Delta
 	SetInstrument(*instrument.Instrument)
-	GetInstrument() *instrument.Instrument
 	GetVoice() voice.Voice
-	GetTargetInst() *instrument.Instrument
-	SetTargetInst(*instrument.Instrument)
-	GetPrevInst() *instrument.Instrument
 	GetPrevVoice() voice.Voice
 	GetNoteSemitone() note.Semitone
 	SetStoredSemitone(note.Semitone)
 	SetTargetSemitone(note.Semitone)
 	SetOverrideSemitone(note.Semitone)
-	GetTargetPos() sampling.Pos
-	SetTargetPos(sampling.Pos)
-	GetPos() sampling.Pos
-	SetPos(sampling.Pos)
 	SetNotePlayTick(bool, note.Action, int)
 	GetRetriggerCount() uint8
 	SetRetriggerCount(uint8)
 	SetPanEnabled(bool)
-	GetPan() panning.Position
-	SetPan(panning.Position)
 	SetRenderChannel(*render.Channel)
 	GetRenderChannel() *render.Channel
 	SetVolumeActive(bool)
@@ -68,7 +50,10 @@ type Channel[TPeriod period.Period, TMemory any, TChannelData song.ChannelData] 
 	SetVolumeEnvelopeEnable(bool)
 	SetPanningEnvelopeEnable(bool)
 	SetPitchEnvelopeEnable(bool)
-	NoteCut()
+
+	GetPreviousState() ChannelState[TPeriod]
+	GetActiveState() *ChannelState[TPeriod]
+	GetTargetState() *ChannelState[TPeriod]
 }
 
 type ChannelTargeter[TPeriod period.Period, TMemory any, TChannelData song.ChannelData] func(out *op.ChannelTargets[TPeriod], d TChannelData, s song.Data, cs Channel[TPeriod, TMemory, TChannelData]) error

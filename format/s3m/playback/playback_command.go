@@ -19,7 +19,7 @@ func (o doNoteCalc) Process(p playback.Playback, cs *channelState) error {
 		return nil
 	}
 
-	if inst := cs.GetTargetInst(); inst != nil {
+	if inst := cs.GetTargetState().Instrument; inst != nil {
 		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
 		period := s3mPeriod.CalcSemitonePeriod(cs.Semitone, inst.GetFinetune(), inst.GetSampleRate())
 		o.UpdateFunc(period)
@@ -61,7 +61,10 @@ func (m *manager) processRowNote(ch int, cs *channelState, currentTick int, last
 	keyOff := false
 	stop := false
 
-	if targetInst := cs.GetTargetInst(); targetInst != nil {
+	active := cs.GetActiveState()
+	target := cs.GetTargetState()
+
+	if targetInst := target.Instrument; targetInst != nil {
 		cs.SetInstrument(targetInst)
 		keyOn = true
 	} else {
@@ -73,15 +76,15 @@ func (m *manager) processRowNote(ch int, cs *channelState, currentTick int, last
 			nc.Release()
 			nc.Fadeout()
 		}
-		targetPeriod := cs.GetTargetPeriod()
-		cs.SetPeriod(targetPeriod)
+		targetPeriod := target.Period
+		active.Period = targetPeriod
 		cs.SetPortaTargetPeriod(targetPeriod)
 	}
-	cs.SetPos(cs.GetTargetPos())
+	active.Pos = target.Pos
 
-	if inst := cs.GetInstrument(); inst != nil {
-		keyOff = inst.IsReleaseNote(n)
-		stop = inst.IsStopNote(n)
+	if active.Instrument != nil {
+		keyOff = active.Instrument.IsReleaseNote(n)
+		stop = active.Instrument.IsStopNote(n)
 	}
 
 	if nc := cs.GetVoice(); nc != nil {
@@ -96,7 +99,7 @@ func (m *manager) processRowNote(ch int, cs *channelState, currentTick int, last
 			nc.Fadeout()
 		} else if stop {
 			cs.SetInstrument(nil)
-			cs.NoteCut()
+			active.NoteCut()
 		}
 	}
 	return nil
@@ -106,7 +109,7 @@ func (m *manager) processVoiceUpdates(ch int, cs *channelState, currentTick int,
 	if cs.UsePeriodOverride {
 		cs.UsePeriodOverride = false
 		arpeggioPeriod := cs.GetPeriodOverride()
-		cs.SetPeriod(arpeggioPeriod)
+		cs.GetActiveState().Period = arpeggioPeriod
 	}
 	return nil
 }

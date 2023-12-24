@@ -15,7 +15,7 @@ func (e SurroundOn) Start(cs S3MChannel, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 
 	// TODO: support for center rear panning
-	cs.SetPan(s3mPanning.DefaultPanning)
+	cs.GetActiveState().Pan = s3mPanning.DefaultPanning
 	return nil
 }
 

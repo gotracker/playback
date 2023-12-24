@@ -21,7 +21,7 @@ func (e SetPanPosition[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data
 
 	pan := itfile.PanValue(x)
 
-	cs.SetPan(itPanning.FromItPanning(pan))
+	cs.GetActiveState().Pan = itPanning.FromItPanning(pan)
 	return nil
 }
 

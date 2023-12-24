@@ -13,7 +13,7 @@ type Arpeggio ChannelCommand // 'J'
 func (e Arpeggio) Start(cs S3MChannel, p playback.Playback) error {
 	cs.ResetRetriggerCount()
 	cs.UnfreezePlayback()
-	cs.SetPos(cs.GetTargetPos())
+	cs.GetActiveState().Pos = cs.GetTargetState().Pos
 	return nil
 }
 

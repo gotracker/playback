@@ -167,7 +167,7 @@ func (d Data) ShortString() string {
 
 func GetTargetsFromData[TPeriod period.Period](out *op.ChannelTargets[TPeriod], d Data, s song.Data, cs playback.Channel[TPeriod, Memory, Data]) error {
 	var n note.Note = note.EmptyNote{}
-	inst := cs.GetInstrument()
+	inst := cs.GetActiveState().Instrument
 	prevInst := inst
 
 	if d.HasNote() || d.HasInstrument() {

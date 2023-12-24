@@ -29,7 +29,7 @@ func (e RetrigVolumeSlide[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Da
 	rt := cs.GetRetriggerCount() + 1
 	cs.SetRetriggerCount(rt)
 	if DataEffect(rt) >= x {
-		cs.SetPos(sampling.Pos{})
+		cs.GetActiveState().Pos = sampling.Pos{}
 		cs.ResetRetriggerCount()
 		switch x {
 		case 1:

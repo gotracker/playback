@@ -67,16 +67,17 @@ func (d *ChannelDataTxnHelper[TPeriod, TMemory, TChannelData]) CommitPreRow(p pl
 }
 
 func (d *ChannelDataTxnHelper[TPeriod, TMemory, TChannelData]) CommitRow(p playback.Playback, cs *ChannelState[TPeriod, TMemory, TChannelData], semitoneSetterFactory SemitoneSetterFactory[TPeriod, TMemory, TChannelData]) error {
+	target := cs.GetTargetState()
 	if pos, ok := d.TargetPos.Get(); ok {
-		cs.SetTargetPos(pos)
+		target.Pos = pos
 	}
 
 	if inst, ok := d.TargetInst.Get(); ok {
-		cs.SetTargetInst(inst)
+		target.Instrument = inst
 	}
 
 	if period, ok := d.TargetPeriod.Get(); ok {
-		cs.SetTargetPeriod(period)
+		target.Period = period
 		cs.SetPortaTargetPeriod(period)
 	}
 
@@ -89,7 +90,8 @@ func (d *ChannelDataTxnHelper[TPeriod, TMemory, TChannelData]) CommitRow(p playb
 	}
 
 	if v, ok := d.TargetVolume.Get(); ok {
-		cs.SetActiveVolume(v)
+		cs.GetActiveState().SetVolume(v)
+		target.SetVolume(v)
 	}
 
 	na, targetTick := d.NoteAction.Get()
@@ -97,7 +99,9 @@ func (d *ChannelDataTxnHelper[TPeriod, TMemory, TChannelData]) CommitRow(p playb
 	cs.SetNotePlayTick(targetTick, na, 0)
 
 	if st, ok := d.NoteCalcST.Get(); ok {
-		d.AddNoteOp(semitoneSetterFactory(st, cs.SetTargetPeriod))
+		d.AddNoteOp(semitoneSetterFactory(st, func(p TPeriod) {
+			target.Period = p
+		}))
 	}
 
 	return nil

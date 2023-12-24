@@ -78,14 +78,14 @@ func NewManager(song *layout.Song) (playback.Playback, error) {
 		cs.SetSongDataInterface(song)
 		cs.SetRenderChannel(oc)
 		cs.SetGlobalVolume(m.GetGlobalVolume())
-		cs.SetActiveVolume(ch.InitialVolume)
+		active := cs.GetActiveState()
+		active.SetVolume(ch.InitialVolume)
 		if song.Head.Stereo {
 			cs.SetPanEnabled(true)
-			cs.SetPan(ch.InitialPanning)
+			active.Pan = ch.InitialPanning
 		} else {
-			cs.SetPanEnabled(true)
-			cs.SetPan(panning.CenterAhead)
 			cs.SetPanEnabled(false)
+			active.Pan = panning.CenterAhead
 		}
 		cs.SetStoredSemitone(note.UnchangedSemitone)
 		mem := &song.ChannelSettings[i].Memory

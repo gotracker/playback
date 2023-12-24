@@ -21,7 +21,7 @@ func (e NoteCut[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p pla
 	x := DataEffect(e) & 0xf
 
 	if x != 0 && currentTick == int(x) {
-		cs.NoteCut()
+		cs.GetActiveState().NoteCut()
 	}
 	return nil
 }

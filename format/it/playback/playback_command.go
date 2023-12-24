@@ -20,7 +20,7 @@ func (o doNoteCalc[TPeriod]) Process(p playback.Playback, cs *state.ChannelState
 		return nil
 	}
 
-	if inst := cs.GetTargetInst(); inst != nil {
+	if inst := cs.GetTargetState().Instrument; inst != nil {
 		cs.Semitone = note.Semitone(int(o.Semitone) + int(inst.GetSemitoneShift()))
 		ft := inst.GetFinetune()
 		period := itPeriod.CalcSemitonePeriod[TPeriod](cs.Semitone, ft, inst.GetSampleRate())
@@ -69,25 +69,25 @@ func (m *manager[TPeriod]) processRowNote(ch int, cs *state.ChannelState[TPeriod
 		cs.TransitionActiveToPastState()
 	}
 
+	active := cs.GetActiveState()
+	target := cs.GetTargetState()
+
 	wantAttack := false
-	targetPeriod := cs.GetTargetPeriod()
-	if !targetPeriod.IsInvalid() {
-		targetInst := cs.GetTargetInst()
-		if targetInst != nil {
+	if !target.Period.IsInvalid() {
+		if target.Instrument != nil {
 			keyOn = true
 			wantAttack = noteAction == note.ActionRetrigger
 		}
 
 		if cs.UseTargetPeriod {
-			cs.SetPeriod(targetPeriod)
-			cs.SetPortaTargetPeriod(targetPeriod)
+			active.Period = target.Period
+			cs.SetPortaTargetPeriod(target.Period)
 		}
 
-		cs.SetInstrument(targetInst)
-		cs.SetPos(cs.GetTargetPos())
+		cs.SetInstrument(target.Instrument)
+		active.Pos = target.Pos
 	}
 
-	var invalidPeriod TPeriod
 	if nc := cs.GetVoice(); nc != nil {
 		switch noteAction {
 		case note.ActionRetrigger:
@@ -100,7 +100,8 @@ func (m *manager[TPeriod]) processRowNote(ch int, cs *state.ChannelState[TPeriod
 			nc.Release()
 		case note.ActionCut:
 			cs.SetInstrument(nil)
-			cs.SetPeriod(invalidPeriod)
+			var invalidPeriod TPeriod
+			active.Period = invalidPeriod
 		}
 	}
 
@@ -111,7 +112,7 @@ func (m *manager[TPeriod]) processVoiceUpdates(ch int, cs *state.ChannelState[TP
 	if cs.UsePeriodOverride {
 		cs.UsePeriodOverride = false
 		arpeggioPeriod := cs.GetPeriodOverride()
-		cs.SetPeriod(arpeggioPeriod)
+		cs.GetActiveState().Period = arpeggioPeriod
 	}
 	return nil
 }

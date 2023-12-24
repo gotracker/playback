@@ -28,7 +28,7 @@ func (e RetrigVolumeSlide) Tick(cs S3MChannel, p playback.Playback, currentTick 
 	rt := cs.GetRetriggerCount() + 1
 	cs.SetRetriggerCount(rt)
 	if DataEffect(rt) >= x {
-		cs.SetPos(sampling.Pos{})
+		cs.GetActiveState().Pos = sampling.Pos{}
 		cs.ResetRetriggerCount()
 		switch x {
 		case 1:

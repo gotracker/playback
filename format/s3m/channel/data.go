@@ -129,7 +129,7 @@ func NoteFromS3MNote(sn s3mfile.Note) note.Note {
 
 func GetTargetsFromData(out *op.ChannelTargets[period.Amiga], d Data, s song.Data, cs playback.Channel[period.Amiga, Memory, Data]) error {
 	var n note.Note = note.EmptyNote{}
-	inst := cs.GetInstrument()
+	inst := cs.GetActiveState().Instrument
 	prevInst := inst
 
 	if d.HasNote() || d.HasInstrument() {

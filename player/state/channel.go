@@ -2,8 +2,6 @@ package state
 
 import (
 	"github.com/gotracker/gomixing/mixing"
-	"github.com/gotracker/gomixing/panning"
-	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice"
@@ -37,7 +35,7 @@ type SemitoneSetterFactory[TPeriod period.Period, TMemory any, TChannelData song
 // ChannelState is the state of a single channel
 type ChannelState[TPeriod period.Period, TMemory any, TChannelData song.ChannelData] struct {
 	activeState Active[TPeriod]
-	targetState Playback[TPeriod]
+	targetState playback.ChannelState[TPeriod]
 	prevState   Active[TPeriod]
 
 	ActiveEffects []playback.Effect
@@ -80,7 +78,7 @@ func (cs *ChannelState[TPeriod, TMemory, TChannelData]) WillTriggerOn(tick int) 
 // AdvanceRow will update the current state to make room for the next row's state data
 func (cs *ChannelState[TPeriod, TMemory, TChannelData]) AdvanceRow(txn ChannelDataTransaction[TPeriod, TMemory, TChannelData]) {
 	cs.prevState = cs.activeState
-	cs.targetState = cs.activeState.Playback
+	cs.targetState = cs.activeState.ChannelState
 	cs.Trigger.Reset()
 	cs.RetriggerCount = 0
 	cs.activeState.PeriodDelta = 0
@@ -146,18 +144,6 @@ func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetMemory(mem *TMemory) 
 	cs.Memory = mem
 }
 
-// GetActiveVolume returns the current active volume on the channel
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetActiveVolume() volume.Volume {
-	return cs.activeState.Volume
-}
-
-// SetActiveVolume sets the active volume on the channel
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetActiveVolume(vol volume.Volume) {
-	if vol != volume.VolumeUseInstVol {
-		cs.activeState.Volume = vol
-	}
-}
-
 func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetSongDataInterface(s song.Data) {
 	cs.s = s
 }
@@ -203,16 +189,6 @@ func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetPortaTargetPeriod(per
 }
 
 // GetTargetPeriod returns the soon-to-be-committed sampler period (when the note retriggers)
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetTargetPeriod() TPeriod {
-	return cs.targetState.Period
-}
-
-// SetTargetPeriod sets the soon-to-be-committed sampler period (when the note retriggers)
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetTargetPeriod(period TPeriod) {
-	cs.targetState.Period = period
-}
-
-// GetTargetPeriod returns the soon-to-be-committed sampler period (when the note retriggers)
 func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetPeriodOverride() TPeriod {
 	return cs.periodOverride
 }
@@ -238,11 +214,6 @@ func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetVolumeActive(on bool)
 	cs.volumeActive = on
 }
 
-// GetInstrument returns the interface to the active instrument
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetInstrument() *instrument.Instrument {
-	return cs.activeState.Instrument
-}
-
 // SetInstrument sets the interface to the active instrument
 func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetInstrument(inst *instrument.Instrument) {
 	cs.activeState.Instrument = inst
@@ -252,27 +223,14 @@ func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetInstrument(inst *inst
 		} else {
 			cs.activeState.Voice = voiceImpl.New[TPeriod](cs.PeriodConverter, inst, cs.RenderChannel)
 		}
+	} else {
+		cs.activeState.Voice = nil
 	}
 }
 
 // GetVoice returns the active voice interface
 func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetVoice() voice.Voice {
 	return cs.activeState.Voice
-}
-
-// GetTargetInst returns the interface to the soon-to-be-committed active instrument (when the note retriggers)
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetTargetInst() *instrument.Instrument {
-	return cs.targetState.Instrument
-}
-
-// SetTargetInst sets the soon-to-be-committed active instrument (when the note retriggers)
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetTargetInst(inst *instrument.Instrument) {
-	cs.targetState.Instrument = inst
-}
-
-// GetPrevInst returns the interface to the last row's active instrument
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetPrevInst() *instrument.Instrument {
-	return cs.prevState.Instrument
 }
 
 // GetPrevVoice returns the interface to the last row's active voice
@@ -283,36 +241,6 @@ func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetPrevVoice() voice.Voi
 // GetNoteSemitone returns the note semitone for the channel
 func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetNoteSemitone() note.Semitone {
 	return cs.StoredSemitone
-}
-
-// GetTargetPos returns the soon-to-be-committed sample position of the instrument
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetTargetPos() sampling.Pos {
-	return cs.targetState.Pos
-}
-
-// SetTargetPos sets the soon-to-be-committed sample position of the instrument
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetTargetPos(pos sampling.Pos) {
-	cs.targetState.Pos = pos
-}
-
-// GetPeriod returns the current sampler period of the active instrument
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetPeriod() TPeriod {
-	return cs.activeState.Period
-}
-
-// SetPeriod sets the current sampler period of the active instrument
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetPeriod(period TPeriod) {
-	cs.activeState.Period = period
-}
-
-// GetPos returns the sample position of the active instrument
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetPos() sampling.Pos {
-	return cs.activeState.Pos
-}
-
-// SetPos sets the sample position of the active instrument
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetPos(pos sampling.Pos) {
-	cs.activeState.Pos = pos
 }
 
 // SetNotePlayTick sets the tick on which the note will retrigger
@@ -342,22 +270,12 @@ func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetPanEnabled(on bool) {
 	cs.PanEnabled = on
 }
 
-// SetPan sets the active panning value of the channel
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetPan(pan panning.Position) {
-	if cs.PanEnabled {
-		cs.activeState.Pan = pan
-	}
-}
-
-// GetPan gets the active panning value of the channel
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetPan() panning.Position {
-	return cs.activeState.Pan
-}
-
 // SetTargetSemitone sets the target semitone for the channel
 func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetTargetSemitone(st note.Semitone) {
 	if cs.txn != nil {
-		cs.txn.AddNoteOp(cs.SemitoneSetterFactory(st, cs.SetTargetPeriod))
+		cs.txn.AddNoteOp(cs.SemitoneSetterFactory(st, func(p TPeriod) {
+			cs.GetTargetState().Period = p
+		}))
 	}
 }
 
@@ -472,7 +390,14 @@ func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetPitchEnvelopeEnable(e
 	voice.EnablePitchEnvelope[TPeriod](cs.activeState.Voice, enabled)
 }
 
-func (cs *ChannelState[TPeriod, TMemory, TChannelData]) NoteCut() {
-	var empty TPeriod
-	cs.activeState.Period = empty
+func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetPreviousState() playback.ChannelState[TPeriod] {
+	return cs.prevState.ChannelState
+}
+
+func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetActiveState() *playback.ChannelState[TPeriod] {
+	return &cs.activeState.ChannelState
+}
+
+func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetTargetState() *playback.ChannelState[TPeriod] {
+	return &cs.targetState
 }
