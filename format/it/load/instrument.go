@@ -228,7 +228,7 @@ func convertPanEnvValue(v int8) panning.Position {
 }
 
 func convertPitchEnvValue(v int8) filter.PitchFiltValue {
-	return filter.PitchFiltValue(v + 32)
+	return filter.PitchFiltValue(v)
 }
 
 func convertEnvelope[T any](outEnv *envelope.Envelope[T], inEnv *itfile.Envelope, convert func(int8) T) error {

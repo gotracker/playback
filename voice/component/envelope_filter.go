@@ -93,5 +93,6 @@ func (e *FilterEnvelope) update() {
 		y1 = next.Value()
 	}
 
-	e.value = util.Lerp(float64(t), y0.AsFilter(), y1.AsFilter())
+	v := util.Lerp(float64(t), y0, y1)
+	e.value = uint8(32 + v)
 }

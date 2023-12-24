@@ -94,5 +94,5 @@ func (e *PitchEnvelope[TPeriod]) update() {
 		y1 = next.Value()
 	}
 
-	e.delta = -period.Delta(util.Lerp(float64(t), y0.AsPitch(), y1.AsPitch()))
+	e.delta = -period.Delta(util.Lerp(float64(t), y0, y1))
 }
