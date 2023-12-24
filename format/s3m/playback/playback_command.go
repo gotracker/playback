@@ -94,10 +94,9 @@ func (m *manager) processRowNote(ch int, cs *channelState, currentTick int, last
 		} else if keyOff {
 			nc.Release()
 			nc.Fadeout()
-			cs.SetPeriod(0)
 		} else if stop {
 			cs.SetInstrument(nil)
-			cs.SetPeriod(0)
+			cs.NoteCut()
 		}
 	}
 	return nil
