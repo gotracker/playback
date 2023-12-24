@@ -72,10 +72,6 @@ func (m *manager) processRowNote(ch int, cs *channelState, currentTick int, last
 	}
 
 	if cs.UseTargetPeriod {
-		if nc := cs.GetVoice(); nc != nil {
-			nc.Release()
-			nc.Fadeout()
-		}
 		targetPeriod := target.Period
 		active.Period = targetPeriod
 		cs.SetPortaTargetPeriod(targetPeriod)
@@ -87,16 +83,16 @@ func (m *manager) processRowNote(ch int, cs *channelState, currentTick int, last
 		stop = active.Instrument.IsStopNote(n)
 	}
 
-	if nc := cs.GetVoice(); nc != nil {
+	if curVoice := cs.GetVoice(); curVoice != nil {
 		if keyOn && noteAction == note.ActionRetrigger {
 			// S3M is weird and only sets the global volume on the channel when a KeyOn happens
 			cs.SetGlobalVolume(m.GetGlobalVolume())
-			nc.Attack()
+			curVoice.Attack()
 			mem := cs.GetMemory()
 			mem.Retrigger()
 		} else if keyOff {
-			nc.Release()
-			nc.Fadeout()
+			curVoice.Release()
+			curVoice.Fadeout()
 		} else if stop {
 			cs.SetInstrument(nil)
 			active.NoteCut()

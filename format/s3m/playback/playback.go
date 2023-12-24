@@ -22,6 +22,7 @@ import (
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/system"
+	"github.com/gotracker/playback/tracing"
 )
 
 type channelState = state.ChannelState[period.Amiga, channel.Memory, channel.Data]
@@ -29,6 +30,7 @@ type channelState = state.ChannelState[period.Amiga, channel.Memory, channel.Dat
 // manager is a playback manager for S3M music
 type manager struct {
 	player.Tracker
+	tracing.Tracing[period.Amiga, channel.Memory, channel.Data]
 
 	song *layout.Song
 
@@ -39,7 +41,7 @@ type manager struct {
 	postMixRowTxn *playpattern.RowUpdateTransaction
 	premix        *output.PremixData
 
-	rowRenderState *rowRenderState
+	rowRenderState *state.RowRenderState
 	OnEffect       func(playback.Effect)
 
 	chOrder [4][]*channelState
@@ -58,8 +60,14 @@ func NewManager(song *layout.Song) (playback.Playback, error) {
 		song: song,
 	}
 
+	m.Tracing.Playback = &m
+	m.Tracing.ChannelGetter = func(c int) playback.Channel[period.Amiga, channel.Memory, channel.Data] {
+		return m.GetChannel(c)
+	}
+
 	m.Tracker.Tickable = &m
 	m.Tracker.Premixable = &m
+	m.Tracker.Traceable = &m.Tracing
 
 	m.pattern.Reset()
 	m.pattern.Orders = song.OrderList
@@ -342,6 +350,10 @@ func (m *manager) GetNumOrders() int {
 // GetCurrentRow returns the current row
 func (m *manager) GetCurrentRow() index.Row {
 	return m.pattern.GetCurrentRow()
+}
+
+func (m *manager) GetRenderState() playback.RowRenderState {
+	return m.rowRenderState
 }
 
 // GetName returns the current song's name

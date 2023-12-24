@@ -216,15 +216,24 @@ func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetVolumeActive(on bool)
 
 // SetInstrument sets the interface to the active instrument
 func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetInstrument(inst *instrument.Instrument) {
+	prevVoice := cs.activeState.Voice
+	doClearPrev := false
 	cs.activeState.Instrument = inst
 	if inst != nil {
 		if inst == cs.prevState.Instrument {
 			cs.activeState.Voice = cs.prevState.Voice
 		} else {
+			doClearPrev = true
 			cs.activeState.Voice = voiceImpl.New[TPeriod](cs.PeriodConverter, inst, cs.RenderChannel)
 		}
 	} else {
+		doClearPrev = true
 		cs.activeState.Voice = nil
+	}
+
+	if doClearPrev && prevVoice != nil {
+		prevVoice.Release()
+		prevVoice.Fadeout()
 	}
 }
 
@@ -388,6 +397,10 @@ func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetPanningEnvelopeEnable
 // SetPitchEnvelopeEnable sets the enable flag on the active pitch/filter envelope
 func (cs *ChannelState[TPeriod, TMemory, TChannelData]) SetPitchEnvelopeEnable(enabled bool) {
 	voice.EnablePitchEnvelope[TPeriod](cs.activeState.Voice, enabled)
+}
+
+func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetUseTargetPeriod() bool {
+	return cs.UseTargetPeriod
 }
 
 func (cs *ChannelState[TPeriod, TMemory, TChannelData]) GetPreviousState() playback.ChannelState[TPeriod] {

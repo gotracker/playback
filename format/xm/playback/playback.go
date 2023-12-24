@@ -21,11 +21,13 @@ import (
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
+	"github.com/gotracker/playback/tracing"
 )
 
 // manager is a playback manager for XM music
 type manager[TPeriod period.Period] struct {
 	player.Tracker
+	tracing.Tracing[TPeriod, channel.Memory, channel.Data]
 
 	song *layout.Song
 
@@ -36,7 +38,7 @@ type manager[TPeriod period.Period] struct {
 	postMixRowTxn *playpattern.RowUpdateTransaction
 	premix        *output.PremixData
 
-	rowRenderState *rowRenderState
+	rowRenderState *state.RowRenderState
 	OnEffect       func(playback.Effect)
 }
 
@@ -49,8 +51,14 @@ func (m *manager[TPeriod]) init(song *layout.Song, periodConverter period.Period
 	m.Tracker.BaseClockRate = xmPeriod.XMBaseClock
 	m.song = song
 
+	m.Tracing.Playback = m
+	m.Tracing.ChannelGetter = func(c int) playback.Channel[TPeriod, channel.Memory, channel.Data] {
+		return m.GetChannel(c)
+	}
+
 	m.Tracker.Tickable = m
 	m.Tracker.Premixable = m
+	m.Tracker.Traceable = &m.Tracing
 
 	m.pattern.Reset()
 	m.pattern.Orders = song.OrderList
@@ -335,6 +343,10 @@ func (m *manager[TPeriod]) GetNumOrders() int {
 // GetCurrentRow returns the current row
 func (m *manager[TPeriod]) GetCurrentRow() index.Row {
 	return m.pattern.GetCurrentRow()
+}
+
+func (m *manager[TPeriod]) GetRenderState() playback.RowRenderState {
+	return m.rowRenderState
 }
 
 // GetName returns the current song's name

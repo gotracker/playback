@@ -31,14 +31,15 @@ type PCM[TPeriod period.Period] interface {
 
 // PCMConfiguration is the information needed to configure an PCM2 voice
 type PCMConfiguration[TPeriod period.Period] struct {
-	SampleRate    period.Frequency
-	InitialVolume volume.Volume
-	InitialPeriod TPeriod
-	AutoVibrato   voice.AutoVibrato
-	Data          instrument.Data
-	OutputFilter  voice.FilterApplier
-	VoiceFilter   filter.Filter
-	PluginFilter  filter.Filter
+	SampleRate       period.Frequency
+	InitialVolume    volume.Volume
+	InitialPeriod    TPeriod
+	AutoVibrato      voice.AutoVibrato
+	Data             instrument.Data
+	OutputFilter     voice.FilterApplier
+	VoiceFilter      filter.Filter
+	PluginFilter     filter.Filter
+	Vol0Optimization Vol0OptimizationConfiguration
 }
 
 // == the actual pcm voice ==
@@ -67,7 +68,7 @@ type pcmVoice[TPeriod period.Period] struct {
 	pitchEnv  component.PitchEnvelope[TPeriod]
 	panEnv    component.PanEnvelope
 	filterEnv component.FilterEnvelope
-	vol0ticks int
+	vol0Opt   component.Vol0Optimization
 	done      bool
 
 	periodConverter period.PeriodConverter[TPeriod]
@@ -122,6 +123,9 @@ func NewPCM[TPeriod period.Period](periodConverter period.PeriodConverter[TPerio
 		v.freq.ResetAutoVibratoAndSweep(config.AutoVibrato.Sweep)
 	}
 
+	v.vol0Opt.SetEnabled(config.Vol0Optimization.Enabled)
+	v.vol0Opt.Init(config.Vol0Optimization.MaxTicksAt0)
+
 	return &v
 }
 
@@ -129,7 +133,7 @@ func NewPCM[TPeriod period.Period](periodConverter period.PeriodConverter[TPerio
 
 func (v *pcmVoice[TPeriod]) Attack() {
 	v.keyOn = true
-	v.vol0ticks = 0
+	v.vol0Opt.Reset()
 	v.done = false
 	v.amp.Attack()
 	v.freq.ResetAutoVibrato()
@@ -176,7 +180,7 @@ func (v *pcmVoice[TPeriod]) IsDone() bool {
 		return v.amp.GetFadeoutVolume() <= 0
 	}
 
-	return v.vol0ticks >= 3
+	return v.vol0Opt.IsDone()
 }
 
 // == SampleStream ==
@@ -413,11 +417,7 @@ func (v *pcmVoice[TPeriod]) Advance(tickDuration time.Duration) {
 		v.voiceFilter.UpdateEnv(fval)
 	}
 
-	if vol := v.GetFinalVolume(); vol <= 0 {
-		v.vol0ticks++
-	} else {
-		v.vol0ticks = 0
-	}
+	v.vol0Opt.ObserveVolume(v.GetFinalVolume())
 	v.prevKeyOn = v.keyOn
 }
 
@@ -451,7 +451,7 @@ func (v *pcmVoice[TPeriod]) Clone() voice.Voice {
 		pitchEnv:                v.pitchEnv.Clone(),
 		panEnv:                  v.panEnv.Clone(),
 		filterEnv:               v.filterEnv.Clone(),
-		vol0ticks:               0,
+		vol0Opt:                 v.vol0Opt.Clone(),
 		done:                    false,
 		periodConverter:         v.periodConverter,
 	}

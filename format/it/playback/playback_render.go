@@ -3,7 +3,6 @@ package playback
 import (
 	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/player/render"
-	"github.com/gotracker/playback/player/state"
 )
 
 // OnPreTick runs the IT pre-tick processing
@@ -23,7 +22,7 @@ func (m *manager[TPeriod]) OnTick() error {
 	}()
 	m.postMixRowTxn = postMixRowTxn
 
-	if m.rowRenderState == nil || m.rowRenderState.currentTick >= m.rowRenderState.ticksThisRow {
+	if m.rowRenderState == nil || m.rowRenderState.CurrentTick >= m.rowRenderState.TicksThisRow {
 		if err := m.processPatternRow(); err != nil {
 			return err
 		}
@@ -41,13 +40,13 @@ func (m *manager[TPeriod]) OnTick() error {
 
 	finalData.Order = int(m.pattern.GetCurrentOrder())
 	finalData.Row = int(m.pattern.GetCurrentRow())
-	finalData.Tick = m.rowRenderState.currentTick
-	if m.rowRenderState.currentTick == 0 {
+	finalData.Tick = m.rowRenderState.CurrentTick
+	if m.rowRenderState.CurrentTick == 0 {
 		finalData.RowText = m.getRowText()
 	}
 
-	m.rowRenderState.currentTick++
-	if m.rowRenderState.currentTick >= m.rowRenderState.ticksThisRow {
+	m.rowRenderState.CurrentTick++
+	if m.rowRenderState.CurrentTick >= m.rowRenderState.TicksThisRow {
 		postMixRowTxn.AdvanceRow = true
 	}
 
@@ -64,16 +63,9 @@ func (m *manager[TPeriod]) GetPremixData() (*output.PremixData, error) {
 	return m.premix, nil
 }
 
-type rowRenderState struct {
-	state.RenderDetails
-
-	ticksThisRow int
-	currentTick  int
-}
-
 func (m *manager[TPeriod]) soundRenderTick(premix *output.PremixData) error {
-	tick := m.rowRenderState.currentTick
-	var lastTick = (tick+1 == m.rowRenderState.ticksThisRow)
+	tick := m.rowRenderState.CurrentTick
+	var lastTick = (tick+1 == m.rowRenderState.TicksThisRow)
 
 	for ch := range m.channels {
 		cs := &m.channels[ch]

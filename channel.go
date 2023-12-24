@@ -50,6 +50,8 @@ type Channel[TPeriod period.Period, TMemory any, TChannelData song.ChannelData] 
 	SetVolumeEnvelopeEnable(bool)
 	SetPanningEnvelopeEnable(bool)
 	SetPitchEnvelopeEnable(bool)
+	GetActiveEffects() []Effect
+	GetUseTargetPeriod() bool
 
 	GetPreviousState() ChannelState[TPeriod]
 	GetActiveState() *ChannelState[TPeriod]

@@ -70,7 +70,7 @@ func (m *manager) processPatternRow() error {
 	if m.rowRenderState == nil {
 		panmixer := s.GetPanMixer()
 
-		m.rowRenderState = &rowRenderState{
+		m.rowRenderState = &state.RowRenderState{
 			RenderDetails: state.RenderDetails{
 				Mix:          s.Mixer(),
 				SamplerSpeed: s.GetSamplerSpeed(),
@@ -128,8 +128,8 @@ func (m *manager) processPatternRow() error {
 
 	m.rowRenderState.Duration = tickDuration
 	m.rowRenderState.Samples = int(tickDuration.Seconds() * float64(s.SampleRate))
-	m.rowRenderState.ticksThisRow = m.pattern.GetTicksThisRow()
-	m.rowRenderState.currentTick = 0
+	m.rowRenderState.TicksThisRow = m.pattern.GetTicksThisRow()
+	m.rowRenderState.CurrentTick = 0
 
 	for _, order := range m.chOrder {
 		for _, cs := range order {

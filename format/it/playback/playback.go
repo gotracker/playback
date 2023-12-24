@@ -24,11 +24,13 @@ import (
 	"github.com/gotracker/playback/player/state"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/system"
+	"github.com/gotracker/playback/tracing"
 )
 
 // manager is a playback manager for IT music
 type manager[TPeriod period.Period] struct {
 	player.Tracker
+	tracing.Tracing[TPeriod, channel.Memory, channel.Data]
 
 	song *layout.Song
 
@@ -40,7 +42,7 @@ type manager[TPeriod period.Period] struct {
 	postMixRowTxn *playpattern.RowUpdateTransaction
 	premix        *output.PremixData
 
-	rowRenderState       *rowRenderState
+	rowRenderState       *state.RowRenderState
 	OnEffect             func(playback.Effect)
 	longChannelOutput    bool
 	enableNewNoteActions bool
@@ -56,13 +58,17 @@ var _ playback.Channel[period.Amiga, channel.Memory, channel.Data] = (*state.Cha
 func (m *manager[TPeriod]) init(song *layout.Song, periodConverter period.PeriodConverter[TPeriod]) error {
 	m.Tracker.BaseClockRate = it.GetBaseClock()
 	m.song = song
+	m.Tracing.Playback = m
+	m.Tracing.ChannelGetter = func(c int) playback.Channel[TPeriod, channel.Memory, channel.Data] {
+		return m.GetChannel(c)
+	}
 
 	m.PastNotes.SetMaxPerChannel(1)
 
 	m.Tracker.PreTickable = m
 	m.Tracker.Tickable = m
 	m.Tracker.Premixable = m
-	m.Tracker.Traceable = m
+	m.Tracker.Traceable = &m.Tracing
 
 	m.pattern.Reset()
 	m.pattern.Orders = song.OrderList
@@ -365,6 +371,10 @@ func (m *manager[TPeriod]) GetNumOrders() int {
 // GetCurrentRow returns the current row
 func (m *manager[TPeriod]) GetCurrentRow() index.Row {
 	return m.pattern.GetCurrentRow()
+}
+
+func (m *manager[TPeriod]) GetRenderState() playback.RowRenderState {
+	return m.rowRenderState
 }
 
 // GetName returns the current song's name

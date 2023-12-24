@@ -21,6 +21,7 @@ type Playback interface {
 	GetOPL2Chip() render.OPL2Chip
 	GetGlobalVolume() volume.Volume
 	SetGlobalVolume(volume.Volume)
+	GetMixerVolume() volume.Volume
 
 	Update(time.Duration, chan<- *output.PremixData) error
 	Generate(time.Duration) (*output.PremixData, error)
@@ -32,6 +33,7 @@ type Playback interface {
 	SetNextOrder(index.Order) error
 	SetNextRow(index.Row) error
 	SetNextRowWithBacktrack(index.Row, bool) error
+	GetCurrentOrder() index.Order
 	GetCurrentRow() index.Row
 	Configure([]feature.Feature) error
 	GetName() string
@@ -41,5 +43,15 @@ type Playback interface {
 	GetOnEffect() func(Effect)
 	IgnoreUnknownEffect() bool
 
+	GetRenderState() RowRenderState
+
 	StartPatternTransaction() *pattern.RowUpdateTransaction
+}
+
+type RowRenderState interface {
+	GetSamplerSpeed() float32
+	GetDuration() time.Duration
+	GetSamples() int
+	GetCurrentTick() int
+	GetTicksThisRow() int
 }

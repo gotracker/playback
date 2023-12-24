@@ -82,13 +82,8 @@ func (s *Sampler) GetSample(pos sampling.Pos) volume.Matrix {
 }
 
 func (s *Sampler) canLoop() bool {
-	switch {
-	case !s.loopsEnabled:
-		return false
-	case s.keyOn && s.sustainLoop.Enabled():
-		return true
-	case s.wholeLoop.Enabled():
-		return true
+	if s.loopsEnabled {
+		return (s.keyOn && s.sustainLoop.Enabled()) || s.wholeLoop.Enabled()
 	}
 	return false
 }

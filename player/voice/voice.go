@@ -31,6 +31,10 @@ func New[TPeriod period.Period](periodConverter period.PeriodConverter[TPeriod],
 			OutputFilter:  output,
 			VoiceFilter:   voiceFilter,
 			PluginFilter:  pluginFilter,
+			Vol0Optimization: Vol0OptimizationConfiguration{
+				Enabled:     true,
+				MaxTicksAt0: 3,
+			},
 		})
 	case *instrument.OPL2:
 		return NewOPL2[TPeriod](OPLConfiguration[TPeriod]{

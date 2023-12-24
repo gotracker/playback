@@ -69,7 +69,7 @@ func (m *manager[TPeriod]) processPatternRow() error {
 	if m.rowRenderState == nil {
 		panmixer := s.GetPanMixer()
 
-		m.rowRenderState = &rowRenderState{
+		m.rowRenderState = &state.RowRenderState{
 			RenderDetails: state.RenderDetails{
 				Mix:          s.Mixer(),
 				SamplerSpeed: s.GetSamplerSpeed(),
@@ -127,8 +127,8 @@ func (m *manager[TPeriod]) processPatternRow() error {
 
 	m.rowRenderState.Duration = tickDuration
 	m.rowRenderState.Samples = int(tickDuration.Seconds() * float64(s.SampleRate))
-	m.rowRenderState.ticksThisRow = m.pattern.GetTicksThisRow()
-	m.rowRenderState.currentTick = 0
+	m.rowRenderState.TicksThisRow = m.pattern.GetTicksThisRow()
+	m.rowRenderState.CurrentTick = 0
 
 	// run row processing, now that prestart has completed
 	for channelNum := 0; channelNum < nch; channelNum++ {
