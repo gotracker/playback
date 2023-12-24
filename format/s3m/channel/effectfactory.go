@@ -105,6 +105,8 @@ func specialEffect(mem *Memory, data Data) EffectS3M {
 		return nil
 	case 0x8: // Set Pan Position
 		return SetPanPosition(data.Info)
+	case 0x9: // Sound Control
+		return soundControlEffect(data)
 	case 0xA: // Stereo Control
 		return StereoControl(data.Info)
 	case 0xB: // Pattern Loop
@@ -142,4 +144,22 @@ func volumeSlideFactory(mem *Memory, cd uint8, ce DataEffect) EffectS3M {
 	// ScreamTracker 3.xx does.
 	return VolumeSlideDown(xy)
 	//return UnhandledCommand{Command: cd, Info: xy}
+}
+
+func soundControlEffect(data Data) EffectS3M {
+	switch data.Info & 0xF {
+	case 0x0: // Surround Off
+	case 0x1: // Surround On
+		// only S91 is supported directly by S3M
+		return SurroundOn(data.Info)
+	case 0x8: // Reverb Off
+	case 0x9: // Reverb On
+	case 0xA: // Center Surround
+	case 0xB: // Quad Surround
+	case 0xC: // Global Filters
+	case 0xD: // Local Filters
+	case 0xE: // Play Forward
+	case 0xF: // Play Backward
+	}
+	return UnhandledCommand{Command: data.Command, Info: data.Info}
 }

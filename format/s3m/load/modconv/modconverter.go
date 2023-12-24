@@ -87,6 +87,17 @@ func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error)
 				case 0xC: // Set Volume
 					u.What |= s3mfile.PatternFlagVolume
 					u.Volume = s3mfile.Volume(u.Info)
+				case 0x8: // Set Pan (mod-style)
+					if effectParameter >= 0x00 && effectParameter <= 0x80 {
+						u.What |= s3mfile.PatternFlagCommand
+						u.Command = 'S' - '@'
+						u.Info = channel.DataEffect(0x80 | (effectParameter >> 4))
+					} else if effectParameter == 0xA4 {
+						// surround
+						u.What |= s3mfile.PatternFlagCommand
+						u.Command = 'S' - '@'
+						u.Info = channel.DataEffect(0x91)
+					}
 				}
 
 				if effect == 0xE {
