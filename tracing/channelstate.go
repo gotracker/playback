@@ -1,17 +1,19 @@
 package tracing
 
 import (
+	"fmt"
+
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/period"
 )
 
-func ChannelStateHeaders() []string {
+func ChannelStateHeaders(preamble string) []string {
 	return []string{
-		"Instrument",
-		"Period",
-		"Volume",
-		"Position",
-		"Pan",
+		fmt.Sprintf("%s Instrument", preamble),
+		fmt.Sprintf("%s Period", preamble),
+		fmt.Sprintf("%s Volume", preamble),
+		fmt.Sprintf("%s Position", preamble),
+		fmt.Sprintf("%s Pan", preamble),
 	}
 }
 

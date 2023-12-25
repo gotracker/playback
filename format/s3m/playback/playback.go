@@ -65,6 +65,7 @@ func NewManager(song *layout.Song) (playback.Playback, error) {
 		return m.GetChannel(c)
 	}
 
+	m.Tracker.PreTickable = &m
 	m.Tracker.Tickable = &m
 	m.Tracker.Premixable = &m
 	m.Tracker.Traceable = &m.Tracing

@@ -59,8 +59,6 @@ func (t *Tracker) Update(deltaTime time.Duration, out chan<- *output.PremixData)
 		return err
 	}
 
-	t.OutputTraces()
-
 	if premix != nil && len(premix.Data) > 0 {
 		out <- premix
 	}
@@ -116,6 +114,8 @@ func (t *Tracker) renderTick() (*output.PremixData, error) {
 	if err := DoPreTick(t.PreTickable); err != nil {
 		return nil, err
 	}
+
+	t.OutputTraces()
 
 	if err := DoTick(t.Tickable); err != nil {
 		return nil, err

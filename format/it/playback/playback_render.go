@@ -8,19 +8,27 @@ import (
 // OnPreTick runs the IT pre-tick processing
 func (m *manager[TPeriod]) OnPreTick() error {
 	m.PastNotes.Update()
+
+	m.premix = nil
+
+	m.postMixRowTxn = m.pattern.StartTransaction()
+
+	if m.rowRenderState == nil || m.rowRenderState.CurrentTick >= m.rowRenderState.TicksThisRow {
+		if err := m.startProcessPatternRow(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
 // OnTick runs the IT tick processing
 func (m *manager[TPeriod]) OnTick() error {
-	m.premix = nil
-
-	postMixRowTxn := m.pattern.StartTransaction()
+	postMixRowTxn := m.postMixRowTxn
 	defer func() {
 		postMixRowTxn.Cancel()
 		m.postMixRowTxn = nil
 	}()
-	m.postMixRowTxn = postMixRowTxn
 
 	if m.rowRenderState == nil || m.rowRenderState.CurrentTick >= m.rowRenderState.TicksThisRow {
 		if err := m.processPatternRow(); err != nil {
@@ -90,7 +98,7 @@ func (m *manager[TPeriod]) soundRenderTick(premix *output.PremixData) error {
 }
 
 /** unused in IT, so far
-func (m *Manager) ensureOPL2() {
+func (m *Manager[TPeriod]) ensureOPL2() {
 	if opl2 := m.GetOPL2Chip(); opl2 == nil {
 		if s := m.GetSampler(); s != nil {
 			opl2 = render.NewOPL2Chip(uint32(s.SampleRate))

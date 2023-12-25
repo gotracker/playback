@@ -14,7 +14,7 @@ const (
 	tickBaseDuration = time.Duration(2500) * time.Millisecond
 )
 
-func (m *manager[TPeriod]) processPatternRow() error {
+func (m *manager[TPeriod]) startProcessPatternRow() error {
 	patIdx, err := m.pattern.GetCurrentPatternIdx()
 	if err != nil {
 		return err
@@ -122,6 +122,25 @@ func (m *manager[TPeriod]) processPatternRow() error {
 	if err := preMixRowTxn.Commit(); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func (m *manager[TPeriod]) processPatternRow() error {
+	patIdx, err := m.pattern.GetCurrentPatternIdx()
+	if err != nil {
+		return err
+	}
+	rowIdx := m.pattern.GetCurrentRow()
+
+	pat := m.song.GetPattern(patIdx)
+	row := pat.GetRow(rowIdx)
+	nch := row.GetNumChannels()
+	if actual := m.GetNumChannels(); nch > actual {
+		nch = actual
+	}
+
+	s := m.GetSampler()
 
 	tickDuration := tickBaseDuration / time.Duration(m.pattern.GetTempo())
 

@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"text/tabwriter"
+
+	ansi "github.com/fatih/color"
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/period"
@@ -49,11 +50,7 @@ func (m Tracing[TPeriod, TMemory, TData]) outputGlobalTrace() func(w io.Writer) 
 
 	return func(w io.Writer) {
 		fmt.Fprintln(w)
-
-		tw := tabwriter.NewWriter(w, 1, 1, 1, ' ', 0)
-		defer tw.Flush()
-
-		gs.Fprintln(tw, "\t", false)
+		gs.WriteOut(w)
 	}
 }
 
@@ -80,17 +77,13 @@ func (m Tracing[TPeriod, TMemory, TData]) outputRenderTrace() func(w io.Writer) 
 
 	return func(w io.Writer) {
 		fmt.Fprintln(w)
-
-		tw := tabwriter.NewWriter(w, 1, 1, 1, ' ', 0)
-		defer tw.Flush()
-
-		rs.Fprintln(tw, "\t", false)
+		rs.WriteOut(w)
 	}
 }
 
 func (m Tracing[TPeriod, TMemory, TData]) outputChannelsTrace() func(w io.Writer) {
 	cs := player.NewTracingTable("=== channels ===",
-		append(
+		append(append(
 			[]string{
 				"Channel",
 				"ChannelVolume",
@@ -101,7 +94,8 @@ func (m Tracing[TPeriod, TMemory, TData]) outputChannelsTrace() func(w io.Writer
 				"UseTargetPeriod",
 				"NewNoteAction",
 			},
-			ChannelStateHeaders()...,
+			ChannelStateHeaders("Previous")...),
+			ChannelStateHeaders("Active")...,
 		)...,
 	)
 
@@ -124,29 +118,31 @@ func (m Tracing[TPeriod, TMemory, TData]) outputChannelsTrace() func(w io.Writer
 			}
 		}
 
-		cs.AddRow(
-			append(
-				[]any{
-					c + 1,
-					ch.GetChannelVolume(),
-					strings.Join(activeEffect, ","),
-					trackData,
-					ch.GetRetriggerCount(),
-					ch.GetNoteSemitone(),
-					ch.GetUseTargetPeriod(),
-					ch.GetNewNoteAction(),
-				},
-				ChannelState[TPeriod](ch.GetActiveState())...,
-			)...,
-		)
+		prev := ch.GetPreviousState()
+		active := ch.GetActiveState()
+
+		data := []any{
+			c + 1,
+			ch.GetChannelVolume(),
+			strings.Join(activeEffect, ","),
+			trackData,
+			ch.GetRetriggerCount(),
+			ch.GetNoteSemitone(),
+			ch.GetUseTargetPeriod(),
+			ch.GetNewNoteAction(),
+		}
+		data = append(data, ChannelState[TPeriod](&prev)...)
+		data = append(data, ChannelState[TPeriod](active)...)
+
+		if prev.Instrument != active.Instrument || any(prev.Period) != any(active.Period) || prev.GetVolume() != active.GetVolume() || prev.Pos != active.Pos || prev.Pan != active.Pan {
+			cs.AddRowColor([]ansi.Attribute{ansi.BgRed, ansi.FgHiWhite}, data...)
+		} else {
+			cs.AddRow(data...)
+		}
 	}
 
 	return func(w io.Writer) {
 		fmt.Fprintln(w)
-
-		tw := tabwriter.NewWriter(w, 1, 1, 1, ' ', 0)
-		defer tw.Flush()
-
-		cs.Fprintln(tw, "\t", true)
+		cs.WriteOut(w)
 	}
 }

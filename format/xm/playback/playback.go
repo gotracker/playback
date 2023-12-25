@@ -56,6 +56,7 @@ func (m *manager[TPeriod]) init(song *layout.Song, periodConverter period.Period
 		return m.GetChannel(c)
 	}
 
+	m.Tracker.PreTickable = m
 	m.Tracker.Tickable = m
 	m.Tracker.Premixable = m
 	m.Tracker.Traceable = &m.Tracing

@@ -5,16 +5,28 @@ import (
 	"github.com/gotracker/playback/player/render"
 )
 
-// OnTick runs the XM tick processing
-func (m *manager[TPeriod]) OnTick() error {
+// OnPreTick runs the IT pre-tick processing
+func (m *manager[TPeriod]) OnPreTick() error {
 	m.premix = nil
 
-	postMixRowTxn := m.pattern.StartTransaction()
+	m.postMixRowTxn = m.pattern.StartTransaction()
+
+	if m.rowRenderState == nil || m.rowRenderState.CurrentTick >= m.rowRenderState.TicksThisRow {
+		if err := m.startProcessPatternRow(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// OnTick runs the IT tick processing
+func (m *manager[TPeriod]) OnTick() error {
+	postMixRowTxn := m.postMixRowTxn
 	defer func() {
 		postMixRowTxn.Cancel()
 		m.postMixRowTxn = nil
 	}()
-	m.postMixRowTxn = postMixRowTxn
 
 	if m.rowRenderState == nil || m.rowRenderState.CurrentTick >= m.rowRenderState.TicksThisRow {
 		if err := m.processPatternRow(); err != nil {

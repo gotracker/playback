@@ -5,16 +5,27 @@ import (
 	"github.com/gotracker/playback/player/render"
 )
 
+// OnPreTick runs the S3M pre-tick processing
+func (m *manager) OnPreTick() error {
+	m.premix = nil
+	m.postMixRowTxn = m.pattern.StartTransaction()
+
+	if m.rowRenderState == nil || m.rowRenderState.CurrentTick >= m.rowRenderState.TicksThisRow {
+		if err := m.startProcessPatternRow(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // OnTick runs the S3M tick processing
 func (m *manager) OnTick() error {
-	m.premix = nil
-
-	postMixRowTxn := m.pattern.StartTransaction()
+	postMixRowTxn := m.postMixRowTxn
 	defer func() {
 		postMixRowTxn.Cancel()
 		m.postMixRowTxn = nil
 	}()
-	m.postMixRowTxn = postMixRowTxn
 
 	if m.rowRenderState == nil || m.rowRenderState.CurrentTick >= m.rowRenderState.TicksThisRow {
 		if err := m.processPatternRow(); err != nil {
