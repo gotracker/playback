@@ -2,15 +2,18 @@ package song
 
 import (
 	"errors"
+
+	"github.com/gotracker/playback/voice/vol0optimization"
 )
 
 type ChannelSettings interface {
 	GetEnabled() bool
 	GetOutputChannelNum() int
 	GetMemory() ChannelMemory
-	GetPanEnabled() bool
+	IsPanEnabled() bool
 	GetDefaultFilterName() string
 	IsDefaultFilterEnabled() bool
+	GetVol0OptimizationSettings() vol0optimization.Vol0OptimizationSettings
 }
 
 type channelInitialVolumeGetter[TVolume Volume] interface {

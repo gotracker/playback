@@ -10,8 +10,8 @@ import (
 
 type voiceFactory[TPeriod period.Period] struct{}
 
-func (voiceFactory[TPeriod]) NewVoice() voice.RenderVoice[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning] {
-	return xmVoice.New(GetMachineSettings[TPeriod]())
+func (voiceFactory[TPeriod]) NewVoice(config voice.VoiceConfig[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) voice.RenderVoice[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning] {
+	return xmVoice.New(config, GetMachineSettings[TPeriod]())
 }
 
 var (

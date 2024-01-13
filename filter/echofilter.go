@@ -22,12 +22,10 @@ type EchoFilterFactory struct {
 }
 
 func (e *EchoFilterFactory) Factory() Factory {
-	return func(instrument, playback period.Frequency) Filter {
+	return func(instrument period.Frequency) Filter {
 		echo := EchoFilter{
 			EchoFilterSettings: e.EchoFilterSettings,
-			sampleRate:         playback,
 		}
-		echo.recalculate()
 		return &echo
 	}
 }
@@ -41,19 +39,29 @@ type delayInfo struct {
 
 type EchoFilter struct {
 	EchoFilterSettings
-	sampleRate      period.Frequency
 	initialFeedback volume.Volume
 	writePos        int
 	delay           [2]delayInfo // L,R
 }
 
+func (e *EchoFilter) SetPlaybackRate(playback period.Frequency) {
+	e.initialFeedback = volume.Volume(math.Sqrt(float64(1.0 - (e.Feedback * e.Feedback))))
+
+	playbackRate := float32(playback)
+	bufferSize := int(playbackRate * 2)
+
+	for c, delayMs := range [2]float32{e.LeftDelay, e.RightDelay} {
+		delay := int(delayMs * 2.0 * playbackRate)
+		e.delay[c].delay = delay
+		e.delay[c].buf = make([]volume.Volume, bufferSize)
+	}
+}
+
 func (e *EchoFilter) Clone() Filter {
 	clone := EchoFilter{
 		EchoFilterSettings: e.EchoFilterSettings,
-		sampleRate:         e.sampleRate,
 		writePos:           e.writePos,
 	}
-	clone.recalculate()
 	for i := range clone.delay {
 		copy(clone.delay[i].buf, e.delay[i].buf)
 	}
@@ -111,19 +119,6 @@ func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 	e.writePos++
 
 	return wet
-}
-
-func (e *EchoFilter) recalculate() {
-	e.initialFeedback = volume.Volume(math.Sqrt(float64(1.0 - (e.Feedback * e.Feedback))))
-
-	playbackRate := float32(e.sampleRate)
-	bufferSize := int(playbackRate * 2)
-
-	for c, delayMs := range [2]float32{e.LeftDelay, e.RightDelay} {
-		delay := int(delayMs * 2.0 * playbackRate)
-		e.delay[c].delay = delay
-		e.delay[c].buf = make([]volume.Volume, bufferSize)
-	}
 }
 
 func (e *EchoFilter) UpdateEnv(val uint8) {

@@ -32,8 +32,8 @@ var (
 func filterFactory(name string) (settings.FilterFactoryFunc, error) {
 	switch name {
 	case "amigalpf":
-		return func(instrument, playback period.Frequency) (filter.Filter, error) {
-			lpf := filter.NewAmigaLPF(instrument, playback)
+		return func(instrument period.Frequency) (filter.Filter, error) {
+			lpf := filter.NewAmigaLPF(instrument)
 			return lpf, nil
 		}, nil
 

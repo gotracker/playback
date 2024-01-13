@@ -311,6 +311,7 @@ func Read(r io.Reader) (*s3mfile.File, error) {
 			OrderCount:      uint16(mf.Head.SongLen),
 			InstrumentCount: 31,
 			PatternCount:    uint16(len(mf.Patterns)),
+			Flags:           0x0004 | 0x0010 | 0x0020, // amigaSlides | amigaLimits | sbFilterEnable
 			GlobalVolume:    s3mfile.DefaultVolume,
 			InitialSpeed:    6,
 			InitialTempo:    125,

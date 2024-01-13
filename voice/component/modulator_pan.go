@@ -17,6 +17,7 @@ type PanModulator[TPanning types.Panning] struct {
 }
 
 type PanModulatorSettings[TPanning types.Panning] struct {
+	Enabled    bool
 	InitialPan TPanning
 }
 
@@ -34,8 +35,10 @@ func (p PanModulator[TPanning]) Clone() PanModulator[TPanning] {
 
 // SetPan sets the current panning
 func (p *PanModulator[TPanning]) SetPan(pan TPanning) {
-	p.pan = pan
-	p.updateFinal()
+	if p.settings.Enabled {
+		p.pan = pan
+		p.updateFinal()
+	}
 }
 
 // GetPan returns the current panning
@@ -45,8 +48,10 @@ func (p PanModulator[TPanning]) GetPan() TPanning {
 
 // SetPanDelta sets the current panning delta
 func (p *PanModulator[TPanning]) SetPanDelta(d types.PanDelta) {
-	p.delta = d
-	p.updateFinal()
+	if p.settings.Enabled {
+		p.delta = d
+		p.updateFinal()
+	}
 }
 
 // GetPanDelta returns the current panning delta

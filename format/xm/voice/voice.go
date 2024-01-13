@@ -45,7 +45,7 @@ var (
 	_ voice.PanEnvelope[xmPanning.Panning]                                          = (*xmVoice[period.Linear])(nil)
 )
 
-func New[TPeriod Period](ms *settings.MachineSettings[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) voice.RenderVoice[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning] {
+func New[TPeriod Period](config voice.VoiceConfig[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], ms *settings.MachineSettings[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) voice.RenderVoice[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning] {
 	v := &xmVoice[TPeriod]{
 		ms: ms,
 	}
@@ -60,13 +60,16 @@ func New[TPeriod Period](ms *settings.MachineSettings[TPeriod, xmVolume.XmVolume
 
 	v.amp.Setup(component.AmpModulatorSettings[xmVolume.XmVolume, xmVolume.XmVolume]{
 		Active:              true,
-		DefaultMixingVolume: xmVolume.DefaultXmMixingVolume,
-		DefaultVolume:       xmVolume.DefaultXmVolume,
+		DefaultMixingVolume: config.InitialMixing,
+		DefaultVolume:       config.InitialVolume,
 	})
 
 	v.pan.Setup(component.PanModulatorSettings[xmPanning.Panning]{
-		InitialPan: xmPanning.DefaultPanning,
+		Enabled:    config.PanEnabled,
+		InitialPan: config.InitialPan,
 	})
+
+	v.vol0Opt.Setup(config.Vol0Optimization)
 
 	return v
 }
@@ -140,7 +143,6 @@ func (v *xmVoice[TPeriod]) Setup(config voice.InstrumentConfig[TPeriod, xmVolume
 	v.panEnv.Setup(component.EnvelopeSettings[xmPanning.Panning, xmPanning.Panning]{
 		Envelope: config.PanEnv,
 	})
-	v.vol0Opt.Setup(config.Vol0Optimization)
 	v.KeyModulator.Release()
 	v.Reset()
 }

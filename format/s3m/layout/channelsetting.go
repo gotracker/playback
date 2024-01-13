@@ -6,6 +6,7 @@ import (
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/song"
+	"github.com/gotracker/playback/voice/vol0optimization"
 )
 
 // ChannelSetting is settings specific to a single channel
@@ -49,7 +50,7 @@ func (c ChannelSetting) GetMemory() song.ChannelMemory {
 	return &c.Memory
 }
 
-func (c ChannelSetting) GetPanEnabled() bool {
+func (c ChannelSetting) IsPanEnabled() bool {
 	return c.PanEnabled
 }
 
@@ -59,4 +60,11 @@ func (c ChannelSetting) GetDefaultFilterName() string {
 
 func (c ChannelSetting) IsDefaultFilterEnabled() bool {
 	return len(c.DefaultFilterName) > 0
+}
+
+func (c ChannelSetting) GetVol0OptimizationSettings() vol0optimization.Vol0OptimizationSettings {
+	return vol0optimization.Vol0OptimizationSettings{
+		Enabled:     c.Memory.Shared.ZeroVolOptimization,
+		MaxTicksAt0: 3,
+	}
 }

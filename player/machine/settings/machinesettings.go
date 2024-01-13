@@ -14,7 +14,7 @@ type (
 	Panning = voice.Panning
 )
 
-type FilterFactoryFunc func(instrument, playback period.Frequency) (filter.Filter, error)
+type FilterFactoryFunc func(instrument period.Frequency) (filter.Filter, error)
 
 type MachineSettings[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] struct {
 	PeriodConverter     song.PeriodCalculator[TPeriod]

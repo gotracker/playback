@@ -4,13 +4,13 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/machine/settings"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice"
-	"github.com/gotracker/playback/voice/types"
 )
 
 type typeLookup struct {
@@ -105,23 +105,56 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 			rc := &m.outputChannels[ch]
 			rc.ChannelNum = i
 			rc.Filter = nil
-			rc.GetSampleRate = m.getSampleRate
-			rc.GetOPL2Chip = func() render.OPL2Chip {
-				// TODO: add OPL2 back in
-				return nil
+
+			if cs.IsDefaultFilterEnabled() {
+				name := cs.GetDefaultFilterName()
+				filtFactory, err := ms.GetFilterFactory(name)
+				if err != nil {
+					return nil, err
+				}
+
+				filt, err := filtFactory(sys.GetCommonRate())
+				if err != nil {
+					return nil, err
+				}
+
+				rc.Filter = filt
 			}
-			rc.ChannelVolume = types.GetMaxVolume[TMixingVolume]()
-			rc.LastGlobalVolume = types.GetMaxVolume[TGlobalVolume]() // this is the channel's version of the GlobalVolume
+			rc.GetOPL2Chip = func() render.OPL2Chip {
+				return m.opl2
+			}
+
+			initialVolume, err := song.GetChannelInitialVolume[TVolume](cs)
+			if err != nil {
+				return nil, err
+			}
+
+			initialMixing, err := song.GetChannelMixingVolume[TMixingVolume](cs)
+			if err != nil {
+				return nil, err
+			}
+
+			initialPan, err := song.GetChannelInitialPanning[TPanning](cs)
+			if err != nil {
+				return nil, err
+			}
+
+			rc.GlobalVolume = volume.Volume(1)
 
 			c := &m.channels[ch]
 			c.enabled = cs.GetEnabled()
 			c.pn.MaxPastNotes = sys.GetMaxPastNotesPerChannel()
-			c.cv = m.ms.VoiceFactory.NewVoice()
+			c.cv = m.ms.VoiceFactory.NewVoice(voice.VoiceConfig[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]{
+				InitialVolume:    initialVolume,
+				InitialMixing:    initialMixing,
+				PanEnabled:       cs.IsPanEnabled(),
+				InitialPan:       initialPan,
+				Vol0Optimization: cs.GetVol0OptimizationSettings(),
+			})
 			c.memory = cs.GetMemory()
 			c.target.ActionTick.Reset()
 
 			c.nna = note.ActionCut
-			var err error
 			if c.osc[OscillatorVibrato], err = ms.GetVibratoFactory(); err != nil {
 				return nil, err
 			}

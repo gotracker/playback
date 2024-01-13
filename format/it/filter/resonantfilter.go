@@ -25,15 +25,17 @@ type ResonantFilter struct {
 	enabled             bool
 	resonance           optional.Value[uint8]
 	cutoff              optional.Value[uint8]
-	playbackRate        period.Frequency
 	highpass            bool
 	extendedFilterRange bool
+
+	f2  float64
+	fr  float64
+	efr float64
 }
 
 // NewResonantFilter creates a new resonant filter with the provided cutoff and resonance values
-func NewResonantFilter(cutoff uint8, resonance uint8, playbackRate period.Frequency, extendedFilterRange bool, highpass bool) filter.Filter {
-	rf := &ResonantFilter{
-		playbackRate:        playbackRate,
+func NewResonantFilter(cutoff uint8, resonance uint8, extendedFilterRange bool, highpass bool) filter.Filter {
+	rf := ResonantFilter{
 		highpass:            highpass,
 		extendedFilterRange: extendedFilterRange,
 	}
@@ -47,8 +49,22 @@ func NewResonantFilter(cutoff uint8, resonance uint8, playbackRate period.Freque
 		rf.cutoff.Set(uint8(c))
 	}
 
-	rf.recalculate(c)
-	return rf
+	return &rf
+}
+
+func (f *ResonantFilter) SetPlaybackRate(playback period.Frequency) {
+	f.f2 = float64(playback) / 2.0
+
+	f.fr = float64(playback)
+	if f.fr != 0 {
+		f.efr = float64(1) / f.fr
+	}
+
+	c := uint8(0x7F)
+	if v, set := f.cutoff.Get(); set {
+		c = v
+	}
+	f.recalculate(c)
 }
 
 func (f *ResonantFilter) Clone() filter.Filter {
@@ -138,8 +154,7 @@ func (f *ResonantFilter) recalculate(v uint8) {
 	const dampingFactorDivisor = ((24.0 / 128.0) / 20.0)
 	dampingFactor := math.Pow(10.0, -float64(resonance)*dampingFactorDivisor)
 
-	f2 := float64(f.playbackRate) / 2.0
-	freq := f2
+	freq := f.f2
 	fcComputedCutoff := float64(computedCutoff)
 	freq = 110.0 * math.Pow(2.0, 0.25+(fcComputedCutoff/filterRange))
 	if freq < 120.0 {
@@ -147,15 +162,15 @@ func (f *ResonantFilter) recalculate(v uint8) {
 	} else if freq > 20000 {
 		freq = 20000
 	}
-	if freq > f2 {
-		freq = f2
+	if freq > f.f2 {
+		freq = f.f2
 	}
 
 	fc := freq * 4.0 * math.Pi
 
 	var d, e float64
 	if f.extendedFilterRange {
-		r := fc / float64(f.playbackRate)
+		r := fc * f.efr
 
 		d = (1.0 - 2.0*dampingFactor) * r
 		if d > 2.0 {
@@ -164,7 +179,7 @@ func (f *ResonantFilter) recalculate(v uint8) {
 		d = (2.0*dampingFactor - d) / r
 		e = 1.0 / (r * r)
 	} else {
-		r := float64(f.playbackRate) / fc
+		r := f.fr / fc
 
 		d = dampingFactor*r + dampingFactor - 1.0
 		e = r * r

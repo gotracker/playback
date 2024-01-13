@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	s3mSystem "github.com/gotracker/playback/format/s3m/system"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
@@ -27,7 +28,7 @@ func (e FineVibrato) Tick(ch index.Channel, m machine.Machine[period.Amiga, s3mV
 	// NOTE: JBC - S3M does not update on tick 0, but MOD does.
 	if tick != 0 || mem.Shared.ModCompatibility {
 		return withOscillatorDo(ch, m, int(x), float32(y)*1, machine.OscillatorVibrato, func(value float32) error {
-			return m.SetChannelPeriodDelta(ch, period.Delta(value))
+			return m.SetChannelPeriodDelta(ch, period.Delta(value)*s3mSystem.SlideFinesPerSemitone)
 		})
 	}
 	return nil

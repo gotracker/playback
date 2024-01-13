@@ -23,7 +23,6 @@ type InstrumentConfig[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volu
 	Data                 instrument.Data
 	VoiceFilter          filter.Filter
 	PluginFilter         filter.Filter
-	Vol0Optimization     vol0optimization.Vol0OptimizationSettings
 	FadeOut              fadeout.Settings
 	PitchPan             instrument.PitchPan
 	VolEnv               envelope.Envelope[TVolume]
@@ -31,4 +30,12 @@ type InstrumentConfig[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volu
 	PanEnv               envelope.Envelope[TPanning]
 	PitchFiltMode        bool                                     // true = filter, false = pitch
 	PitchFiltEnv         envelope.Envelope[filter.PitchFiltValue] // this is either pitch or filter
+}
+
+type VoiceConfig[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] struct {
+	InitialVolume    TVolume
+	InitialMixing    TMixingVolume
+	PanEnabled       bool
+	InitialPan       TPanning
+	Vol0Optimization vol0optimization.Vol0OptimizationSettings
 }

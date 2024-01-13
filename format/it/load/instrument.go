@@ -148,8 +148,8 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		pluginFilterFactory  filter.Factory
 	)
 	if inst.InitialFilterResonance != 0 {
-		channelFilterFactory = func(instrument, playback period.Frequency) filter.Filter {
-			return itfilter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, playback, convSettings.extendedFilterRange, convSettings.useHighPassFilter)
+		channelFilterFactory = func(instrument period.Frequency) filter.Filter {
+			return itfilter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, convSettings.extendedFilterRange, convSettings.useHighPassFilter)
 		}
 	}
 

@@ -10,8 +10,8 @@ import (
 
 type voiceFactory struct{}
 
-func (voiceFactory) NewVoice() voice.RenderVoice[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning] {
-	return s3mVoice.New(GetMachineSettings())
+func (voiceFactory) NewVoice(config voice.VoiceConfig[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) voice.RenderVoice[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning] {
+	return s3mVoice.New(config, GetMachineSettings())
 }
 
 var (

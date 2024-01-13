@@ -144,12 +144,11 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetF
 	}
 
 	cr := m.songData.GetSystem().GetCommonRate()
-	sr := m.getSampleRate()
 
 	for i := range m.channels {
 		c := &m.channels[i]
 		if enabled {
-			filt, err := filtFactory(cr, sr)
+			filt, err := filtFactory(cr)
 			if err != nil {
 				return err
 			}

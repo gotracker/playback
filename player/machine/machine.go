@@ -135,10 +135,8 @@ type machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	us       settings.UserSettings
 	opl2     render.OPL2Chip
 
-	rowStringer render.RowStringer
-
+	rowStringer    render.RowStringer
 	outputChannels []render.Channel[TGlobalVolume, TMixingVolume, TPanning]
-	getSampleRate  func() period.Frequency
 }
 
 func NewMachine(songData song.Data, us settings.UserSettings) (MachineTicker, error) {

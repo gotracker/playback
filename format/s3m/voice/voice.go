@@ -35,7 +35,7 @@ var (
 	_ voice.PanModulator[s3mPanning.Panning]                                       = (*s3mVoice)(nil)
 )
 
-func New(ms *settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) voice.RenderVoice[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning] {
+func New(config voice.VoiceConfig[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], ms *settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) voice.RenderVoice[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning] {
 	v := &s3mVoice{
 		ms: ms,
 	}
@@ -50,14 +50,16 @@ func New(ms *settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.
 
 	v.AmpModulator.Setup(component.AmpModulatorSettings[s3mVolume.FineVolume, s3mVolume.Volume]{
 		Active:              true,
-		DefaultMixingVolume: s3mVolume.MaxFineVolume,
-		DefaultVolume:       s3mVolume.MaxVolume,
+		DefaultMixingVolume: config.InitialMixing,
+		DefaultVolume:       config.InitialVolume,
 	})
 
 	v.PanModulator.Setup(component.PanModulatorSettings[s3mPanning.Panning]{
-		InitialPan: s3mPanning.DefaultPanning,
+		Enabled:    config.PanEnabled,
+		InitialPan: config.InitialPan,
 	})
 
+	v.vol0Opt.Setup(config.Vol0Optimization)
 	return v
 }
 
@@ -94,7 +96,6 @@ func (v *s3mVoice) Setup(config voice.InstrumentConfig[period.Amiga, s3mVolume.V
 	v.config = config
 
 	v.FreqModulator.Setup(component.FreqModulatorSettings[period.Amiga]{})
-	v.vol0Opt.Setup(config.Vol0Optimization)
 	v.KeyModulator.Release()
 	v.Reset()
 }

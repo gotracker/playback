@@ -53,7 +53,7 @@ var (
 	_ voice.FilterEnvelope                                                            = (*itVoice[period.Linear])(nil)
 )
 
-func New[TPeriod Period](ms *settings.MachineSettings[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]) voice.RenderVoice[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning] {
+func New[TPeriod Period](config voice.VoiceConfig[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], ms *settings.MachineSettings[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]) voice.RenderVoice[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning] {
 	v := &itVoice[TPeriod]{
 		ms:                      ms,
 		pitchAndFilterEnvShared: true,
@@ -69,13 +69,16 @@ func New[TPeriod Period](ms *settings.MachineSettings[TPeriod, itVolume.FineVolu
 
 	v.amp.Setup(component.AmpModulatorSettings[itVolume.FineVolume, itVolume.Volume]{
 		Active:              true,
-		DefaultMixingVolume: itVolume.MaxItFineVolume,
-		DefaultVolume:       itVolume.Volume(itVolume.MaxItVolume),
+		DefaultMixingVolume: config.InitialMixing,
+		DefaultVolume:       config.InitialVolume,
 	})
 
 	v.pan.Setup(component.PanModulatorSettings[itPanning.Panning]{
-		InitialPan: itPanning.DefaultPanning,
+		Enabled:    config.PanEnabled,
+		InitialPan: config.InitialPan,
 	})
+
+	v.vol0Opt.Setup(config.Vol0Optimization)
 
 	return v
 }
@@ -164,7 +167,6 @@ func (v *itVoice[TPeriod]) Setup(config voice.InstrumentConfig[TPeriod, itVolume
 	v.filterEnv.Setup(component.EnvelopeSettings[int8, uint8]{
 		Envelope: config.PitchFiltEnv,
 	})
-	v.vol0Opt.Setup(config.Vol0Optimization)
 	v.KeyModulator.Release()
 	v.Reset()
 }
