@@ -1,69 +1,91 @@
 package component
 
 import (
+	"fmt"
+
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/tracing"
 	"github.com/gotracker/playback/voice/loop"
 	"github.com/gotracker/playback/voice/pcm"
+	"github.com/gotracker/playback/voice/types"
 )
 
 // Sampler is a sampler component
-type Sampler struct {
-	sample       pcm.Sample
+type Sampler[TPeriod types.Period, TVolume types.Volume] struct {
+	settings     SamplerSettings[TPeriod, TVolume]
 	pos          sampling.Pos
-	keyOn        bool
 	loopsEnabled bool
-	wholeLoop    loop.Loop
-	sustainLoop  loop.Loop
+
+	slimKeyModulator
 }
 
-func (s Sampler) Clone() Sampler {
-	return Sampler{
-		sample:       s.sample,
-		pos:          sampling.Pos{},
-		keyOn:        false,
-		loopsEnabled: s.loopsEnabled,
-		wholeLoop:    s.wholeLoop,
-		sustainLoop:  s.sustainLoop,
-	}
+type SamplerSettings[TPeriod types.Period, TVolume types.Volume] struct {
+	Sample        pcm.Sample
+	DefaultVolume TVolume
+	WholeLoop     loop.Loop
+	SustainLoop   loop.Loop
+}
+
+func (s Sampler[TPeriod, TVolume]) Clone() Voicer[TPeriod, TVolume] {
+	m := s
+	return &m
 }
 
 // Setup sets up the sampler
-func (s *Sampler) Setup(sample pcm.Sample, wholeLoop loop.Loop, sustainLoop loop.Loop) {
-	s.sample = sample
-	s.wholeLoop = wholeLoop
-	s.sustainLoop = sustainLoop
+func (s *Sampler[TPeriod, TVolume]) Setup(settings SamplerSettings[TPeriod, TVolume]) {
+	s.settings = settings
 }
 
 // SetPos sets the current position of the sampler in the pcm data (and loops)
-func (s *Sampler) SetPos(pos sampling.Pos) {
+func (s *Sampler[TPeriod, TVolume]) SetPos(pos sampling.Pos) {
 	s.pos = pos
 }
 
 // GetPos returns the current position of the sampler in the pcm data (and loops)
-func (s *Sampler) GetPos() sampling.Pos {
+func (s Sampler[TPeriod, TVolume]) GetPos() sampling.Pos {
 	return s.pos
 }
 
 // Attack sets the key-on value (for loop processing)
-func (s *Sampler) Attack() {
-	s.keyOn = true
+func (s *Sampler[TPeriod, TVolume]) Attack() {
+	s.slimKeyModulator.Attack()
 	s.loopsEnabled = true
 }
 
 // Release releases the key-on value (for loop processing)
-func (s *Sampler) Release() {
-	s.keyOn = false
+func (s *Sampler[TPeriod, TVolume]) Release() {
+	s.slimKeyModulator.Release()
 }
 
 // Fadeout disables the loops (for loop processing)
-func (s *Sampler) Fadeout() {
+func (s *Sampler[TPeriod, TVolume]) Fadeout() {
 	s.loopsEnabled = false
 }
 
+func (s *Sampler[TPeriod, TVolume]) DeferredAttack() {
+	// does nothing
+}
+
+func (s *Sampler[TPeriod, TVolume]) DeferredRelease() {
+	// does nothing
+}
+
+func (s Sampler[TPeriod, TVolume]) GetDefaultVolume() TVolume {
+	return s.settings.DefaultVolume
+}
+
+func (s Sampler[TPeriod, TVolume]) GetNumChannels() int {
+	if s.settings.Sample == nil {
+		return 0
+	}
+	return s.settings.Sample.Channels()
+}
+
 // GetSample returns a multi-channel sample at the specified position
-func (s *Sampler) GetSample(pos sampling.Pos) volume.Matrix {
+func (s *Sampler[TPeriod, TVolume]) GetSample(pos sampling.Pos) volume.Matrix {
 	v0 := s.getConvertedSample(pos.Pos)
 	if v0.Channels == 0 {
 		if s.canLoop() {
@@ -81,31 +103,52 @@ func (s *Sampler) GetSample(pos sampling.Pos) volume.Matrix {
 	return v0.Lerp(v1, pos.Frac)
 }
 
-func (s *Sampler) canLoop() bool {
+func (s Sampler[TPeriod, TVolume]) canLoop() bool {
 	if s.loopsEnabled {
-		return (s.keyOn && s.sustainLoop.Enabled()) || s.wholeLoop.Enabled()
+		return (s.keyOn && s.settings.SustainLoop.Enabled()) || s.settings.WholeLoop.Enabled()
 	}
 	return false
 }
 
-func (s *Sampler) getConvertedSample(pos int) volume.Matrix {
-	if s.sample == nil {
+func (s *Sampler[TPeriod, TVolume]) getConvertedSample(pos int) volume.Matrix {
+	if s.settings.Sample == nil {
 		return volume.Matrix{}
 	}
-	sl := s.sample.Length()
-	if pos >= sl && !s.canLoop() {
-		return volume.Matrix{}
+	sl := s.settings.Sample.Length()
+	fadeout := false
+	fadeoutLen := 0
+	if pos >= sl {
+		if s.canLoop() {
+			pos, _ = loop.CalcLoopPos(s.settings.WholeLoop, s.settings.SustainLoop, pos, sl, s.keyOn)
+		} else {
+			fadeoutLen = pos - sl
+			pos = sl - 1
+			fadeout = true
+		}
 	}
-	opos := pos
-	pos, _ = loop.CalcLoopPos(s.wholeLoop, s.sustainLoop, pos, sl, s.keyOn)
-	_ = opos
 	if pos < 0 || pos >= sl {
 		return volume.Matrix{}
 	}
-	s.sample.Seek(pos)
-	data, err := s.sample.Read()
+	s.settings.Sample.Seek(pos)
+	data, err := s.settings.Sample.Read()
 	if err != nil {
 		return volume.Matrix{}
 	}
-	return data
+
+	if !fadeout {
+		return data
+	}
+	if fadeoutLen >= 32 {
+		return data.Apply(0)
+	}
+
+	atten := volume.Volume(1) / volume.Volume(int(1<<fadeoutLen))
+	return data.Apply(atten)
+}
+
+func (s Sampler[TPeriod, TVolume]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
+	t.TraceChannelWithComment(ch, fmt.Sprintf("pos{%v} loopsEnabled{%v}",
+		s.pos,
+		s.loopsEnabled,
+	), comment)
 }

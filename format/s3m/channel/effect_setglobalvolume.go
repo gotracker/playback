@@ -3,27 +3,24 @@ package channel
 import (
 	"fmt"
 
-	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
-
-	"github.com/gotracker/playback"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // SetGlobalVolume defines a set global volume effect
 type SetGlobalVolume ChannelCommand // 'V'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e SetGlobalVolume) PreStart(cs S3MChannel, p playback.Playback) error {
-	p.SetGlobalVolume(s3mVolume.VolumeFromS3M(s3mfile.Volume(DataEffect(e))))
-	return nil
-}
-
-// Start triggers on the first tick, but before the Tick() function is called
-func (e SetGlobalVolume) Start(cs S3MChannel, p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
-
 func (e SetGlobalVolume) String() string {
 	return fmt.Sprintf("V%0.2x", DataEffect(e))
+}
+
+func (e SetGlobalVolume) RowStart(ch index.Channel, m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) error {
+	return m.SetGlobalVolume(s3mVolume.Volume(DataEffect(e)))
+}
+
+func (e SetGlobalVolume) TraceData() string {
+	return e.String()
 }

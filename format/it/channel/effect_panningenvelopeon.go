@@ -3,21 +3,24 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // PanningEnvelopeOn defines a panning envelope: on effect
 type PanningEnvelopeOn[TPeriod period.Period] DataEffect // 'S7A'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e PanningEnvelopeOn[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-
-	cs.SetPanningEnvelopeEnable(true)
-	return nil
-}
-
 func (e PanningEnvelopeOn[TPeriod]) String() string {
 	return fmt.Sprintf("S%0.2x", DataEffect(e))
+}
+
+func (e PanningEnvelopeOn[TPeriod]) RowStart(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]) error {
+	return m.SetChannelPanningEnvelopeEnable(ch, true)
+}
+
+func (e PanningEnvelopeOn[TPeriod]) TraceData() string {
+	return e.String()
 }

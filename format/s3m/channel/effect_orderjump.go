@@ -3,24 +3,25 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // OrderJump defines an order jump effect
 type OrderJump ChannelCommand // 'B'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e OrderJump) Start(cs S3MChannel, p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
-
-// Stop is called on the last tick of the row, but after the Tick() function is called
-func (e OrderJump) Stop(cs S3MChannel, p playback.Playback, lastTick int) error {
-	return p.SetNextOrder(index.Order(e))
-}
-
 func (e OrderJump) String() string {
 	return fmt.Sprintf("B%0.2x", DataEffect(e))
+}
+
+func (e OrderJump) RowEnd(ch index.Channel, m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) error {
+	o := index.Order(e)
+	return m.SetOrder(o)
+}
+
+func (e OrderJump) TraceData() string {
+	return e.String()
 }

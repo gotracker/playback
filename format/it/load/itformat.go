@@ -10,17 +10,20 @@ import (
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	itblock "github.com/gotracker/goaudiofile/music/tracked/it/block"
-	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/format/it/layout"
 	itPanning "github.com/gotracker/playback/format/it/panning"
 	"github.com/gotracker/playback/format/it/pattern"
+	itSystem "github.com/gotracker/playback/format/it/system"
+	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
+	"github.com/gotracker/playback/song"
 )
 
 func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
@@ -28,28 +31,29 @@ func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
 		return nil, errors.New("file header is nil")
 	}
 	head := layout.Header{
-		Name:         fh.GetName(),
-		InitialSpeed: int(fh.InitialSpeed),
-		InitialTempo: int(fh.InitialTempo),
-		GlobalVolume: volume.Volume(fh.GlobalVolume.Value()),
+		Name:             fh.GetName(),
+		InitialSpeed:     int(fh.InitialSpeed),
+		InitialTempo:     int(fh.InitialTempo),
+		GlobalVolume:     itVolume.FineVolume(fh.GlobalVolume),
+		LinearFreqSlides: fh.Flags.IsLinearSlides(),
 	}
 	switch {
 	case fh.TrackerCompatVersion < 0x200:
-		head.MixingVolume = volume.Volume(fh.MixingVolume.Value())
+		head.MixingVolume = max(itVolume.FineVolume(fh.MixingVolume*2), itVolume.MaxItFineVolume)
 	case fh.TrackerCompatVersion >= 0x200:
-		head.MixingVolume = volume.Volume(fh.MixingVolume) / 128
+		head.MixingVolume = itVolume.FineVolume(fh.MixingVolume)
 	}
 	return &head, nil
 }
 
-func convertItPattern(pkt itfile.PackedPattern, channels int) (pattern.Pattern, int, error) {
-	pat := make(pattern.Pattern, pkt.Rows)
+func convertItPattern[TPeriod period.Period](pkt itfile.PackedPattern, channels int) (*pattern.Pattern[TPeriod], int, error) {
+	pat := make(song.Pattern[channel.Data[TPeriod], itVolume.Volume], pkt.Rows)
 
 	channelMem := make([]itfile.ChannelData, channels)
 	maxCh := uint8(0)
 	pos := 0
 	for rowNum := 0; rowNum < int(pkt.Rows); rowNum++ {
-		row := make([]channel.Data, channels)
+		row := make([]channel.Data[TPeriod], channels)
 		pat[rowNum] = row
 	channelLoop:
 		for {
@@ -64,7 +68,7 @@ func convertItPattern(pkt itfile.PackedPattern, channels int) (pattern.Pattern, 
 
 			channelNum := int(chn.ChannelNumber)
 
-			cd := channel.Data{
+			cd := channel.Data[TPeriod]{
 				What:            chn.Flags,
 				Note:            chn.Note,
 				Instrument:      chn.Instrument,
@@ -80,10 +84,18 @@ func convertItPattern(pkt itfile.PackedPattern, channels int) (pattern.Pattern, 
 		}
 	}
 
-	return pat, int(maxCh), nil
+	return &pattern.Pattern[TPeriod]{Pattern: pat}, int(maxCh), nil
 }
 
-func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.Song, error) {
+func convertItFileToSong(f *itfile.File, features []feature.Feature) (song.Data, error) {
+	if f.Head.Flags.IsLinearSlides() {
+		return convertItFileToTypedSong[period.Linear](f, features)
+	} else {
+		return convertItFileToTypedSong[period.Amiga](f, features)
+	}
+}
+
+func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []feature.Feature) (*layout.Song[TPeriod], error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -93,11 +105,12 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.So
 	oldEffectMode := f.Head.Flags.IsOldEffects()
 	efgLinkMode := f.Head.Flags.IsEFGLinking()
 
-	song := layout.Song{
+	songData := &layout.Song[TPeriod]{
+		System:            itSystem.ITSystem,
 		Head:              *h,
-		Instruments:       make(map[uint8]*instrument.Instrument),
+		Instruments:       make(map[uint8]*instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]),
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument),
-		Patterns:          make([]pattern.Pattern, len(f.Patterns)),
+		Patterns:          make([]pattern.Pattern[TPeriod], len(f.Patterns)),
 		OrderList:         make([]index.Pattern, int(f.Head.OrderCount)),
 		FilterPlugins:     make(map[int]filter.Factory),
 	}
@@ -107,14 +120,14 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.So
 		case *itblock.FX:
 			if filter, err := decodeFilter(t); err == nil {
 				if i, err := strconv.Atoi(string(t.Identifier[2:])); err == nil {
-					song.FilterPlugins[i] = filter
+					songData.FilterPlugins[i] = filter
 				}
 			}
 		}
 	}
 
 	for i := 0; i < int(f.Head.OrderCount); i++ {
-		song.OrderList[i] = index.Pattern(f.OrderList[i])
+		songData.OrderList[i] = index.Pattern(f.OrderList[i])
 	}
 
 	if f.Head.Flags.IsUseInstruments() {
@@ -132,40 +145,38 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.So
 				}
 
 				for _, ci := range instMap {
-					addSampleWithNoteMapToSong(&song, ci.Inst, ci.NR, instNum)
+					addSampleWithNoteMapToSong(songData, ci.Inst, ci.NR, instNum)
 				}
 
 			case *itfile.IMPIInstrument:
-				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, convSettings, song.FilterPlugins, features)
+				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, convSettings, songData.FilterPlugins, features)
 				if err != nil {
 					return nil, err
 				}
 
 				for _, ci := range instMap {
-					addSampleWithNoteMapToSong(&song, ci.Inst, ci.NR, instNum)
+					addSampleWithNoteMapToSong(songData, ci.Inst, ci.NR, instNum)
 				}
 			}
 		}
 	}
 
 	lastEnabledChannel := 0
-	song.Patterns = make([]pattern.Pattern, len(f.Patterns))
 	for patNum, pkt := range f.Patterns {
-		pattern, maxCh, err := convertItPattern(pkt, len(f.Head.ChannelVol))
+		p, maxCh, err := convertItPattern[TPeriod](pkt, len(f.Head.ChannelVol))
 		if err != nil {
 			return nil, err
 		}
-		if pattern == nil {
+		if p == nil {
 			continue
 		}
 		if lastEnabledChannel < maxCh {
 			lastEnabledChannel = maxCh
 		}
-		song.Patterns[patNum] = pattern
+		songData.Patterns[patNum] = *p
 	}
 
 	sharedMem := channel.SharedMemory{
-		LinearFreqSlides:           linearFrequencySlides,
 		OldEffectMode:              oldEffectMode,
 		EFGLinkMode:                efgLinkMode,
 		ResetMemoryAtStartOfOrder0: true,
@@ -176,9 +187,9 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.So
 		cs := layout.ChannelSetting{
 			OutputChannelNum: chNum,
 			Enabled:          true,
-			InitialVolume:    volume.Volume(1),
-			ChannelVolume:    volume.Volume(f.Head.ChannelVol[chNum].Value()),
-			InitialPanning:   itPanning.FromItPanning(f.Head.ChannelPan[chNum]),
+			InitialVolume:    itVolume.Volume(itVolume.DefaultItVolume),
+			ChannelVolume:    min(itVolume.FineVolume(f.Head.ChannelVol[chNum]*2), itVolume.MaxItFineVolume),
+			InitialPanning:   itPanning.Panning(f.Head.ChannelPan[chNum]),
 			Memory: channel.Memory{
 				Shared: &sharedMem,
 			},
@@ -189,9 +200,8 @@ func convertItFileToSong(f *itfile.File, features []feature.Feature) (*layout.So
 		channels[chNum] = cs
 	}
 
-	song.ChannelSettings = channels
-
-	return &song, nil
+	songData.ChannelSettings = channels
+	return songData, nil
 }
 
 func decodeFilter(f *itblock.FX) (filter.Factory, error) {
@@ -215,7 +225,7 @@ type noteRemap struct {
 	Remap note.Semitone
 }
 
-func addSampleWithNoteMapToSong(song *layout.Song, sample *instrument.Instrument, sts []noteRemap, instNum int) {
+func addSampleWithNoteMapToSong[TPeriod period.Period](song *layout.Song[TPeriod], sample *instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning], sts []noteRemap, instNum int) {
 	if sample == nil {
 		return
 	}
@@ -242,7 +252,7 @@ func addSampleWithNoteMapToSong(song *layout.Song, sample *instrument.Instrument
 	}
 }
 
-func readIT(r io.Reader, features []feature.Feature) (*layout.Song, error) {
+func readIT(r io.Reader, features []feature.Feature) (song.Data, error) {
 	f, err := itfile.Read(r)
 	if err != nil {
 		return nil, err

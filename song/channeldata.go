@@ -4,13 +4,12 @@ import (
 	"fmt"
 
 	"github.com/gotracker/gomixing/volume"
-
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 )
 
 // ChannelData is an interface for channel data
-type ChannelData interface {
+type ChannelDataIntf interface {
 	HasNote() bool
 	GetNote() note.Note
 
@@ -18,7 +17,7 @@ type ChannelData interface {
 	GetInstrument(note.Semitone) instrument.ID
 
 	HasVolume() bool
-	GetVolume() volume.Volume
+	GetVolumeGeneric() volume.Volume
 
 	HasCommand() bool
 
@@ -26,4 +25,10 @@ type ChannelData interface {
 
 	fmt.Stringer
 	ShortString() string
+}
+
+type ChannelData[TVolume Volume] interface {
+	ChannelDataIntf
+
+	GetVolume() TVolume
 }

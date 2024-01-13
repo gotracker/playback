@@ -133,8 +133,8 @@ func (m *Memory) GlobalVolumeSlide(input DataEffect) (DataEffect, DataEffect) {
 }
 
 // Panbrello gets or sets the most recent non-zero value (or input) for Panbrello
-func (m *Memory) Panbrello(input DataEffect) DataEffect {
-	return m.panbrello.Coalesce(input)
+func (m *Memory) Panbrello(input DataEffect) (DataEffect, DataEffect) {
+	return m.panbrello.CoalesceXY(input)
 }
 
 // TremorMem returns the Tremor object

@@ -10,8 +10,7 @@ import (
 
 // Linear is a linear period, based on semitone and finetune values
 type Linear struct {
-	Finetune   note.Finetune
-	CommonRate Frequency
+	Finetune note.Finetune
 }
 
 // Add adds the current period to a delta value then returns the resulting period
@@ -36,6 +35,24 @@ func (p Linear) PortaDown(amount int) Linear {
 
 func (p Linear) PortaUp(amount int) Linear {
 	return p.Add(Delta(amount))
+}
+
+func (p Linear) PortaTo(amount int, target Linear) Linear {
+	switch p.Compare(target) {
+	case comparison.SpaceshipLeftGreater:
+		// porta down to target
+		p = p.PortaDown(amount)
+		if p.Compare(target) == comparison.SpaceshipRightGreater {
+			return target
+		}
+	case comparison.SpaceshipRightGreater:
+		// porta up to target
+		p = p.PortaUp(amount)
+		if p.Compare(target) == comparison.SpaceshipLeftGreater {
+			return target
+		}
+	}
+	return p
 }
 
 func (p Linear) IsInvalid() bool {
@@ -65,5 +82,8 @@ func (p Linear) Lerp(t float64, rhs Linear) Period {
 }
 
 func (p Linear) String() string {
-	return fmt.Sprintf("LinearPeriod{ Finetune:%v CommonRate:%v }", p.Finetune, p.CommonRate)
+	if p.Finetune == 0 {
+		return "Linear{ nil }"
+	}
+	return fmt.Sprintf("Linear{ Finetune:%v }", p.Finetune)
 }

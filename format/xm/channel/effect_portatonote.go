@@ -3,44 +3,38 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/note"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
-	"github.com/heucuva/comparison"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // PortaToNote defines a portamento-to-note effect
 type PortaToNote[TPeriod period.Period] DataEffect // '3'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e PortaToNote[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	cs.UnfreezePlayback()
-	if cmd := cs.GetChannelData(); cmd.HasNote() {
-		cs.SetPortaTargetPeriod(cs.GetTargetState().Period)
-		cs.SetNotePlayTick(false, note.ActionContinue, 0)
-	}
-	return nil
+func (e PortaToNote[TPeriod]) String() string {
+	return fmt.Sprintf("3%0.2x", DataEffect(e))
 }
 
-// Tick is called on every tick
-func (e PortaToNote[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
-	if currentTick == 0 {
+func (e PortaToNote[TPeriod]) RowStart(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) error {
+	return m.StartChannelPortaToNote(ch)
+}
+
+func (e PortaToNote[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], tick int) error {
+	if tick == 0 {
 		return nil
 	}
 
-	mem := cs.GetMemory()
-	xx := mem.PortaToNote(DataEffect(e))
-
-	current := cs.GetActiveState().Period
-	target := cs.GetPortaTargetPeriod()
-	if period.ComparePeriods(current, target) == comparison.SpaceshipRightGreater {
-		return doPortaUpToNote(cs, float32(xx), 4, target) // subtracts
-	} else {
-		return doPortaDownToNote(cs, float32(xx), 4, target) // adds
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
 	}
+
+	xx := mem.PortaToNote(DataEffect(e))
+	return m.DoChannelPortaToNote(ch, period.Delta(xx)*4)
 }
 
-func (e PortaToNote[TPeriod]) String() string {
-	return fmt.Sprintf("3%0.2x", DataEffect(e))
+func (e PortaToNote[TPeriod]) TraceData() string {
+	return e.String()
 }

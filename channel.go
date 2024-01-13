@@ -1,7 +1,6 @@
 package playback
 
 import (
-	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/op"
 	"github.com/gotracker/playback/player/render"
@@ -13,10 +12,10 @@ import (
 )
 
 // Channel is an interface for channel state
-type Channel[TPeriod period.Period, TMemory any, TChannelData song.ChannelData] interface {
+type Channel[TPeriod period.Period, TMemory song.ChannelMemory, TChannelData song.ChannelData[TVolume], TGlobalVolume, TMixingVolume, TVolume song.Volume, TPanning song.Panning] interface {
 	ResetRetriggerCount()
-	SetMemory(*TMemory)
-	GetMemory() *TMemory
+	SetMemory(TMemory)
+	GetMemory() TMemory
 	FreezePlayback()
 	UnfreezePlayback()
 	GetChannelData() TChannelData
@@ -25,7 +24,7 @@ type Channel[TPeriod period.Period, TMemory any, TChannelData song.ChannelData] 
 	SetPeriodOverride(TPeriod)
 	SetPeriodDelta(period.Delta)
 	GetPeriodDelta() period.Delta
-	SetInstrument(*instrument.Instrument)
+	SetInstrument(*instrument.Instrument[TMixingVolume, TVolume, TPanning])
 	GetVoice() voice.Voice
 	GetPrevVoice() voice.Voice
 	GetNoteSemitone() note.Semitone
@@ -36,12 +35,12 @@ type Channel[TPeriod period.Period, TMemory any, TChannelData song.ChannelData] 
 	GetRetriggerCount() uint8
 	SetRetriggerCount(uint8)
 	SetPanEnabled(bool)
-	SetRenderChannel(*render.Channel)
-	GetRenderChannel() *render.Channel
+	SetRenderChannel(*render.Channel[TGlobalVolume, TMixingVolume, TPanning])
+	GetRenderChannel() *render.Channel[TGlobalVolume, TMixingVolume, TPanning]
 	SetVolumeActive(bool)
-	SetGlobalVolume(volume.Volume)
-	SetChannelVolume(volume.Volume)
-	GetChannelVolume() volume.Volume
+	SetGlobalVolume(TGlobalVolume)
+	SetChannelVolume(TMixingVolume)
+	GetChannelVolume() TMixingVolume
 	SetEnvelopePosition(int)
 	TransitionActiveToPastState()
 	SetNewNoteAction(note.Action)
@@ -53,9 +52,9 @@ type Channel[TPeriod period.Period, TMemory any, TChannelData song.ChannelData] 
 	GetActiveEffects() []Effect
 	GetUseTargetPeriod() bool
 
-	GetPreviousState() ChannelState[TPeriod]
-	GetActiveState() *ChannelState[TPeriod]
-	GetTargetState() *ChannelState[TPeriod]
+	GetPreviousState() ChannelState[TPeriod, TVolume, TPanning]
+	GetActiveState() *ChannelState[TPeriod, TVolume, TPanning]
+	GetTargetState() *ChannelState[TPeriod, TVolume, TPanning]
 }
 
-type ChannelTargeter[TPeriod period.Period, TMemory any, TChannelData song.ChannelData] func(out *op.ChannelTargets[TPeriod], d TChannelData, s song.Data, cs Channel[TPeriod, TMemory, TChannelData]) error
+type ChannelTargeter[TPeriod period.Period, TMemory song.ChannelMemory, TChannelData song.ChannelData[TVolume], TGlobalVolume, TMixingVolume, TVolume song.Volume, TPanning song.Panning] func(out *op.ChannelTargets[TPeriod, TVolume, TPanning], d TChannelData, s song.Data, cs Channel[TPeriod, TMemory, TChannelData, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error

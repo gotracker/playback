@@ -3,14 +3,13 @@ package component
 import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
-
-	"github.com/gotracker/playback/voice"
+	"github.com/gotracker/playback/voice/filter"
 )
 
 // OutputFilter applies a filter to a sample stream
 type OutputFilter struct {
 	Input  sampling.SampleStream
-	Output voice.FilterApplier
+	Output filter.Applier
 }
 
 // GetSample operates the filter

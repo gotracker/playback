@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/song"
 )
@@ -12,7 +14,7 @@ type EffectIT = playback.Effect
 
 // VolEff is a combined effect that includes a volume effect and a standard effect
 type VolEff[TPeriod period.Period] struct {
-	playback.CombinedEffect[TPeriod, Memory, Data]
+	playback.CombinedEffect[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning, *Memory, Data[TPeriod]]
 	eff EffectIT
 }
 
@@ -23,13 +25,17 @@ func (e VolEff[TPeriod]) String() string {
 	return fmt.Sprint(e.eff)
 }
 
+func (e VolEff[TPeriod]) TraceData() string {
+	return e.String()
+}
+
 // Factory produces an effect for the provided channel pattern data
-func EffectFactory[TPeriod period.Period](mem *Memory, data song.ChannelData) EffectIT {
+func EffectFactory[TPeriod period.Period](mem *Memory, data song.ChannelData[itVolume.Volume]) EffectIT {
 	if data == nil {
 		return nil
 	}
 
-	d, _ := data.(Data)
+	d, _ := data.(Data[TPeriod])
 
 	if !d.What.HasCommand() && !d.What.HasVolPan() {
 		return nil
@@ -58,7 +64,7 @@ func EffectFactory[TPeriod period.Period](mem *Memory, data song.ChannelData) Ef
 	}
 }
 
-func standardEffectFactory[TPeriod period.Period](mem *Memory, data Data) EffectIT {
+func standardEffectFactory[TPeriod period.Period](mem *Memory, data Data[TPeriod]) EffectIT {
 	switch data.Effect + '@' {
 	case '@': // unused
 		return nil
@@ -125,7 +131,7 @@ func standardEffectFactory[TPeriod period.Period](mem *Memory, data Data) Effect
 	case 'X': // Set Pan Position
 		return SetPanPosition[TPeriod](data.EffectParameter)
 	case 'Y': // Panbrello
-		//return Panbrello[TPeriod](data.EffectParameter)
+		return Panbrello[TPeriod](data.EffectParameter)
 	case 'Z': // MIDI Macro
 		return nil // TODO: MIDIMacro
 	default:
@@ -133,7 +139,7 @@ func standardEffectFactory[TPeriod period.Period](mem *Memory, data Data) Effect
 	return UnhandledCommand[TPeriod]{Command: data.Effect, Info: data.EffectParameter}
 }
 
-func specialEffect[TPeriod period.Period](data Data) EffectIT {
+func specialEffect[TPeriod period.Period](data Data[TPeriod]) EffectIT {
 	switch data.EffectParameter >> 4 {
 	case 0x0: // unused
 		return nil
@@ -172,7 +178,7 @@ func specialEffect[TPeriod period.Period](data Data) EffectIT {
 	return UnhandledCommand[TPeriod]{Command: data.Effect, Info: data.EffectParameter}
 }
 
-func specialNoteEffects[TPeriod period.Period](data Data) EffectIT {
+func specialNoteEffects[TPeriod period.Period](data Data[TPeriod]) EffectIT {
 	switch data.EffectParameter & 0xf {
 	case 0x0: // Past Note Cut
 		return PastNoteCut[TPeriod](data.EffectParameter)
@@ -225,7 +231,7 @@ func volumeSlideFactory[TPeriod period.Period](mem *Memory, cd Command, ce DataE
 	return nil
 }
 
-func soundControlEffect[TPeriod period.Period](data Data) EffectIT {
+func soundControlEffect[TPeriod period.Period](data Data[TPeriod]) EffectIT {
 	switch data.EffectParameter & 0xF {
 	case 0x0: // Surround Off
 	case 0x1: // Surround On

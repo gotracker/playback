@@ -3,26 +3,30 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // Tremor defines a tremor effect
 type Tremor[TPeriod period.Period] DataEffect // 'I'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e Tremor[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
-
-// Tick is called on every tick
-func (e Tremor[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
-	mem := cs.GetMemory()
-	x, y := mem.Tremor(DataEffect(e))
-	return doTremor(cs, currentTick, int(x)+1, int(y)+1)
-}
-
 func (e Tremor[TPeriod]) String() string {
 	return fmt.Sprintf("I%0.2x", DataEffect(e))
+}
+
+func (e Tremor[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], tick int) error {
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
+
+	x, y := mem.Tremor(DataEffect(e))
+	return doTremor(ch, m, int(x)+1, int(y)+1)
+}
+
+func (e Tremor[TPeriod]) TraceData() string {
+	return e.String()
 }

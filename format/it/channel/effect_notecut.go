@@ -3,29 +3,25 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // NoteCut defines a note cut effect
 type NoteCut[TPeriod period.Period] DataEffect // 'SCx'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e NoteCut[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
-
-// Tick is called on every tick
-func (e NoteCut[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
-	x := DataEffect(e) & 0xf
-
-	if x != 0 && currentTick == int(x) {
-		cs.FreezePlayback()
-	}
-	return nil
-}
-
 func (e NoteCut[TPeriod]) String() string {
 	return fmt.Sprintf("S%0.2x", DataEffect(e))
+}
+
+func (e NoteCut[TPeriod]) RowStart(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]) error {
+	return m.SetChannelNoteAction(ch, note.ActionCut, int(e&0x0F))
+}
+
+func (e NoteCut[TPeriod]) TraceData() string {
+	return e.String()
 }

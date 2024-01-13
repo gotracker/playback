@@ -1,7 +1,6 @@
 package channel
 
 import (
-	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/voice/oscillator"
 
 	"github.com/gotracker/playback/memory"
@@ -12,8 +11,7 @@ import (
 
 // Memory is the storage object for custom effect/command values
 type Memory struct {
-	semitone note.Semitone
-	inst     InstID
+	inst InstID
 
 	portaToNote   memory.Value[DataEffect]
 	vibratoSpeed  memory.Value[DataEffect]
@@ -31,16 +29,6 @@ type Memory struct {
 	patternLoop       formatutil.PatternLoop
 
 	Shared *SharedMemory
-}
-
-// Semitone gets or sets the most recent non-zero value (or input) for the semitone
-func (m *Memory) Semitone(input note.Semitone) note.Semitone {
-	if input == 0 {
-		return m.semitone
-	}
-
-	m.semitone = input
-	return input
 }
 
 // Inst gets or sets the most recent non-zero value (or input) for inst
@@ -136,7 +124,6 @@ func (m *Memory) GetPatternLoop() *formatutil.PatternLoop {
 // StartOrder is called when the first order's row at tick 0 is started
 func (m *Memory) StartOrder() {
 	if m.Shared.ResetMemoryAtStartOfOrder0 {
-		m.semitone = 0
 		m.inst = 0
 		m.portaToNote.Reset()
 		m.vibratoSpeed.Reset()

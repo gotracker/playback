@@ -8,7 +8,10 @@ const (
 	// DefaultC4SampleRate is the default c4 sample rate for XM samples
 	DefaultC4SampleRate = 8363
 	// C4Period is the sampler (Amiga-style) period of the C-4 note
-	C4Period = 1712
+	C4Period = 856
+
+	C4Octave = 4
+	C4Note   = C4Octave * NotesPerOctave
 
 	floatDefaultC4SampleRate = float32(DefaultC4SampleRate)
 
@@ -20,11 +23,17 @@ const (
 	SemitonesPerNote      = 16
 	SlideFinesPerNote     = SlideFinesPerSemitone * SemitonesPerNote
 	SlideFinesPerOctave   = SlideFinesPerNote * NotesPerOctave
-	C4SlideFines          = 4 * SlideFinesPerOctave
+	C4SlideFines          = C4Note * SlideFinesPerNote
 )
 
-var XMSystem system.System = system.ClockedSystem{
-	BaseClock:          XMBaseClock,
-	BaseFinetunes:      C4SlideFines,
-	FinetunesPerOctave: SlideFinesPerOctave,
+var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
+
+var XMSystem system.ClockableSystem = system.ClockedSystem{
+	MaxPastNotesPerChannel: 0,
+	BaseClock:              XMBaseClock,
+	BaseFinetunes:          C4SlideFines,
+	FinetunesPerOctave:     SlideFinesPerOctave,
+	FinetunesPerNote:       SlideFinesPerNote,
+	CommonRate:             DefaultC4SampleRate,
+	SemitonePeriods:        semitonePeriodTable,
 }

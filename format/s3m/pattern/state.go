@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/gotracker/playback/format/s3m/channel"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/pattern"
 	"github.com/gotracker/playback/player/feature"
@@ -235,7 +236,7 @@ func (state *State) nextRow() error {
 }
 
 // GetRows returns all the rows in the pattern
-func (state *State) GetRows() (*song.Pattern[channel.Data], error) {
+func (state *State) GetRows() (*song.Pattern[channel.Data, s3mVolume.Volume], error) {
 nextRow:
 	for loops := 0; loops < len(state.Patterns); loops++ {
 		var patNum = state.GetPatNum()

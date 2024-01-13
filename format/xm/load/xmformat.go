@@ -6,14 +6,15 @@ import (
 	"math"
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
-	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/heucuva/optional"
 
 	"github.com/gotracker/playback/format/xm/channel"
 	"github.com/gotracker/playback/format/xm/layout"
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
 	"github.com/gotracker/playback/format/xm/pattern"
 	xmPeriod "github.com/gotracker/playback/format/xm/period"
+	xmSystem "github.com/gotracker/playback/format/xm/system"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
@@ -21,7 +22,8 @@ import (
 	"github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
-	"github.com/gotracker/playback/voice"
+	"github.com/gotracker/playback/song"
+	"github.com/gotracker/playback/voice/autovibrato"
 	"github.com/gotracker/playback/voice/envelope"
 	"github.com/gotracker/playback/voice/fadeout"
 	"github.com/gotracker/playback/voice/loop"
@@ -33,11 +35,12 @@ func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {
 		return nil, errors.New("file header is nil")
 	}
 	head := layout.Header{
-		Name:         fh.GetName(),
-		InitialSpeed: int(fh.DefaultSpeed),
-		InitialTempo: int(fh.DefaultTempo),
-		GlobalVolume: xmVolume.DefaultVolume,
-		MixingVolume: xmVolume.DefaultMixingVolume,
+		Name:             fh.GetName(),
+		InitialSpeed:     int(fh.DefaultSpeed),
+		InitialTempo:     int(fh.DefaultTempo),
+		GlobalVolume:     xmVolume.DefaultXmVolume,
+		MixingVolume:     xmVolume.DefaultXmMixingVolume,
+		LinearFreqSlides: fh.Flags.IsLinearSlides(),
 	}
 	return &head, nil
 }
@@ -59,23 +62,20 @@ func xmAutoVibratoWSToProtrackerWS(vibtype uint8) uint8 {
 	}
 }
 
-func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlides bool, features []feature.Feature) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
+func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlides bool, features []feature.Feature) ([]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], map[int][]note.Semitone, error) {
 	noteMap := make(map[int][]note.Semitone)
 
-	var instruments []*instrument.Instrument
+	var instruments []*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
 
 	for _, si := range inst.Samples {
-		v := xmVolume.XmVolume(si.Volume)
-		if v >= 0x40 {
-			v = 0x40
-		}
-		sample := instrument.Instrument{
-			Static: instrument.StaticValues{
+		v := min(xmVolume.XmVolume(si.Volume), 0x40)
+		sample := instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]{
+			Static: instrument.StaticValues[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]{
 				Filename:           si.GetName(),
 				Name:               inst.GetName(),
-				Volume:             v.Volume(),
+				Volume:             v,
 				RelativeNoteNumber: si.RelativeNoteNumber,
-				AutoVibrato: voice.AutoVibrato{
+				AutoVibrato: autovibrato.AutoVibratoSettings{
 					Enabled:           (inst.VibratoDepth != 0 && inst.VibratoRate != 0),
 					Sweep:             int(inst.VibratoSweep),
 					WaveformSelection: xmAutoVibratoWSToProtrackerWS(inst.VibratoType),
@@ -123,18 +123,17 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 			End:   int(inst.PanSustainPoint),
 		}
 
-		ii := instrument.PCM{
-			Loop:         &loop.Disabled{},
-			MixingVolume: volume.Volume(1),
+		ii := instrument.PCM[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]{
+			Loop: &loop.Disabled{},
 			FadeOut: fadeout.Settings{
 				Mode:   fadeout.ModeOnlyIfVolEnvActive,
 				Amount: volume.Volume(inst.VolumeFadeout) / 65536,
 			},
-			Panning: xmPanning.PanningFromXm(si.Panning),
-			VolEnv: envelope.Envelope[volume.Volume]{
+			Panning: optional.NewValue[xmPanning.Panning](xmPanning.Panning(si.Panning)),
+			VolEnv: envelope.Envelope[xmVolume.XmVolume]{
 				Enabled: (inst.VolFlags & xmfile.EnvelopeFlagEnabled) != 0,
 			},
-			PanEnv: envelope.Envelope[panning.Position]{
+			PanEnv: envelope.Envelope[xmPanning.Panning]{
 				Enabled: (inst.PanFlags & xmfile.EnvelopeFlagEnabled) != 0,
 			},
 		}
@@ -147,7 +146,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				volEnvSustainMode = loop.ModeNormal
 			}
 
-			ii.VolEnv.Values = make([]envelope.EnvPoint[volume.Volume], int(inst.VolPoints))
+			ii.VolEnv.Values = make([]envelope.EnvPoint[xmVolume.XmVolume], int(inst.VolPoints))
 			for i := range ii.VolEnv.Values {
 				x1 := int(inst.VolEnv[i].X)
 				y1 := uint8(inst.VolEnv[i].Y)
@@ -155,9 +154,13 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				if i+1 < len(ii.VolEnv.Values) {
 					x2 = int(inst.VolEnv[i+1].X)
 				} else {
+					ii.VolEnv.Length = x1
 					x2 = math.MaxInt64
 				}
-				ii.VolEnv.Values[i].Init(x2-x1, xmVolume.XmVolume(y1).Volume())
+				v := &ii.VolEnv.Values[i]
+				v.Length = x2 - x1
+				v.Pos = x1
+				v.Y = xmVolume.XmVolume(y1)
 			}
 		}
 
@@ -169,7 +172,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				panEnvSustainMode = loop.ModeNormal
 			}
 
-			ii.PanEnv.Values = make([]envelope.EnvPoint[panning.Position], int(inst.VolPoints))
+			ii.PanEnv.Values = make([]envelope.EnvPoint[xmPanning.Panning], int(inst.VolPoints))
 			for i := range ii.PanEnv.Values {
 				x1 := int(inst.PanEnv[i].X)
 				// XM stores pan envelope values in 0..64
@@ -181,21 +184,17 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 					x2 = int(inst.PanEnv[i+1].X)
 				} else {
 					x2 = math.MaxInt64
+					ii.PanEnv.Length = x1
 				}
-				ii.PanEnv.Values[i].Init(x2-x1, xmPanning.PanningFromXm(y1))
+				v := &ii.PanEnv.Values[i]
+				v.Length = x2 - x1
+				v.Pos = x1
+				v.Y = xmPanning.Panning(y1)
 			}
 		}
 
-		if si.Finetune != 0 {
-			if linearFrequencySlides {
-				sample.SampleRate = xmPeriod.CalcFinetuneC4SampleRate[period.Linear](xmPeriod.LinearConverter, xmPeriod.DefaultC4SampleRate, note.Finetune(si.Finetune))
-			} else {
-				sample.SampleRate = xmPeriod.CalcFinetuneC4SampleRate[period.Amiga](xmPeriod.AmigaConverter, xmPeriod.DefaultC4SampleRate, note.Finetune(si.Finetune))
-			}
-		}
-		if sample.SampleRate == 0 {
-			sample.SampleRate = period.Frequency(xmPeriod.DefaultC4SampleRate)
-		}
+		n := note.Semitone(xmSystem.C4Note + si.RelativeNoteNumber)
+		sample.SampleRate = xmPeriod.CalcFinetuneC4SampleRate(xmSystem.DefaultC4SampleRate, n, note.Finetune(si.Finetune))
 		if si.Flags.IsStereo() {
 			numChannels = 2
 		}
@@ -247,7 +246,7 @@ func xmLoopModeToLoopMode(mode xmfile.SampleLoopMode) loop.Mode {
 	}
 }
 
-func convertXMInstrumentToInstrument(ih *xmfile.InstrumentHeader, linearFrequencySlides bool, features []feature.Feature) ([]*instrument.Instrument, map[int][]note.Semitone, error) {
+func convertXMInstrumentToInstrument(ih *xmfile.InstrumentHeader, linearFrequencySlides bool, features []feature.Feature) ([]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], map[int][]note.Semitone, error) {
 	if ih == nil {
 		return nil, nil, errors.New("instrument is nil")
 	}
@@ -255,16 +254,16 @@ func convertXMInstrumentToInstrument(ih *xmfile.InstrumentHeader, linearFrequenc
 	return xmInstrumentToInstrument(ih, linearFrequencySlides, features)
 }
 
-func convertXmPattern(pkt xmfile.Pattern) (pattern.Pattern, int) {
-	pat := make(pattern.Pattern, len(pkt.Data))
+func convertXmPattern[TPeriod period.Period](pkt xmfile.Pattern) (*pattern.Pattern[TPeriod], int) {
+	pat := make(song.Pattern[channel.Data[TPeriod], xmVolume.XmVolume], len(pkt.Data))
 
 	maxCh := uint8(0)
 	for rowNum, drow := range pkt.Data {
-		row := make(pattern.Row, len(drow))
+		row := make(song.Row[channel.Data[TPeriod], xmVolume.XmVolume], len(drow))
 		pat[rowNum] = row
 
 		for channelNum, chn := range drow {
-			cd := channel.Data{
+			cd := channel.Data[TPeriod]{
 				What:            chn.Flags,
 				Note:            chn.Note,
 				Instrument:      chn.Instrument,
@@ -279,10 +278,18 @@ func convertXmPattern(pkt xmfile.Pattern) (pattern.Pattern, int) {
 		}
 	}
 
-	return pat, int(maxCh)
+	return &pattern.Pattern[TPeriod]{Pattern: pat}, int(maxCh)
 }
 
-func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.Song, error) {
+func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (song.Data, error) {
+	if f.Head.Flags.IsLinearSlides() {
+		return convertXmFileToTypedSong[period.Linear](f, features)
+	} else {
+		return convertXmFileToTypedSong[period.Amiga](f, features)
+	}
+}
+
+func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []feature.Feature) (*layout.Song[TPeriod], error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -290,16 +297,17 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 
 	linearFrequencySlides := f.Head.Flags.IsLinearSlides()
 
-	song := layout.Song{
+	s := layout.Song[TPeriod]{
+		System:            xmSystem.XMSystem,
 		Head:              *h,
-		Instruments:       make(map[uint8]*instrument.Instrument),
-		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument),
-		Patterns:          make([]pattern.Pattern, len(f.Patterns)),
+		Instruments:       make(map[uint8]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]),
+		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]),
+		Patterns:          make([]pattern.Pattern[TPeriod], len(f.Patterns)),
 		OrderList:         make([]index.Pattern, int(f.Head.SongLength)),
 	}
 
 	for i := 0; i < int(f.Head.SongLength); i++ {
-		song.OrderList[i] = index.Pattern(f.Head.OrderTable[i])
+		s.OrderList[i] = index.Pattern(f.Head.OrderTable[i])
 	}
 
 	for instNum, ih := range f.Instruments {
@@ -315,7 +323,7 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 				InstID: uint8(instNum + 1),
 			}
 			sample.Static.ID = id
-			song.Instruments[id.InstID] = sample
+			s.Instruments[id.InstID] = sample
 		}
 		for i, sts := range noteMap {
 			sample := samples[i]
@@ -323,10 +331,10 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 			if !ok {
 				continue
 			}
-			inm, ok := song.InstrumentNoteMap[id.InstID]
+			inm, ok := s.InstrumentNoteMap[id.InstID]
 			if !ok {
-				inm = make(map[note.Semitone]*instrument.Instrument)
-				song.InstrumentNoteMap[id.InstID] = inm
+				inm = make(map[note.Semitone]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning])
+				s.InstrumentNoteMap[id.InstID] = inm
 			}
 			for _, st := range sts {
 				inm[st] = samples[i]
@@ -335,16 +343,15 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 	}
 
 	lastEnabledChannel := 0
-	song.Patterns = make([]pattern.Pattern, len(f.Patterns))
 	for patNum, pkt := range f.Patterns {
-		pattern, maxCh := convertXmPattern(pkt)
+		pattern, maxCh := convertXmPattern[TPeriod](pkt)
 		if pattern == nil {
 			continue
 		}
 		if lastEnabledChannel < maxCh {
 			lastEnabledChannel = maxCh
 		}
-		song.Patterns[patNum] = pattern
+		s.Patterns[patNum] = *pattern
 	}
 
 	sharedMem := channel.SharedMemory{
@@ -356,7 +363,7 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 	for chNum := range channels {
 		cs := layout.ChannelSetting{
 			Enabled:        true,
-			InitialVolume:  xmVolume.DefaultVolume,
+			InitialVolume:  xmVolume.DefaultXmVolume,
 			InitialPanning: xmPanning.DefaultPanning,
 			Memory: channel.Memory{
 				Shared: &sharedMem,
@@ -368,12 +375,12 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (*layout.So
 		channels[chNum] = cs
 	}
 
-	song.ChannelSettings = channels
+	s.ChannelSettings = channels
 
-	return &song, nil
+	return &s, nil
 }
 
-func readXM(r io.Reader, features []feature.Feature) (*layout.Song, error) {
+func readXM(r io.Reader, features []feature.Feature) (song.Data, error) {
 	f, err := xmfile.Read(r)
 	if err != nil {
 		return nil, err

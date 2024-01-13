@@ -3,29 +3,29 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
-
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // Arpeggio defines an arpeggio effect
 type Arpeggio[TPeriod period.Period] DataEffect // 'J'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e Arpeggio[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	cs.UnfreezePlayback()
-	cs.GetActiveState().Pos = cs.GetTargetState().Pos
-	return nil
-}
-
-// Tick is called on every tick
-func (e Arpeggio[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
-	mem := cs.GetMemory()
-	x, y := mem.Arpeggio(DataEffect(e))
-	return doArpeggio(cs, currentTick, int8(x), int8(y))
-}
-
 func (e Arpeggio[TPeriod]) String() string {
 	return fmt.Sprintf("J%0.2x", DataEffect(e))
+}
+
+func (e Arpeggio[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], tick int) error {
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
+	x, y := mem.Arpeggio(DataEffect(e))
+	return doArpeggio(ch, m, tick, int8(x), int8(y))
+}
+
+func (e Arpeggio[TPeriod]) TraceData() string {
+	return e.String()
 }

@@ -3,25 +3,34 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // FinePortaUp defines an fine portamento up effect
 type FinePortaUp[TPeriod period.Period] DataEffect // 'E1x'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e FinePortaUp[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	cs.UnfreezePlayback()
-
-	mem := cs.GetMemory()
-	xy := mem.FinePortaUp(DataEffect(e))
-	y := xy & 0x0F
-
-	return doPortaUp(cs, float32(y), 4)
-}
-
 func (e FinePortaUp[TPeriod]) String() string {
 	return fmt.Sprintf("E%0.2x", DataEffect(e))
+}
+
+func (e FinePortaUp[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], tick int) error {
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
+	y := mem.FinePortaUp(DataEffect(e)) & 0x0F
+
+	if tick != 0 {
+		return nil
+	}
+
+	return m.DoChannelPortaUp(ch, period.Delta(y)*4)
+}
+
+func (e FinePortaUp[TPeriod]) TraceData() string {
+	return e.String()
 }

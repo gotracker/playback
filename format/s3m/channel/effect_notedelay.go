@@ -3,25 +3,26 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // NoteDelay defines a note delay effect
 type NoteDelay ChannelCommand // 'SDx'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e NoteDelay) PreStart(cs S3MChannel, p playback.Playback) error {
-	cs.SetNotePlayTick(true, note.ActionRetrigger, int(DataEffect(e)&0x0F))
-	return nil
-}
-
-// Start triggers on the first tick, but before the Tick() function is called
-func (e NoteDelay) Start(cs S3MChannel, p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
-
 func (e NoteDelay) String() string {
 	return fmt.Sprintf("S%0.2x", DataEffect(e))
+}
+
+func (e NoteDelay) RowStart(ch index.Channel, m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) error {
+	tick := int(DataEffect(e) & 0x0F)
+	return m.SetChannelNoteAction(ch, note.ActionRetrigger, tick)
+}
+
+func (e NoteDelay) TraceData() string {
+	return e.String()
 }

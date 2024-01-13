@@ -1,15 +1,16 @@
 package envelope
 
 import (
+	"math"
+
 	"github.com/gotracker/playback/voice/loop"
 )
 
 // State is the state information about an envelope
 type State[T any] struct {
-	position int
-	length   int
-	stopped  bool
-	env      *Envelope[T]
+	tick    int
+	stopped bool
+	env     *Envelope[T]
 }
 
 func (e *State[T]) Init(env *Envelope[T]) {
@@ -24,10 +25,9 @@ func (e *State[T]) Init(env *Envelope[T]) {
 
 func (e State[T]) Clone() State[T] {
 	return State[T]{
-		position: 0,
-		length:   e.length,
-		stopped:  false,
-		env:      e.env,
+		tick:    e.tick,
+		stopped: e.stopped,
+		env:     e.env,
 	}
 }
 
@@ -53,65 +53,62 @@ func (e *State[T]) Reset() {
 		return
 	}
 
-	e.position = 0
-	pos, _, _ := e.calcLoopedPos(true)
-	if pos < len(e.env.Values) {
-		e.length = e.env.Values[pos].Length()
-	}
+	e.tick = 0
+	e.stopped = false
 }
 
-func (e *State[T]) calcLoopedPos(keyOn bool) (int, int, bool) {
-	nPoints := len(e.env.Values)
-	var looped bool
-	cur, _ := loop.CalcLoopPos(e.env.Loop, e.env.Sustain, e.position, nPoints, keyOn)
-	next, _ := loop.CalcLoopPos(e.env.Loop, e.env.Sustain, e.position+1, nPoints, keyOn)
-	if (keyOn && e.env.Sustain.Enabled()) || e.env.Loop.Enabled() {
-		looped = true
-	}
-	return cur, next, looped
+func (e *State[T]) Pos() int {
+	return e.tick
 }
 
 // GetCurrentValue returns the current value
-func (e *State[T]) GetCurrentValue(keyOn bool) (*EnvPoint[T], *EnvPoint[T], float32) {
+func (e *State[T]) GetCurrentValue(keyOn, prevKeyOn bool) (*EnvPoint[T], *EnvPoint[T], float64) {
 	if e.stopped {
 		return nil, nil, 0
 	}
 
-	pos, npos, looped := e.calcLoopedPos(keyOn)
-	if pos >= len(e.env.Values) {
+	nPoints := len(e.env.Values)
+
+	if nPoints == 0 {
 		return nil, nil, 0
 	}
 
-	if npos >= len(e.env.Values) {
-		npos = pos
+	curTick, _ := loop.CalcLoopPos(e.env.Loop, e.env.Sustain, e.tick, e.env.Length, prevKeyOn)
+	nextTick, _ := loop.CalcLoopPos(e.env.Loop, e.env.Sustain, e.tick+1, e.env.Length, keyOn)
+
+	var cur EnvPoint[T]
+	for _, it := range e.env.Values {
+		if it.Pos > curTick {
+			break
+		}
+		cur = it
 	}
 
-	cur := e.env.Values[pos]
-	next := e.env.Values[npos]
-	t := float32(0)
-	tl := cur.Length()
-	if tl > 0 {
-		l := float32(e.length)
-		if looped {
-			if e.env.Sustain.Enabled() && keyOn && e.env.Sustain.Length() == 0 {
-				l = 0
-			} else {
-				l = float32(e.length)
-			}
+	var next EnvPoint[T]
+	foundNext := false
+	for _, it := range e.env.Values {
+		if it.Pos > nextTick {
+			next = it
+			foundNext = true
+			break
 		}
-		t = 1 - (l / float32(tl))
 	}
-	switch {
-	case t < 0:
-		t = 0
-	case t > 1:
-		t = 1
+
+	if !foundNext {
+		return &cur, &cur, 0
+	}
+
+	t := float64(0)
+	if cur.Length > 0 {
+		if tl := curTick - cur.Pos; tl > 0 {
+			t = max(min((float64(tl)/float64(cur.Length)), 1), 0)
+		}
 	}
 	return &cur, &next, t
 }
 
 // Advance advances the state by 1 tick
-func (e *State[T]) Advance(keyOn bool, prevKeyOn bool) bool {
+func (e *State[T]) Advance(keyOn bool) bool {
 	if e.stopped {
 		return false
 	}
@@ -126,26 +123,28 @@ func (e *State[T]) Advance(keyOn bool, prevKeyOn bool) bool {
 		}
 	}
 
-loopAdvance:
-	e.length--
-	if e.length > 0 {
-		return false
-	}
-	if keyOn != prevKeyOn && prevKeyOn {
-		p, _, _ := e.calcLoopedPos(prevKeyOn)
-		e.position = p
-	}
+	nPoints := len(e.env.Values)
 
-	e.position++
-	pos, _, _ := e.calcLoopedPos(keyOn)
-	if pos >= len(e.env.Values) {
+	if nPoints == 0 {
 		e.stopped = true
 		return true
 	}
 
-	e.length = e.env.Values[pos].Length()
-	if e.length <= 0 {
-		goto loopAdvance
+	e.tick++
+	curTick, _ := loop.CalcLoopPos(e.env.Loop, e.env.Sustain, e.tick, e.env.Length, keyOn)
+
+	found := false
+	for _, i := range e.env.Values {
+		if i.Pos >= curTick && i.Length != math.MaxInt {
+			found = true
+			break
+		}
 	}
+
+	if !found {
+		e.stopped = true
+		return true
+	}
+
 	return false
 }

@@ -1,43 +1,42 @@
 package playback
 
 import (
-	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/playback/instrument"
-	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice/types"
 )
 
 // ChannelState is the information needed to make an instrument play
-type ChannelState[TPeriod period.Period] struct {
-	Instrument *instrument.Instrument
+type ChannelState[TPeriod types.Period, TVolume types.Volume, TPanning types.Panning] struct {
+	Instrument instrument.InstrumentIntf
 	Period     TPeriod
-	vol        volume.Volume
+	vol        TVolume
 	Pos        sampling.Pos
-	Pan        panning.Position
+	Pan        TPanning
 }
 
 // Reset sets the render state to defaults
-func (s *ChannelState[TPeriod]) Reset() {
+func (s *ChannelState[TPeriod, TVolume, TPanning]) Reset() {
 	s.Instrument = nil
-	var empty TPeriod
-	s.Period = empty
+	var emptyPeriod TPeriod
+	s.Period = emptyPeriod
 	s.Pos = sampling.Pos{}
-	s.Pan = panning.CenterAhead
+	var emptyPan TPanning
+	s.Pan = emptyPan
 }
 
-func (s *ChannelState[TPeriod]) GetVolume() volume.Volume {
+func (s *ChannelState[TPeriod, TVolume, TPanning]) GetVolume() TVolume {
 	return s.vol
 }
 
-func (s *ChannelState[TPeriod]) SetVolume(vol volume.Volume) {
-	if vol != volume.VolumeUseInstVol {
+func (s *ChannelState[TPeriod, TVolume, TPanning]) SetVolume(vol TVolume) {
+	if !vol.IsUseInstrumentVol() {
 		s.vol = vol
 	}
 }
 
-func (s *ChannelState[TPeriod]) NoteCut() {
+func (s *ChannelState[TPeriod, TVolume, TPanning]) NoteCut() {
 	var empty TPeriod
 	s.Period = empty
 }

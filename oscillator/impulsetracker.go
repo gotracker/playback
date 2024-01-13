@@ -114,6 +114,10 @@ func (o *impulseOscillator) SetWaveform(table oscillator.WaveTableSelect) {
 	o.Table = table
 }
 
+func (o *impulseOscillator) GetWaveform() oscillator.WaveTableSelect {
+	return o.Table
+}
+
 // Reset resets the position of the oscillator
 func (o *impulseOscillator) Reset() {
 	o.reset(false)

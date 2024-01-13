@@ -3,41 +3,38 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // PanSlide defines a pan slide effect
 type PanSlide[TPeriod period.Period] DataEffect // 'Pxx'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e PanSlide[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	xx := DataEffect(e)
-	x := xx >> 4
-	y := xx & 0x0F
+func (e PanSlide[TPeriod]) String() string {
+	return fmt.Sprintf("P%0.2x", DataEffect(e))
+}
 
-	active := cs.GetActiveState()
-	xp := DataEffect(xmPanning.PanningToXm(active.Pan))
+func (e PanSlide[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], tick int) error {
+	xx := DataEffect(e)
+	x, y := xx>>4, xx&0x0F
+
 	if x == 0 {
 		// slide left y units
-		if xp < y {
-			xp = 0
-		} else {
-			xp -= y
+		if err := m.SlideChannelPan(ch, 1, -float32(y)); err != nil {
+			return err
 		}
 	} else if y == 0 {
 		// slide right x units
-		if xp > 0xFF-x {
-			xp = 0xFF
-		} else {
-			xp += x
+		if err := m.SlideChannelPan(ch, 1, float32(x)); err != nil {
+			return err
 		}
 	}
-	active.Pan = xmPanning.PanningFromXm(uint8(xp))
 	return nil
 }
 
-func (e PanSlide[TPeriod]) String() string {
-	return fmt.Sprintf("P%0.2x", DataEffect(e))
+func (e PanSlide[TPeriod]) TraceData() string {
+	return e.String()
 }

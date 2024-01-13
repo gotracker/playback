@@ -8,27 +8,30 @@ import (
 	"math"
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
-	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
-	"github.com/gotracker/playback/voice"
+	"github.com/gotracker/playback/util"
+	"github.com/gotracker/playback/voice/autovibrato"
 	"github.com/gotracker/playback/voice/envelope"
 	"github.com/gotracker/playback/voice/fadeout"
 	"github.com/gotracker/playback/voice/loop"
 	"github.com/gotracker/playback/voice/oscillator"
 	"github.com/gotracker/playback/voice/pcm"
+	"github.com/heucuva/optional"
 
 	"github.com/gotracker/playback/filter"
 	itfilter "github.com/gotracker/playback/format/it/filter"
 	itNote "github.com/gotracker/playback/format/it/note"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	oscillatorImpl "github.com/gotracker/playback/oscillator"
 )
 
 type convInst struct {
-	Inst *instrument.Instrument
+	Inst *instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]
 	NR   []noteRemap
 }
 
@@ -57,19 +60,18 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 			End:   int(inst.SustainLoopEnd),
 		}
 
-		id := instrument.PCM{
-			Panning: panning.CenterAhead,
+		id := instrument.PCM[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
 			FadeOut: fadeout.Settings{
 				Mode:   fadeout.ModeAlwaysActive,
 				Amount: volume.Volume(inst.Fadeout) / 512,
 			},
-			VolEnv: envelope.Envelope[volume.Volume]{
+			VolEnv: envelope.Envelope[itVolume.Volume]{
 				Enabled: (inst.Flags & itfile.IMPIOldFlagUseVolumeEnvelope) != 0,
-				Values:  make([]envelope.EnvPoint[volume.Volume], 0),
+				Values:  make([]envelope.EnvPoint[itVolume.Volume], 0),
 			},
 		}
 
-		ii := instrument.Instrument{
+		ii := instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
 			Inst: &id,
 		}
 
@@ -100,12 +102,13 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 			}
 
 			for i := range inst.VolumeEnvelope {
-				var out envelope.EnvPoint[volume.Volume]
+				var out envelope.EnvPoint[itVolume.Volume]
 				in1 := inst.VolumeEnvelope[i]
-				vol := volume.Volume(uint8(in1)) / 64
-				if vol > 1 {
-					vol = 1
+				vol := itVolume.Volume(uint8(in1))
+				if vol > itVolume.Volume(itVolume.MaxItVolume) {
+					vol = itVolume.Volume(itVolume.MaxItVolume)
 				}
+				out.Pos = i
 				out.Y = vol
 				ending := false
 				if i+1 >= len(inst.VolumeEnvelope) {
@@ -117,9 +120,10 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 					}
 				}
 				if !ending {
-					out.Ticks = 1
+					out.Length = 1
 				} else {
-					out.Ticks = math.MaxInt64
+					id.VolEnv.Length = i
+					out.Length = math.MaxInt64
 				}
 				id.VolEnv.Values = append(id.VolEnv.Values, out)
 			}
@@ -156,16 +160,20 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 	}
 
 	for i, ci := range outInsts {
-		id := instrument.PCM{
-			Panning: panning.CenterAhead,
+		id := instrument.PCM[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
 			FadeOut: fadeout.Settings{
 				Mode:   fadeout.ModeAlwaysActive,
 				Amount: volume.Volume(inst.Fadeout) / 1024,
 			},
+			PitchPan: instrument.PitchPan{
+				Enabled:    inst.PitchPanSeparation != 0,
+				Center:     note.Semitone(inst.PitchPanCenter),
+				Separation: float32(inst.PitchPanSeparation) / 8,
+			},
 		}
 
-		ii := instrument.Instrument{
-			Static: instrument.StaticValues{
+		ii := instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
+			Static: instrument.StaticValues[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
 				FilterFactory: channelFilterFactory,
 				PluginFilter:  pluginFilterFactory,
 			},
@@ -186,6 +194,9 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		}
 
 		mixVol := volume.Volume(inst.GlobalVolume.Value())
+		if !inst.DefaultPan.IsDisabled() {
+			ii.Static.Panning = optional.NewValue(util.Lerp(float64(inst.DefaultPan.Value()), 0, itPanning.MaxPanning))
+		}
 
 		ci.Inst = &ii
 		if err := addSampleInfoToConvertedInstrument(ci.Inst, &id, &sampData[i], mixVol, convSettings, features); err != nil {
@@ -195,9 +206,7 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		if err := convertEnvelope(&id.VolEnv, &inst.VolumeEnvelope, convertVolEnvValue); err != nil {
 			return nil, err
 		}
-		id.VolEnv.OnFinished = func(v voice.Voice) {
-			v.Fadeout()
-		}
+		id.VolEnvFinishFadesOut = true
 
 		if err := convertEnvelope(&id.PanEnv, &inst.PanningEnvelope, convertPanEnvValue); err != nil {
 			return nil, err
@@ -212,19 +221,19 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 	return outInsts, nil
 }
 
-func convertVolEnvValue(v int8) volume.Volume {
-	vol := volume.Volume(uint8(v)) / 64
-	if vol > 1 {
+func convertVolEnvValue(v int8) itVolume.Volume {
+	vol := itVolume.Volume(uint8(v))
+	if vol > itVolume.Volume(itVolume.MaxItVolume) {
 		// NOTE: there might be an incoming Y value == 0xFF, which really
 		// means "end of envelope" and should not mean "full volume",
 		// but we can cheat a little here and probably get away with it...
-		vol = 1
+		vol = itVolume.Volume(itVolume.MaxItVolume)
 	}
 	return vol
 }
 
-func convertPanEnvValue(v int8) panning.Position {
-	return panning.MakeStereoPosition(float32(v), -64, 64)
+func convertPanEnvValue(v int8) itPanning.Panning {
+	return itPanning.Panning(int(v) + 128)
 }
 
 func convertPitchEnvValue(v int8) filter.PitchFiltValue {
@@ -260,16 +269,22 @@ func convertEnvelope[T any](outEnv *envelope.Envelope[T], inEnv *itfile.Envelope
 	for i := range outEnv.Values {
 		in1 := inEnv.NodePoints[i]
 		y := convert(in1.Y)
-		var ticks int
 		if i+1 < len(outEnv.Values) {
 			in2 := inEnv.NodePoints[i+1]
-			ticks = int(in2.Tick) - int(in1.Tick)
+			ticks := int(in2.Tick) - int(in1.Tick)
+			var out envelope.EnvPoint[T]
+			out.Length = ticks
+			out.Pos = int(in1.Tick)
+			out.Y = y
+			outEnv.Values[i] = out
 		} else {
-			ticks = math.MaxInt64
+			outEnv.Values[i] = envelope.EnvPoint[T]{
+				Pos:    int(in1.Tick),
+				Length: math.MaxInt,
+				Y:      y,
+			}
+			outEnv.Length = int(in1.Tick)
 		}
-		var out envelope.EnvPoint[T]
-		out.Init(ticks, y)
-		outEnv.Values[i] = out
 	}
 
 	outEnv.Loop = loop.NewLoop(envLoopMode, envLoopSettings)
@@ -340,12 +355,11 @@ func itAutoVibratoWSToProtrackerWS(vibtype uint8) uint8 {
 	}
 }
 
-func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrument.PCM, si *itfile.FullSample, instVol volume.Volume, convSettings convertITInstrumentSettings, features []feature.Feature) error {
+func addSampleInfoToConvertedInstrument(ii *instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning], id *instrument.PCM[itVolume.FineVolume, itVolume.Volume, itPanning.Panning], si *itfile.FullSample, instVol volume.Volume, convSettings convertITInstrumentSettings, features []feature.Feature) error {
 	instLen := int(si.Header.Length)
 	numChannels := 1
 
-	id.MixingVolume = volume.Volume(si.Header.GlobalVolume.Value())
-	id.MixingVolume *= instVol
+	id.MixingVolume.Set(max(itVolume.FineVolume(float32(itVolume.MaxItFineVolume)*si.Header.GlobalVolume.Value()*float32(instVol)), itVolume.MaxItFineVolume))
 	loopMode := loop.ModeDisabled
 	loopSettings := loop.Settings{
 		Begin: int(si.Header.LoopBegin),
@@ -446,7 +460,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 	ii.Static.Filename = si.Header.GetFilename()
 	ii.Static.Name = si.Header.GetName()
 	ii.SampleRate = period.Frequency(si.Header.C5Speed)
-	ii.Static.AutoVibrato = voice.AutoVibrato{
+	ii.Static.AutoVibrato = autovibrato.AutoVibratoSettings{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
 		Sweep:             255,
 		WaveformSelection: itAutoVibratoWSToProtrackerWS(si.Header.VibratoType),
@@ -456,7 +470,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 			return oscillatorImpl.NewImpulseTrackerOscillator(1)
 		},
 	}
-	ii.Static.Volume = volume.Volume(si.Header.Volume.Value())
+	ii.Static.Volume = itVolume.Volume(si.Header.Volume)
 
 	if ii.SampleRate == 0 {
 		ii.SampleRate = 8363.0
@@ -474,7 +488,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument, id *instrumen
 		ii.Static.AutoVibrato.Sweep = int(si.Header.VibratoDepth) * 256 / int(si.Header.VibratoSweep)
 	}
 	if !si.Header.DefaultPan.IsDisabled() {
-		id.Panning = panning.MakeStereoPosition(si.Header.DefaultPan.Value(), 0, 1)
+		id.Panning.Set(itPanning.Panning(si.Header.DefaultPan))
 	}
 
 	return nil

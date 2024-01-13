@@ -2,10 +2,12 @@ package state
 
 import (
 	"time"
+
+	"github.com/gotracker/playback/player/state/render"
 )
 
 type RowRenderState struct {
-	RenderDetails
+	render.Details
 
 	TicksThisRow int
 	CurrentTick  int
@@ -20,13 +22,13 @@ func (r RowRenderState) GetCurrentTick() int {
 }
 
 func (r RowRenderState) GetSamplerSpeed() float32 {
-	return r.RenderDetails.SamplerSpeed
+	return r.Details.SamplerSpeed
 }
 
 func (r RowRenderState) GetDuration() time.Duration {
-	return r.RenderDetails.Duration
+	return r.Details.Duration
 }
 
 func (r RowRenderState) GetSamples() int {
-	return r.RenderDetails.Samples
+	return r.Details.Samples
 }

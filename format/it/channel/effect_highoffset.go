@@ -3,24 +3,29 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // HighOffset defines a sample high offset effect
 type HighOffset[TPeriod period.Period] DataEffect // 'SAx'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e HighOffset[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	mem := cs.GetMemory()
+func (e HighOffset[TPeriod]) String() string {
+	return fmt.Sprintf("S%0.2x", DataEffect(e))
+}
 
-	xx := DataEffect(e)
-
-	mem.HighOffset = int(xx) * 0x10000
+func (e HighOffset[TPeriod]) RowStart(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]) error {
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
+	mem.HighOffset = int(e) * 0x10000
 	return nil
 }
 
-func (e HighOffset[TPeriod]) String() string {
-	return fmt.Sprintf("S%0.2x", DataEffect(e))
+func (e HighOffset[TPeriod]) TraceData() string {
+	return e.String()
 }

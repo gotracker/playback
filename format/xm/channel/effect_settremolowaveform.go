@@ -3,27 +3,25 @@ package channel
 import (
 	"fmt"
 
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 	"github.com/gotracker/playback/voice/oscillator"
-
-	"github.com/gotracker/playback"
 )
 
 // SetTremoloWaveform defines a set tremolo waveform effect
 type SetTremoloWaveform[TPeriod period.Period] DataEffect // 'E7x'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e SetTremoloWaveform[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-
-	x := DataEffect(e) & 0xf
-
-	mem := cs.GetMemory()
-	trem := mem.TremoloOscillator()
-	trem.SetWaveform(oscillator.WaveTableSelect(x))
-	return nil
-}
-
 func (e SetTremoloWaveform[TPeriod]) String() string {
 	return fmt.Sprintf("E%0.2x", DataEffect(e))
+}
+
+func (e SetTremoloWaveform[TPeriod]) RowStart(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) error {
+	return m.SetChannelOscillatorWaveform(ch, machine.OscillatorTremolo, oscillator.WaveTableSelect(e&0x0F))
+}
+
+func (e SetTremoloWaveform[TPeriod]) TraceData() string {
+	return e.String()
 }

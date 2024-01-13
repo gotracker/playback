@@ -15,7 +15,7 @@ func (v VolEffect) Volume() volume.Volume {
 	if v == 0x00 {
 		return volume.VolumeUseInstVol
 	}
-	return XmVolume(v - 0x10).Volume()
+	return XmVolume(v - 0x10).ToVolume()
 }
 
 // ToVolume converts an xm volume to a player volume

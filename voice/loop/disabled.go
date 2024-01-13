@@ -16,12 +16,5 @@ func (l *Disabled) Length() int {
 
 // CalcPos calculates the position based on the loop details
 func (l *Disabled) CalcPos(pos int, length int) (int, bool) {
-	switch {
-	case pos < 0:
-		return 0, false
-	case pos < length:
-		return pos, false
-	default:
-		return length, false
-	}
+	return min(max(pos, 0), length), false
 }

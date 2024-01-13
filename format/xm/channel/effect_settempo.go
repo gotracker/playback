@@ -3,36 +3,27 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // SetTempo defines a set tempo effect
 type SetTempo[TPeriod period.Period] DataEffect // 'F'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e SetTempo[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	if e > 0x20 {
-		m := p.(XM)
-		if err := m.SetTempo(int(e)); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Start triggers on the first tick, but before the Tick() function is called
-func (e SetTempo[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
-
-// Tick is called on every tick
-func (e SetTempo[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
-	m := p.(XM)
-	return m.SetTempo(int(e))
-}
-
 func (e SetTempo[TPeriod]) String() string {
 	return fmt.Sprintf("F%0.2x", DataEffect(e))
+}
+
+func (e SetTempo[TPeriod]) RowStart(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) error {
+	if e < 0x20 {
+		return nil
+	}
+	return m.SetBPM(int(e))
+}
+
+func (e SetTempo[TPeriod]) TraceData() string {
+	return e.String()
 }

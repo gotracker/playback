@@ -4,8 +4,10 @@ import (
 	"errors"
 
 	"github.com/gotracker/playback/format/xm/channel"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/pattern"
+	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/song"
 	formatutil "github.com/gotracker/playback/util"
@@ -13,7 +15,7 @@ import (
 )
 
 // State is the current pattern state
-type State struct {
+type State[TPeriod period.Period] struct {
 	currentOrder      index.Order
 	currentRow        index.Row
 	ticks             int
@@ -27,22 +29,22 @@ type State struct {
 	loopDetect           formatutil.LoopDetect // when SongLoopEnabled is false, this is used to detect song loops
 	loopCount            int
 
-	Patterns []Pattern
+	Patterns []Pattern[TPeriod]
 	Orders   []index.Pattern
 }
 
 // GetTempo returns the tempo of the current state
-func (state *State) GetTempo() int {
+func (state *State[TPeriod]) GetTempo() int {
 	return state.tempo
 }
 
 // GetSpeed returns the row speed of the current state
-func (state *State) GetSpeed() int {
+func (state *State[TPeriod]) GetSpeed() int {
 	return state.ticks
 }
 
 // GetTicksThisRow returns the number of ticks in the current row
-func (state *State) GetTicksThisRow() int {
+func (state *State[TPeriod]) GetTicksThisRow() int {
 	rowLoops := 1
 	if patternDelay, ok := state.patternDelay.Get(); ok {
 		rowLoops = patternDelay
@@ -54,7 +56,7 @@ func (state *State) GetTicksThisRow() int {
 }
 
 // GetPatNum returns the current pattern number
-func (state *State) GetPatNum() index.Pattern {
+func (state *State[TPeriod]) GetPatNum() index.Pattern {
 	if int(state.currentOrder) >= len(state.Orders) {
 		return index.InvalidPattern
 	}
@@ -62,7 +64,7 @@ func (state *State) GetPatNum() index.Pattern {
 }
 
 // GetNumRows returns the number of rows in the current pattern
-func (state *State) GetNumRows() (int, error) {
+func (state *State[TPeriod]) GetNumRows() (int, error) {
 	rows, err := state.GetRows()
 	if err != nil {
 		return 0, err
@@ -74,31 +76,31 @@ func (state *State) GetNumRows() (int, error) {
 }
 
 // WantsStop returns true when the current pattern wants to end the song
-func (state *State) WantsStop() bool {
+func (state *State[TPeriod]) WantsStop() bool {
 	return state.GetPatNum() == index.InvalidPattern
 }
 
 // setCurrentOrder sets the current order index
-func (state *State) setCurrentOrder(order index.Order) {
+func (state *State[TPeriod]) setCurrentOrder(order index.Order) {
 	state.currentOrder = order
 }
 
-func (state *State) advanceOrder() {
+func (state *State[TPeriod]) advanceOrder() {
 	state.setCurrentOrder(state.currentOrder + 1)
 }
 
 // GetCurrentOrder returns the current order
-func (state *State) GetCurrentOrder() index.Order {
+func (state *State[TPeriod]) GetCurrentOrder() index.Order {
 	return state.currentOrder
 }
 
 // GetNumOrders returns the number of orders in the song
-func (state *State) GetNumOrders() int {
+func (state *State[TPeriod]) GetNumOrders() int {
 	return len(state.Orders)
 }
 
 // GetCurrentPatternIdx returns the current pattern index, derived from the order list
-func (state *State) GetCurrentPatternIdx() (index.Pattern, error) {
+func (state *State[TPeriod]) GetCurrentPatternIdx() (index.Pattern, error) {
 	ordLen := len(state.Orders)
 
 	if ordLen == 0 {
@@ -137,12 +139,12 @@ func (state *State) GetCurrentPatternIdx() (index.Pattern, error) {
 }
 
 // GetCurrentRow returns the current row
-func (state *State) GetCurrentRow() index.Row {
+func (state *State[TPeriod]) GetCurrentRow() index.Row {
 	return state.currentRow
 }
 
 // setCurrentRow sets the current row
-func (state *State) setCurrentRow(row index.Row) error {
+func (state *State[TPeriod]) setCurrentRow(row index.Row) error {
 	state.currentRow = row
 	rows, err := state.GetNumRows()
 	if err != nil {
@@ -157,7 +159,7 @@ func (state *State) setCurrentRow(row index.Row) error {
 }
 
 // Observe will attempt to detect a song loop
-func (state *State) Observe() error {
+func (state *State[TPeriod]) Observe() error {
 	if state.SongLoop.Count >= 0 {
 		if state.loopDetect.Observe(state.currentOrder, state.currentRow) {
 			if state.SongLoop.Count == 0 || (state.SongLoop.Count > 0 && state.loopCount >= state.SongLoop.Count) {
@@ -176,7 +178,7 @@ func (state *State) Observe() error {
 }
 
 // nextOrder travels to the next pattern in the order list
-func (state *State) nextOrder(resetRow ...bool) error {
+func (state *State[TPeriod]) nextOrder(resetRow ...bool) error {
 	state.advanceOrder()
 	state.patternDelay.Reset()
 	state.finePatternDelay = 0
@@ -191,8 +193,8 @@ func (state *State) nextOrder(resetRow ...bool) error {
 }
 
 // Reset resets a pattern state back to zeroes
-func (state *State) Reset() {
-	*state = State{
+func (state *State[TPeriod]) Reset() {
+	*state = State[TPeriod]{
 		SongLoop: feature.SongLoop{
 			Count: 0,
 		},
@@ -205,7 +207,7 @@ func (state *State) Reset() {
 
 // nextRow travels to the next row in the pattern
 // or the next order in the order list if the last row has been exhausted
-func (state *State) nextRow() error {
+func (state *State[TPeriod]) nextRow() error {
 	state.patternDelay.Reset()
 	state.finePatternDelay = 0
 
@@ -234,7 +236,7 @@ func (state *State) nextRow() error {
 }
 
 // GetRows returns all the rows in the pattern
-func (state *State) GetRows() (*song.Pattern[channel.Data], error) {
+func (state *State[TPeriod]) GetRows() (*song.Pattern[channel.Data[TPeriod], xmVolume.XmVolume], error) {
 nextRow:
 	for loops := 0; loops < len(state.Patterns); loops++ {
 		var patNum = state.GetPatNum()
@@ -251,21 +253,21 @@ nextRow:
 				return nil, nil
 			}
 			pat := &state.Patterns[patNum]
-			return pat, nil
+			return &pat.Pattern, nil
 		}
 	}
 	return nil, nil
 }
 
 // NeedResetPatternLoops returns the state of the resetPatternLoops variable (and resets it)
-func (state *State) NeedResetPatternLoops() bool {
+func (state *State[TPeriod]) NeedResetPatternLoops() bool {
 	rpl := state.resetPatternLoops
 	state.resetPatternLoops = false
 	return rpl
 }
 
 // commitTransaction will update the order and row indexes at once, idempotently, from a row update transaction.
-func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) error {
+func (state *State[TPeriod]) commitTransaction(txn *pattern.RowUpdateTransaction) error {
 	tempo, tempoSet := txn.Tempo.Get()
 	tempoDelta, tempoDeltaSet := txn.TempoDelta.Get()
 	if tempoSet || tempoDeltaSet {
@@ -330,7 +332,7 @@ func (state *State) commitTransaction(txn *pattern.RowUpdateTransaction) error {
 }
 
 // StartTransaction starts a row update transaction
-func (state *State) StartTransaction() *pattern.RowUpdateTransaction {
+func (state *State[TPeriod]) StartTransaction() *pattern.RowUpdateTransaction {
 	txn := pattern.RowUpdateTransaction{
 		CommitTransaction: state.commitTransaction,
 	}

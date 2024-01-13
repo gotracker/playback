@@ -10,6 +10,7 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 
 	"github.com/gotracker/playback/format/s3m/channel"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 )
 
 func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error) {
@@ -29,7 +30,7 @@ func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error)
 				What:       s3mfile.PatternFlags(c & 0x1F),
 				Note:       s3mfile.EmptyNote,
 				Instrument: channel.InstID(sampleNumber),
-				Volume:     s3mfile.EmptyVolume,
+				Volume:     s3mVolume.Volume(s3mfile.EmptyVolume),
 				Command:    uint8(0),
 				Info:       channel.DataEffect(0),
 			}
@@ -86,7 +87,7 @@ func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error)
 					u.Command = 'R' - '@'
 				case 0xC: // Set Volume
 					u.What |= s3mfile.PatternFlagVolume
-					u.Volume = s3mfile.Volume(u.Info)
+					u.Volume = s3mVolume.Volume(u.Info)
 				case 0x8: // Set Pan (mod-style)
 					if effectParameter >= 0x00 && effectParameter <= 0x80 {
 						u.What |= s3mfile.PatternFlagCommand

@@ -3,29 +3,24 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // SetSpeed defines a set speed effect
 type SetSpeed ChannelCommand // 'A'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e SetSpeed) PreStart(cs S3MChannel, p playback.Playback) error {
-	if e != 0 {
-		m := p.(S3M)
-		if err := m.SetTicks(int(e)); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Start triggers on the first tick, but before the Tick() function is called
-func (e SetSpeed) Start(cs S3MChannel, p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
-
 func (e SetSpeed) String() string {
 	return fmt.Sprintf("A%0.2x", DataEffect(e))
+}
+
+func (e SetSpeed) RowStart(ch index.Channel, m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) error {
+	return m.SetTempo(int(e))
+}
+
+func (e SetSpeed) TraceData() string {
+	return e.String()
 }

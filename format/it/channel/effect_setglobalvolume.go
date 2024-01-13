@@ -3,31 +3,25 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/gomixing/volume"
-
-	"github.com/gotracker/playback"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // SetGlobalVolume defines a set global volume effect
 type SetGlobalVolume[TPeriod period.Period] DataEffect // 'V'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e SetGlobalVolume[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	v := volume.Volume(DataEffect(e)) / 0x80
-	if v > 1 {
-		v = 1
-	}
-	cs.SetChannelVolume(v)
-	return nil
-}
-
-// Start triggers on the first tick, but before the Tick() function is called
-func (e SetGlobalVolume[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
-
 func (e SetGlobalVolume[TPeriod]) String() string {
 	return fmt.Sprintf("V%0.2x", DataEffect(e))
+}
+
+func (e SetGlobalVolume[TPeriod]) RowStart(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]) error {
+	v := max(itVolume.FineVolume(DataEffect(e)), itVolume.MaxItFineVolume)
+	return m.SetGlobalVolume(v)
+}
+
+func (e SetGlobalVolume[TPeriod]) TraceData() string {
+	return e.String()
 }

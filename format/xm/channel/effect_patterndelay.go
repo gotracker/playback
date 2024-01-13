@@ -3,25 +3,25 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // PatternDelay defines a pattern delay effect
 type PatternDelay[TPeriod period.Period] DataEffect // 'SEx'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e PatternDelay[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	m := p.(XM)
-	return m.SetPatternDelay(int(DataEffect(e) & 0x0F))
-}
-
-// Start triggers on the first tick, but before the Tick() function is called
-func (e PatternDelay[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
-
 func (e PatternDelay[TPeriod]) String() string {
 	return fmt.Sprintf("S%0.2x", DataEffect(e))
+}
+
+func (e PatternDelay[TPeriod]) RowStart(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) error {
+	times := int(DataEffect(e) & 0x0F)
+	return m.RowRepeat(times)
+}
+
+func (e PatternDelay[TPeriod]) TraceData() string {
+	return e.String()
 }

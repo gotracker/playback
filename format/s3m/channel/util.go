@@ -1,11 +1,11 @@
 package channel
 
 import (
-	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/heucuva/comparison"
 
 	"github.com/gotracker/playback"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
@@ -14,7 +14,7 @@ import (
 )
 
 type EffectS3M = playback.Effect
-type S3MChannel = playback.Channel[period.Amiga, Memory, Data]
+type S3MChannel = playback.Channel[period.Amiga, *Memory, Data, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
 
 // S3M is an interface to S3M effect operations
 type S3M interface {
@@ -33,10 +33,9 @@ type S3M interface {
 	IgnoreUnknownEffect() bool                     // Unhandled
 }
 
-func doVolSlide(cs S3MChannel, delta float32, multiplier float32) error {
+func oldDoVolSlide(cs S3MChannel, delta float32, multiplier float32) error {
 	active := cs.GetActiveState()
-	av := active.GetVolume()
-	v := s3mVolume.VolumeToS3M(av)
+	v := active.GetVolume()
 	vol := int16(float32(v) + (delta * multiplier))
 	if vol >= 64 {
 		vol = 63
@@ -44,13 +43,12 @@ func doVolSlide(cs S3MChannel, delta float32, multiplier float32) error {
 	if vol < 0 {
 		vol = 0
 	}
-	sv := s3mfile.Volume(vol)
-	nv := s3mVolume.VolumeFromS3M(sv)
-	active.SetVolume(nv)
+	sv := s3mVolume.Volume(vol)
+	active.SetVolume(sv)
 	return nil
 }
 
-func doPortaUp(cs S3MChannel, amount float32, multiplier float32) error {
+func oldDoPortaUp(cs S3MChannel, amount float32, multiplier float32) error {
 	active := cs.GetActiveState()
 	cur := active.Period
 	if cur.IsInvalid() {
@@ -84,7 +82,7 @@ func doPortaUpToNote(cs S3MChannel, amount float32, multiplier float32, target p
 	return nil
 }
 
-func doPortaDown(cs S3MChannel, amount float32, multiplier float32) error {
+func oldDoPortaDown(cs S3MChannel, amount float32, multiplier float32) error {
 	active := cs.GetActiveState()
 	cur := active.Period
 	if cur.IsInvalid() {
@@ -114,7 +112,7 @@ func doPortaDownToNote(cs S3MChannel, amount float32, multiplier float32, target
 	return nil
 }
 
-func doVibrato(cs S3MChannel, currentTick int, speed DataEffect, depth DataEffect, multiplier float32) error {
+func oldDoVibrato(cs S3MChannel, currentTick int, speed DataEffect, depth DataEffect, multiplier float32) error {
 	mem := cs.GetMemory()
 	delta := calculateWaveTable(cs, currentTick, DataEffect(speed), DataEffect(depth), multiplier, mem.VibratoOscillator())
 	d := period.Delta(delta)
@@ -122,7 +120,7 @@ func doVibrato(cs S3MChannel, currentTick int, speed DataEffect, depth DataEffec
 	return nil
 }
 
-func doTremor(cs S3MChannel, currentTick int, onTicks int, offTicks int) error {
+func oldDoTremor(cs S3MChannel, currentTick int, onTicks int, offTicks int) error {
 	mem := cs.GetMemory()
 	tremor := mem.TremorMem()
 	if tremor.IsActive() {
@@ -138,7 +136,7 @@ func doTremor(cs S3MChannel, currentTick int, onTicks int, offTicks int) error {
 	return nil
 }
 
-func doArpeggio(cs S3MChannel, currentTick int, arpSemitoneADelta int8, arpSemitoneBDelta int8) error {
+func oldDoArpeggio(cs S3MChannel, currentTick int, arpSemitoneADelta int8, arpSemitoneBDelta int8) error {
 	ns := cs.GetNoteSemitone()
 	var arpSemitoneTarget note.Semitone
 	switch currentTick % 3 {
@@ -155,7 +153,7 @@ func doArpeggio(cs S3MChannel, currentTick int, arpSemitoneADelta int8, arpSemit
 }
 
 var (
-	volSlideTwoThirdsTable = [...]s3mfile.Volume{
+	volSlideTwoThirdsTable = [...]s3mVolume.Volume{
 		0, 0, 1, 1, 2, 3, 3, 4, 5, 5, 6, 6, 7, 8, 8, 9,
 		10, 10, 11, 11, 12, 13, 13, 14, 15, 15, 16, 16, 17, 18, 18, 19,
 		20, 20, 21, 21, 22, 23, 23, 24, 25, 25, 26, 26, 27, 28, 28, 29,
@@ -165,18 +163,18 @@ var (
 
 func doVolSlideTwoThirds(cs S3MChannel) error {
 	active := cs.GetActiveState()
-	vol := s3mVolume.VolumeToS3M(active.GetVolume())
+	vol := active.GetVolume()
 	if vol >= 64 {
 		vol = 63
 	}
-	active.SetVolume(s3mVolume.VolumeFromS3M(volSlideTwoThirdsTable[vol]))
+	active.SetVolume(volSlideTwoThirdsTable[vol])
 	return nil
 }
 
 func doTremolo(cs S3MChannel, currentTick int, speed DataEffect, depth DataEffect, multiplier float32) error {
 	mem := cs.GetMemory()
 	delta := calculateWaveTable(cs, currentTick, speed, depth, multiplier, mem.TremoloOscillator())
-	return doVolSlide(cs, delta, 1.0)
+	return oldDoVolSlide(cs, delta, 1.0)
 }
 
 func calculateWaveTable(cs S3MChannel, currentTick int, speed DataEffect, depth DataEffect, multiplier float32, o oscillator.Oscillator) float32 {

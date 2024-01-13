@@ -3,22 +3,29 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // ExtraFinePortaDown defines an extra-fine portamento down effect
 type ExtraFinePortaDown ChannelCommand // 'EEx'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e ExtraFinePortaDown) Start(cs S3MChannel, p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	cs.UnfreezePlayback()
-
-	y := DataEffect(e) & 0x0F
-
-	return doPortaDown(cs, float32(y), 1)
-}
-
 func (e ExtraFinePortaDown) String() string {
 	return fmt.Sprintf("E%0.2x", DataEffect(e))
+}
+
+func (e ExtraFinePortaDown) Tick(ch index.Channel, m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], tick int) error {
+	if tick != 0 {
+		return nil
+	}
+
+	y := DataEffect(e) & 0x0F
+	return doPortaDown(ch, m, float32(y), 1)
+}
+
+func (e ExtraFinePortaDown) TraceData() string {
+	return e.String()
 }

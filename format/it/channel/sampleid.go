@@ -18,5 +18,5 @@ func (s SampleID) IsEmpty() bool {
 }
 
 func (s SampleID) String() string {
-	return fmt.Sprint(s.InstID)
+	return fmt.Sprintf("%d(%v)", s.InstID, s.Semitone)
 }

@@ -3,32 +3,35 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // PortaUp defines a portamento up effect
 type PortaUp[TPeriod period.Period] DataEffect // '1'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e PortaUp[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	cs.UnfreezePlayback()
-	return nil
+func (e PortaUp[TPeriod]) String() string {
+	return fmt.Sprintf("1%0.2x", DataEffect(e))
 }
 
-// Tick is called on every tick
-func (e PortaUp[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
-	mem := cs.GetMemory()
+func (e PortaUp[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], tick int) error {
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
+
 	xx := mem.PortaUp(DataEffect(e))
 
-	if currentTick == 0 {
+	if tick == 0 {
 		return nil
 	}
 
-	return doPortaUp(cs, float32(xx), 4)
+	return m.DoChannelPortaUp(ch, period.Delta(xx)*4)
 }
 
-func (e PortaUp[TPeriod]) String() string {
-	return fmt.Sprintf("1%0.2x", DataEffect(e))
+func (e PortaUp[TPeriod]) TraceData() string {
+	return e.String()
 }

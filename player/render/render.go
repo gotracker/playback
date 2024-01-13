@@ -7,13 +7,13 @@ import (
 )
 
 // RowDisplay is an array of ChannelDisplays
-type RowDisplay[TChannelData song.ChannelData] struct {
+type RowDisplay[TChannelData song.ChannelDataIntf] struct {
 	Channels   []TChannelData
 	longFormat bool
 }
 
 // NewRowText creates an array of ChannelDisplay information
-func NewRowText[TChannelData song.ChannelData](channels int, longFormat bool) RowDisplay[TChannelData] {
+func NewRowText[TChannelData song.ChannelDataIntf](channels int, longFormat bool) RowDisplay[TChannelData] {
 	rd := RowDisplay[TChannelData]{
 		Channels:   make([]TChannelData, channels),
 		longFormat: longFormat,
@@ -40,9 +40,7 @@ func (rt RowDisplay[TChannelData]) String(options ...any) string {
 	return "|" + strings.Join(items, "|") + "|"
 }
 
-type RowStringer interface {
-	String(options ...any) string
-}
+type RowStringer = song.RowStringer
 
 // RowRender is the final output of a single row's data
 type RowRender struct {

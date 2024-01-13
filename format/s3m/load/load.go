@@ -5,13 +5,13 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/common"
-	"github.com/gotracker/playback/format/s3m/layout"
 	"github.com/gotracker/playback/format/s3m/load/modconv"
 	s3mPlayback "github.com/gotracker/playback/format/s3m/playback"
 	"github.com/gotracker/playback/player/feature"
+	"github.com/gotracker/playback/song"
 )
 
-func readMOD(r io.Reader, features []feature.Feature) (*layout.Song, error) {
+func readMOD(r io.Reader, features []feature.Feature) (song.Data, error) {
 	f, err := modconv.Read(r)
 	if err != nil {
 		return nil, err

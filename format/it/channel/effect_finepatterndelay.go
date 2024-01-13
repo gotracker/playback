@@ -3,26 +3,25 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // FinePatternDelay defines an fine pattern delay effect
 type FinePatternDelay[TPeriod period.Period] DataEffect // 'S6x'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e FinePatternDelay[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-
-	x := DataEffect(e) & 0xf
-
-	m := p.(IT)
-	if err := m.AddRowTicks(int(x)); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (e FinePatternDelay[TPeriod]) String() string {
 	return fmt.Sprintf("S%0.2x", DataEffect(e))
+}
+
+func (e FinePatternDelay[TPeriod]) RowStart(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]) error {
+	x := DataEffect(e) & 0x0F
+	return m.AddExtraTicks(int(x))
+}
+
+func (e FinePatternDelay[TPeriod]) TraceData() string {
+	return e.String()
 }

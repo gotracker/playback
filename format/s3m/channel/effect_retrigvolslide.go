@@ -3,68 +3,71 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/gomixing/sampling"
-
-	"github.com/gotracker/playback"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // RetrigVolumeSlide defines a retriggering volume slide effect
 type RetrigVolumeSlide ChannelCommand // 'Q'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e RetrigVolumeSlide) Start(cs S3MChannel, p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
+func (e RetrigVolumeSlide) String() string {
+	return fmt.Sprintf("Q%0.2x", DataEffect(e))
 }
 
-// Tick is called on every tick
-func (e RetrigVolumeSlide) Tick(cs S3MChannel, p playback.Playback, currentTick int) error {
-	x := DataEffect(e) >> 4
-	y := DataEffect(e) & 0x0F
-	if y == 0 {
+func (e RetrigVolumeSlide) Tick(ch index.Channel, m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], tick int) error {
+	x := DataEffect(e) >> 4   // vol slide instruction
+	y := DataEffect(e) & 0x0F // number of ticks between retriggers
+
+	if (tick % int(y+1)) != 0 {
 		return nil
 	}
 
-	rt := cs.GetRetriggerCount() + 1
-	cs.SetRetriggerCount(rt)
-	if DataEffect(rt) >= x {
-		cs.GetActiveState().Pos = sampling.Pos{}
-		cs.ResetRetriggerCount()
-		switch x {
-		case 1:
-			return doVolSlide(cs, -1, 1)
-		case 2:
-			return doVolSlide(cs, -2, 1)
-		case 3:
-			return doVolSlide(cs, -4, 1)
-		case 4:
-			return doVolSlide(cs, -8, 1)
-		case 5:
-			return doVolSlide(cs, -6, 1)
-		case 6:
-			return doVolSlideTwoThirds(cs)
-		case 7:
-			return doVolSlide(cs, 0, float32(0.5))
-		case 8: // ?
-		case 9:
-			return doVolSlide(cs, 1, 1)
-		case 10:
-			return doVolSlide(cs, 2, 1)
-		case 11:
-			return doVolSlide(cs, 4, 1)
-		case 12:
-			return doVolSlide(cs, 8, 1)
-		case 13:
-			return doVolSlide(cs, 16, 1)
-		case 14:
-			return doVolSlide(cs, 0, float32(1.5))
-		case 15:
-			return doVolSlide(cs, 0, 2)
-		}
+	if err := m.SetChannelNoteAction(ch, note.ActionRetrigger, tick); err != nil {
+		return err
+	}
+
+	switch x {
+	case 0: // nothing
+		fallthrough
+	default:
+
+	case 1: // -1
+		return m.SlideChannelVolume(ch, 1, -1)
+	case 2: // -2
+		return m.SlideChannelVolume(ch, 1, -2)
+	case 3: // -4
+		return m.SlideChannelVolume(ch, 1, -4)
+	case 4: // -8
+		return m.SlideChannelVolume(ch, 1, -8)
+	case 5: // -16
+		return m.SlideChannelVolume(ch, 1, -16)
+	case 6: // * 2/3
+		return m.SlideChannelVolume(ch, 2.0/3.0, 0)
+	case 7: // * 1/2
+		return m.SlideChannelVolume(ch, 1.0/2.0, 0)
+	case 8: // ?
+	case 9: // +1
+		return m.SlideChannelVolume(ch, 1, 1)
+	case 10: // +2
+		return m.SlideChannelVolume(ch, 1, 2)
+	case 11: // +4
+		return m.SlideChannelVolume(ch, 1, 4)
+	case 12: // +8
+		return m.SlideChannelVolume(ch, 1, 8)
+	case 13: // +16
+		return m.SlideChannelVolume(ch, 1, 16)
+	case 14: // * 3/2
+		return m.SlideChannelVolume(ch, 3.0/2.0, 0)
+	case 15: // * 2
+		return m.SlideChannelVolume(ch, 2, 0)
 	}
 	return nil
 }
 
-func (e RetrigVolumeSlide) String() string {
-	return fmt.Sprintf("Q%0.2x", DataEffect(e))
+func (e RetrigVolumeSlide) TraceData() string {
+	return e.String()
 }

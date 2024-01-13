@@ -6,7 +6,9 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/format/s3m/load"
+	"github.com/gotracker/playback/format/s3m/settings"
 	"github.com/gotracker/playback/player/feature"
+	"github.com/gotracker/playback/player/machine"
 	"github.com/gotracker/playback/util"
 )
 
@@ -30,4 +32,8 @@ func (f format) Load(filename string, features []feature.Feature) (playback.Play
 // Load loads an S3M file on a reader into a playback system
 func (f format) LoadFromReader(r io.Reader, features []feature.Feature) (playback.Playback, error) {
 	return load.S3M(r, features)
+}
+
+func init() {
+	machine.RegisterMachine(settings.GetMachineSettings())
 }

@@ -13,6 +13,7 @@ type PeriodPorta[TPeriod Period] interface {
 	Add(d Delta) TPeriod
 	PortaDown(amount int) TPeriod
 	PortaUp(amount int) TPeriod
+	PortaTo(amount int, target TPeriod) TPeriod
 }
 
 func AddDelta[TPeriod Period](p TPeriod, d Delta) TPeriod {
@@ -32,6 +33,22 @@ func PortaDown[TPeriod Period](p TPeriod, amount int) TPeriod {
 func PortaUp[TPeriod Period](p TPeriod, amount int) TPeriod {
 	if pa, ok := any(p).(PeriodPorta[TPeriod]); ok {
 		return pa.PortaUp(amount)
+	}
+	return p
+}
+
+func PortaTo[TPeriod Period](p TPeriod, amount int, target TPeriod) TPeriod {
+	switch ComparePeriods(p, target) {
+	case comparison.SpaceshipRightGreater:
+		p = PortaUp(p, amount)
+		if ComparePeriods(p, target) == comparison.SpaceshipLeftGreater {
+			return target
+		}
+	case comparison.SpaceshipLeftGreater:
+		p = PortaDown(p, amount)
+		if ComparePeriods(p, target) == comparison.SpaceshipRightGreater {
+			return target
+		}
 	}
 	return p
 }

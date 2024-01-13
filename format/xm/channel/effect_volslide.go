@@ -3,38 +3,43 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // VolumeSlide defines a volume slide effect
 type VolumeSlide[TPeriod period.Period] DataEffect // 'A'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e VolumeSlide[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
+func (e VolumeSlide[TPeriod]) String() string {
+	return fmt.Sprintf("A%0.2x", DataEffect(e))
 }
 
-// Tick is called on every tick
-func (e VolumeSlide[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
-	mem := cs.GetMemory()
+func (e VolumeSlide[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], tick int) error {
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
+
 	x, y := mem.VolumeSlide(DataEffect(e))
 
-	if currentTick == 0 {
+	if tick == 0 {
 		return nil
 	}
 
 	if x == 0 {
 		// vol slide down
-		return doVolSlide(cs, -float32(y), 1.0)
+		return m.SlideChannelVolume(ch, 1, -float32(y))
 	} else if y == 0 {
 		// vol slide up
-		return doVolSlide(cs, float32(y), 1.0)
+		return m.SlideChannelVolume(ch, 1, float32(x))
 	}
+
 	return nil
 }
 
-func (e VolumeSlide[TPeriod]) String() string {
-	return fmt.Sprintf("A%0.2x", DataEffect(e))
+func (e VolumeSlide[TPeriod]) TraceData() string {
+	return e.String()
 }

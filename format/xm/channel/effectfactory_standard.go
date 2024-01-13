@@ -4,7 +4,7 @@ import (
 	"github.com/gotracker/playback/period"
 )
 
-func standardEffectFactory[TPeriod period.Period](mem *Memory, cd Data) EffectXM {
+func standardEffectFactory[TPeriod period.Period](mem *Memory, cd Data[TPeriod]) EffectXM {
 	if !cd.What.HasEffect() && !cd.What.HasEffectParameter() {
 		return nil
 	}

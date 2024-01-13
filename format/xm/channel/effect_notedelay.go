@@ -3,26 +3,26 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // NoteDelay defines a note delay effect
 type NoteDelay[TPeriod period.Period] DataEffect // 'EDx'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e NoteDelay[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.SetNotePlayTick(true, note.ActionRetrigger, int(DataEffect(e)&0x0F))
-	return nil
-}
-
-// Start triggers on the first tick, but before the Tick() function is called
-func (e NoteDelay[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
-
 func (e NoteDelay[TPeriod]) String() string {
 	return fmt.Sprintf("E%0.2x", DataEffect(e))
+}
+
+func (e NoteDelay[TPeriod]) RowStart(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) error {
+	x := DataEffect(e) & 0x0F
+	return m.SetChannelNoteAction(ch, note.ActionRetrigger, int(x))
+}
+
+func (e NoteDelay[TPeriod]) TraceData() string {
+	return e.String()
 }

@@ -3,146 +3,141 @@ package tracing
 import (
 	"fmt"
 	"io"
-	"strings"
+	"log"
+	"os"
+	"sync"
 
-	ansi "github.com/fatih/color"
-
-	"github.com/gotracker/playback"
-	"github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/player"
-	"github.com/gotracker/playback/song"
+	"github.com/gotracker/playback/index"
 )
 
-type Tracing[TPeriod period.Period, TMemory any, TData song.ChannelData] struct {
-	playback.Playback
-	ChannelGetter func(c int) playback.Channel[TPeriod, TMemory, TData]
+type Tracing struct {
+	tracingFile *os.File
+	chMap       map[int]*tracingChannelState
+	traces      []tracingMsgFunc
+	c           chan func(w io.Writer)
+	wg          sync.WaitGroup
+
+	tick     Tick
+	updates  []entryIntf
+	prevTick Tick
+	mu       sync.RWMutex
 }
 
-func (m Tracing[TPeriod, TMemory, TData]) OutputTraces(out chan<- func(w io.Writer)) {
-	outputs := []func(w io.Writer){
-		m.outputGlobalTrace(),
-		m.outputRenderTrace(),
-		m.outputChannelsTrace(),
-	}
-	out <- func(w io.Writer) {
-		fmt.Fprintln(w, "################################################")
-		for _, fn := range outputs {
-			fn(w)
-		}
-
-		fmt.Fprintln(w)
-	}
+type entryIntf interface {
+	GetTick() Tick
+	Prefix() string
+	fmt.Stringer
 }
 
-func (m Tracing[TPeriod, TMemory, TData]) outputGlobalTrace() func(w io.Writer) {
-	gs := player.NewTracingTable("=== global ===",
-		"globalVolume",
-		"mixerVolume",
-		"currentOrder",
-		"currentRow",
-	)
-	gs.AddRow(
-		m.Playback.GetGlobalVolume(),
-		m.Playback.GetMixerVolume(),
-		m.Playback.GetCurrentOrder(),
-		m.Playback.GetCurrentRow(),
-	)
+type tracingMsgFunc func() string
 
-	return func(w io.Writer) {
-		fmt.Fprintln(w)
-		gs.WriteOut(w)
-	}
+type tracingChannelState struct {
+	traces []tracingMsgFunc
 }
 
-func (m Tracing[TPeriod, TMemory, TData]) outputRenderTrace() func(w io.Writer) {
-	r := m.Playback.GetRenderState()
-	if r == nil {
-		return func(w io.Writer) {}
+func (t *Tracing) EnableTracing(filename string) error {
+	var err error
+	t.tracingFile, err = os.Create(filename)
+	if err != nil {
+		return err
 	}
 
-	rs := player.NewTracingTable("=== rowRenderState ===",
-		"samplerSpeed",
-		"tickDuration",
-		"samplesPerTick",
-		"ticksThisRow",
-		"currentTick",
-	)
-	rs.AddRow(
-		fmt.Sprint(r.GetSamplerSpeed()),
-		fmt.Sprint(r.GetDuration()),
-		fmt.Sprint(r.GetSamples()),
-		fmt.Sprint(r.GetTicksThisRow()),
-		fmt.Sprint(r.GetCurrentTick()),
-	)
-
-	return func(w io.Writer) {
-		fmt.Fprintln(w)
-		rs.WriteOut(w)
-	}
+	return nil
 }
 
-func (m Tracing[TPeriod, TMemory, TData]) outputChannelsTrace() func(w io.Writer) {
-	cs := player.NewTracingTable("=== channels ===",
-		append(append(
-			[]string{
-				"Channel",
-				"ChannelVolume",
-				"ActiveEffect",
-				"TrackData",
-				"RetriggerCount",
-				"Semitone",
-				"UseTargetPeriod",
-				"NewNoteAction",
-			},
-			ChannelStateHeaders("Previous")...),
-			ChannelStateHeaders("Active")...,
-		)...,
-	)
+func (t *Tracing) Close() {
+	if t.c != nil {
+		close(t.c)
+	}
+	if t.tracingFile != nil {
+		t.tracingFile.Close()
+	}
+	t.wg.Wait()
+}
 
-	for c := 0; c < m.Playback.GetNumChannels(); c++ {
-		ch := m.ChannelGetter(c)
-		if ch == nil {
-			continue
-		}
-		var trackData string
-		effects := ch.GetActiveEffects()
-		if len(effects) == 0 {
-			effects = []playback.Effect{nil}
-		}
-		trackData = fmt.Sprint(ch.GetChannelData())
-		var activeEffect []string
-		for _, effect := range effects {
-			if effect != nil {
-				effectTypes := playback.GetEffectNames(effect)
-				activeEffect = append(activeEffect, strings.Join(effectTypes, ","))
+func (t *Tracing) OutputTraces() {
+	if t.tracingFile == nil {
+		return
+	}
+
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	var updates []entryIntf
+	updates, t.updates = t.updates, nil
+
+	go func() {
+		logger := log.New(t.tracingFile, "", 0)
+		for _, u := range updates {
+			if tick := u.GetTick(); !tick.Equals(t.prevTick) {
+				fmt.Fprintln(t.tracingFile)
+				t.prevTick = tick
 			}
-		}
 
-		prev := ch.GetPreviousState()
-		active := ch.GetActiveState()
-
-		data := []any{
-			c + 1,
-			ch.GetChannelVolume(),
-			strings.Join(activeEffect, ","),
-			trackData,
-			ch.GetRetriggerCount(),
-			ch.GetNoteSemitone(),
-			ch.GetUseTargetPeriod(),
-			ch.GetNewNoteAction(),
+			logger.Println("[" + u.Prefix() + "] " + u.String())
 		}
-		data = append(data, ChannelState[TPeriod](&prev)...)
-		data = append(data, ChannelState[TPeriod](active)...)
+	}()
+}
 
-		if prev.Instrument != active.Instrument || any(prev.Period) != any(active.Period) || prev.GetVolume() != active.GetVolume() || prev.Pos != active.Pos || prev.Pan != active.Pan {
-			cs.AddRowColor([]ansi.Attribute{ansi.BgRed, ansi.FgHiWhite}, data...)
-		} else {
-			cs.AddRow(data...)
-		}
+func (t *Tracing) SetTracingTick(order index.Order, row index.Row, tick int) {
+	t.mu.Lock()
+	t.tick = Tick{
+		Order: order,
+		Row:   row,
+		Tick:  tick,
 	}
+	t.mu.Unlock()
+}
 
-	return func(w io.Writer) {
-		fmt.Fprintln(w)
-		cs.WriteOut(w)
+func (t *Tracing) GetTracingTick() Tick {
+	t.mu.RLock()
+	defer t.mu.RUnlock()
+
+	return t.tick
+}
+
+func (t *Tracing) Trace(op string) {
+	t.TraceWithComment(op, "")
+}
+
+func (t *Tracing) TraceWithComment(op, comment string) {
+	traceWithPayload(t, t.GetTracingTick(), op, comment, empty)
+}
+
+func (t *Tracing) TraceValueChange(op string, prev, new any) {
+	t.TraceValueChangeWithComment(op, prev, new, "")
+}
+
+func (t *Tracing) TraceValueChangeWithComment(op string, prev, new any, comment string) {
+	traceWithPayload(t, t.GetTracingTick(), op, comment, valueUpdate{
+		old: prev,
+		new: new,
+	})
+}
+
+func (t *Tracing) TraceChannel(ch index.Channel, op string) {
+	t.TraceChannelWithComment(ch, op, "")
+}
+
+func (t *Tracing) TraceChannelWithComment(ch index.Channel, op, comment string) {
+	tc := tickChannel{
+		tick: t.GetTracingTick(),
+		ch:   ch,
 	}
+	traceWithPayload(t, tc, op, comment, empty)
+}
+
+func (t *Tracing) TraceChannelValueChange(ch index.Channel, op string, prev, new any) {
+	t.TraceChannelValueChangeWithComment(ch, op, prev, new, "")
+}
+
+func (t *Tracing) TraceChannelValueChangeWithComment(ch index.Channel, op string, prev, new any, comment string) {
+	tc := tickChannel{
+		tick: t.GetTracingTick(),
+		ch:   ch,
+	}
+	traceWithPayload(t, tc, op, comment, valueUpdate{
+		old: prev,
+		new: new,
+	})
 }

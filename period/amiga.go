@@ -33,6 +33,24 @@ func (p Amiga) PortaUp(amount int) Amiga {
 	return p.Add(Delta(amount))
 }
 
+func (p Amiga) PortaTo(amount int, target Amiga) Amiga {
+	switch p.Compare(target) {
+	case comparison.SpaceshipLeftGreater:
+		// porta down to target
+		p = p.PortaDown(amount)
+		if p.Compare(target) == comparison.SpaceshipRightGreater {
+			return target
+		}
+	case comparison.SpaceshipRightGreater:
+		// porta up to target
+		p = p.PortaUp(amount)
+		if p.Compare(target) == comparison.SpaceshipLeftGreater {
+			return target
+		}
+	}
+	return p
+}
+
 func (p Amiga) IsInvalid() bool {
 	return p == 0
 }
@@ -65,5 +83,8 @@ func (p Amiga) GetFrequency() Frequency {
 }
 
 func (p Amiga) String() string {
+	if p == 0 {
+		return "Amiga{ nil }"
+	}
 	return fmt.Sprintf("Amiga{ Period:%d }", p)
 }

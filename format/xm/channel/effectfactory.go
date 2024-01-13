@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/song"
 )
@@ -12,7 +14,7 @@ type EffectXM = playback.Effect
 
 // VolEff is a combined effect that includes a volume effect and a standard effect
 type VolEff[TPeriod period.Period] struct {
-	playback.CombinedEffect[TPeriod, Memory, Data]
+	playback.CombinedEffect[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning, *Memory, Data[TPeriod]]
 	eff EffectXM
 }
 
@@ -31,13 +33,17 @@ func (e VolEff[TPeriod]) Names() []string {
 	return names
 }
 
+func (e VolEff[TPeriod]) TraceData() string {
+	return e.String()
+}
+
 // Factory produces an effect for the provided channel pattern data
-func EffectFactory[TPeriod period.Period](mem *Memory, data song.ChannelData) EffectXM {
+func EffectFactory[TPeriod period.Period](mem *Memory, data song.ChannelData[xmVolume.XmVolume]) EffectXM {
 	if data == nil {
 		return nil
 	}
 
-	d, _ := data.(Data)
+	d, _ := data.(Data[TPeriod])
 	if !d.HasCommand() {
 		return nil
 	}

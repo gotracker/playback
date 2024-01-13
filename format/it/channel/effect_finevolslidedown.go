@@ -3,32 +3,35 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // FineVolumeSlideDown defines a fine volume slide down effect
 type FineVolumeSlideDown[TPeriod period.Period] DataEffect // 'D'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e FineVolumeSlideDown[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
+func (e FineVolumeSlideDown[TPeriod]) String() string {
+	return fmt.Sprintf("D%0.2x", DataEffect(e))
 }
 
-// Tick is called on every tick
-func (e FineVolumeSlideDown[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
-	mem := cs.GetMemory()
-	_, y := mem.VolumeSlide(DataEffect(e))
+func (e FineVolumeSlideDown[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], tick int) error {
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
 
-	if y != 0x0F && currentTick == 0 {
-		return doVolSlide(cs, -float32(y), 1.0)
+	_, y := mem.VolumeSlide(DataEffect(e))
+	if y != 0x0F && tick == 0 {
+		return m.SlideChannelVolume(ch, 1.0, -float32(y))
 	}
 	return nil
 }
 
-func (e FineVolumeSlideDown[TPeriod]) String() string {
-	return fmt.Sprintf("D%0.2x", DataEffect(e))
+func (e FineVolumeSlideDown[TPeriod]) TraceData() string {
+	return e.String()
 }
 
 //====================================================
@@ -36,14 +39,23 @@ func (e FineVolumeSlideDown[TPeriod]) String() string {
 // VolChanFineVolumeSlideDown defines a fine volume slide down effect (from the volume channel)
 type VolChanFineVolumeSlideDown[TPeriod period.Period] DataEffect // 'd'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e VolChanFineVolumeSlideDown[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	mem := cs.GetMemory()
-	y := mem.VolChanVolumeSlide(DataEffect(e))
-
-	return doVolSlide(cs, -float32(y), 1.0)
-}
-
 func (e VolChanFineVolumeSlideDown[TPeriod]) String() string {
 	return fmt.Sprintf("dF%x", DataEffect(e))
+}
+
+func (e VolChanFineVolumeSlideDown[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], tick int) error {
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
+
+	_, y := mem.VolumeSlide(DataEffect(e))
+	if tick == 0 {
+		return m.SlideChannelVolume(ch, 1.0, -float32(y))
+	}
+	return nil
+}
+
+func (e VolChanFineVolumeSlideDown[TPeriod]) TraceData() string {
+	return e.String()
 }

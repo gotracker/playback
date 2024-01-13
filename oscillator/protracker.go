@@ -42,7 +42,7 @@ func (o protrackerOscillator) Clone() oscillator.Oscillator {
 }
 
 // GetWave returns the wave amplitude for the current position
-func (o *protrackerOscillator) GetWave(depth float32) float32 {
+func (o protrackerOscillator) GetWave(depth float32) float32 {
 	var vib float32
 	switch o.Table {
 	case WaveTableSelectSineRetrigger, WaveTableSelectSineContinue:
@@ -79,6 +79,10 @@ func (o *protrackerOscillator) Advance(speed int) {
 // SetWaveform sets the waveform for the current oscillator
 func (o *protrackerOscillator) SetWaveform(table oscillator.WaveTableSelect) {
 	o.Table = table
+}
+
+func (o protrackerOscillator) GetWaveform() oscillator.WaveTableSelect {
+	return o.Table
 }
 
 // Reset resets the position of the oscillator

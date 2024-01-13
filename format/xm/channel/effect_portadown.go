@@ -3,32 +3,35 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // PortaDown defines a portamento down effect
 type PortaDown[TPeriod period.Period] DataEffect // '2'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e PortaDown[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	cs.UnfreezePlayback()
-	return nil
+func (e PortaDown[TPeriod]) String() string {
+	return fmt.Sprintf("2%0.2x", DataEffect(e))
 }
 
-// Tick is called on every tick
-func (e PortaDown[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
-	mem := cs.GetMemory()
+func (e PortaDown[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], tick int) error {
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
+
 	xx := mem.PortaDown(DataEffect(e))
 
-	if currentTick == 0 {
+	if tick == 0 {
 		return nil
 	}
 
-	return doPortaDown(cs, float32(xx), 4)
+	return m.DoChannelPortaDown(ch, period.Delta(xx)*4)
 }
 
-func (e PortaDown[TPeriod]) String() string {
-	return fmt.Sprintf("2%0.2x", DataEffect(e))
+func (e PortaDown[TPeriod]) TraceData() string {
+	return e.String()
 }

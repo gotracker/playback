@@ -1,102 +1,109 @@
 package component
 
 import (
+	"fmt"
+
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/tracing"
+	"github.com/gotracker/playback/voice/types"
 )
 
 // AmpModulator is an amplitude (volume) modulator
-type AmpModulator struct {
-	vol            volume.Volume
-	mixing         volume.Volume
-	fadeoutEnabled bool
-	fadeoutVol     volume.Volume
-	fadeoutAmt     volume.Volume
-	final          volume.Volume // = [fadeoutVol *] mixing * vol
+type AmpModulator[TMixingVolume, TVolume types.Volume] struct {
+	settings AmpModulatorSettings[TMixingVolume, TVolume]
+	active   bool
+	vol      TVolume
+	delta    types.VolumeDelta
+	mixing   TMixingVolume
+	final    volume.Volume // = active? * mixing * vol
 }
 
-// Setup configures the initial settings of the modulator
-func (a *AmpModulator) Setup(mixing volume.Volume) {
-	a.mixing = mixing
+type AmpModulatorSettings[TMixingVolume, TVolume types.Volume] struct {
+	Active              bool
+	DefaultMixingVolume TMixingVolume
+	DefaultVolume       TVolume
+}
+
+func (a *AmpModulator[TMixingVolume, TVolume]) Setup(settings AmpModulatorSettings[TMixingVolume, TVolume]) {
+	a.settings = settings
+	a.active = settings.Active
+	a.vol = settings.DefaultVolume
+	a.delta = 0
+	a.mixing = settings.DefaultMixingVolume
 	a.updateFinal()
 }
 
-// Attack disables the fadeout and resets its volume
-func (a *AmpModulator) Attack() {
-	a.fadeoutEnabled = false
-	a.fadeoutVol = volume.Volume(1)
+func (a AmpModulator[TMixingVolume, TVolume]) Clone() AmpModulator[TMixingVolume, TVolume] {
+	m := a
+	return m
+}
+
+func (a *AmpModulator[TMixingVolume, TVolume]) SetActive(active bool) {
+	a.active = active
 	a.updateFinal()
 }
 
-// Release currently does nothing
-func (a *AmpModulator) Release() {
+func (a AmpModulator[TMixingVolume, TVolume]) IsActive() bool {
+	return a.active
 }
 
-// Fadeout activates the fadeout
-func (a *AmpModulator) Fadeout() {
-	a.fadeoutEnabled = true
-	a.updateFinal()
+// SetMixingVolume configures the mixing volume of the modulator
+func (a *AmpModulator[TMixingVolume, TVolume]) SetMixingVolume(mixing TMixingVolume) {
+	if !mixing.IsUseInstrumentVol() {
+		a.mixing = mixing
+		a.updateFinal()
+	}
+}
+
+// GetMixingVolume returns the current mixing volume of the modulator
+func (a AmpModulator[TMixingVolume, TVolume]) GetMixingVolume() TMixingVolume {
+	return a.mixing
 }
 
 // SetVolume sets the current volume (before fadeout calculation)
-func (a *AmpModulator) SetVolume(vol volume.Volume) {
+func (a *AmpModulator[TMixingVolume, TVolume]) SetVolume(vol TVolume) {
+	if vol.IsUseInstrumentVol() {
+		vol = a.settings.DefaultVolume
+	}
 	a.vol = vol
 	a.updateFinal()
 }
 
 // GetVolume returns the current volume (before fadeout calculation)
-func (a *AmpModulator) GetVolume() volume.Volume {
+func (a AmpModulator[TMixingVolume, TVolume]) GetVolume() TVolume {
 	return a.vol
 }
 
-// SetFadeoutEnabled sets the status of the fadeout enablement flag
-func (a *AmpModulator) SetFadeoutEnabled(enabled bool) {
-	a.fadeoutEnabled = enabled
+func (a *AmpModulator[TMixingVolume, TVolume]) SetVolumeDelta(d types.VolumeDelta) {
+	a.delta = d
 	a.updateFinal()
 }
 
-// ResetFadeoutValue resets the current fadeout value and optionally configures the amount of fadeout
-func (a *AmpModulator) ResetFadeoutValue(amount ...volume.Volume) {
-	a.fadeoutVol = volume.Volume(1)
-	if len(amount) > 0 {
-		a.fadeoutAmt = amount[0]
-	}
-	a.updateFinal()
-}
-
-// IsFadeoutEnabled returns the status of the fadeout enablement flag
-func (a *AmpModulator) IsFadeoutEnabled() bool {
-	return a.fadeoutEnabled
-}
-
-// GetFadeoutVolume returns the value of the fadeout volume
-func (a *AmpModulator) GetFadeoutVolume() volume.Volume {
-	return a.fadeoutVol
+func (a AmpModulator[TMixingVolume, TVolume]) GetVolumeDelta() types.VolumeDelta {
+	return a.delta
 }
 
 // GetFinalVolume returns the current volume (after fadeout calculation)
-func (a *AmpModulator) GetFinalVolume() volume.Volume {
+func (a AmpModulator[TMixingVolume, TVolume]) GetFinalVolume() volume.Volume {
 	return a.final
 }
 
-// Advance advances the fadeout value by 1 tick
-func (a *AmpModulator) Advance() {
-	if a.fadeoutEnabled || a.fadeoutVol <= 0 {
+func (a *AmpModulator[TMixingVolume, TVolume]) updateFinal() {
+	if !a.active {
+		a.final = 0
 		return
 	}
 
-	a.fadeoutVol -= a.fadeoutAmt
-	switch {
-	case a.fadeoutVol < 0:
-		a.fadeoutVol = 0
-	case a.fadeoutVol > 1:
-		a.fadeoutVol = 1
-	}
-	a.updateFinal()
+	v := types.AddVolumeDelta(a.vol, a.delta)
+	a.final = a.mixing.ToVolume() * v.ToVolume()
 }
 
-func (a *AmpModulator) updateFinal() {
-	a.final = a.mixing * a.vol
-	if a.fadeoutEnabled {
-		a.final *= a.fadeoutVol
-	}
+func (a AmpModulator[TMixingVolume, TVolume]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
+	t.TraceChannelWithComment(ch, fmt.Sprintf("active{%v} vol{%v} mixing{%v} final{%v}",
+		a.active,
+		a.vol,
+		a.mixing,
+		a.final,
+	), comment)
 }

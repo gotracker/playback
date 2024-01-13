@@ -4,12 +4,14 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/period"
 )
 
 // VibratoVolumeSlide defines a combination vibrato and volume slide effect
 type VibratoVolumeSlide struct { // 'K'
-	playback.CombinedEffect[period.Amiga, Memory, Data]
+	playback.CombinedEffect[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning, *Memory, Data]
 }
 
 // NewVibratoVolumeSlide creates a new VibratoVolumeSlide object
@@ -21,5 +23,9 @@ func NewVibratoVolumeSlide(mem *Memory, cd uint8, val DataEffect) VibratoVolumeS
 }
 
 func (e VibratoVolumeSlide) String() string {
-	return fmt.Sprintf("K%0.2x", e.Effects[0].(DataEffect))
+	return fmt.Sprintf("K%0.2x", any(e.Effects[0]).(DataEffect))
+}
+
+func (e VibratoVolumeSlide) TraceData() string {
+	return e.String()
 }

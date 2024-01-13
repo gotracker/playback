@@ -2,7 +2,8 @@ package pattern
 
 import (
 	"github.com/gotracker/playback/format/s3m/channel"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/song"
 )
 
-type Row = song.Row[channel.Data]
+type Row = song.Row[channel.Data, s3mVolume.Volume]

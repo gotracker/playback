@@ -1,13 +1,14 @@
 package channel
 
 import (
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/song"
 )
 
 type ChannelCommand DataEffect
 
 // Factory produces an effect for the provided channel pattern data
-func EffectFactory(mem *Memory, data song.ChannelData) EffectS3M {
+func EffectFactory(mem *Memory, data song.ChannelData[s3mVolume.Volume]) EffectS3M {
 	if data == nil {
 		return nil
 	}

@@ -3,31 +3,39 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
+	"github.com/gotracker/playback/voice/types"
 )
 
 // Tremolo defines a tremolo effect
 type Tremolo[TPeriod period.Period] DataEffect // 'R'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e Tremolo[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
-
-// Tick is called on every tick
-func (e Tremolo[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
-	mem := cs.GetMemory()
-	x, y := mem.Tremolo(DataEffect(e))
-	// NOTE: JBC - IT dos not update on tick 0, but MOD does.
-	// Maybe need to add a flag for converted MOD backward compatibility?
-	if currentTick != 0 {
-		return doTremolo(cs, currentTick, x, y, 4)
-	}
-	return nil
-}
-
 func (e Tremolo[TPeriod]) String() string {
 	return fmt.Sprintf("R%0.2x", DataEffect(e))
+}
+
+func (e Tremolo[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], tick int) error {
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
+	x, y := mem.Tremolo(DataEffect(e))
+
+	// NOTE: JBC - IT dos not update on tick 0, but MOD does.
+	// Maybe need to add a flag for converted MOD backward compatibility?
+	if tick == 0 {
+		return nil
+	}
+
+	return withOscillatorDo(ch, m, int(x), float32(y)*4, machine.OscillatorTremolo, func(value float32) error {
+		return m.SetChannelVolumeDelta(ch, types.VolumeDelta(value))
+	})
+}
+
+func (e Tremolo[TPeriod]) TraceData() string {
+	return e.String()
 }

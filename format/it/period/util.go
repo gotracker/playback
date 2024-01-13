@@ -21,7 +21,6 @@ func CalcSemitonePeriod[TPeriod period.Period](semi note.Semitone, ft note.Finet
 	case *period.Linear:
 		nft := int(semi)*system.SlideFinesPerNote + int(ft)
 		p.Finetune = note.Finetune(nft)
-		p.CommonRate = c5SampleRate
 	case *period.Amiga:
 		key := int(semi.Key())
 		octave := uint32(semi.Octave())

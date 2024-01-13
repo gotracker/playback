@@ -9,6 +9,7 @@ type Oscillator interface {
 	GetWave(depth float32) float32
 	Advance(speed int)
 	SetWaveform(table WaveTableSelect)
+	GetWaveform() WaveTableSelect
 	HardReset()
 	Reset()
 }

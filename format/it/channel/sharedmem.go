@@ -1,8 +1,6 @@
 package channel
 
 type SharedMemory struct {
-	// LinearFreqSlides is true if linear frequency slides are enabled (false = amiga-style period-based slides)
-	LinearFreqSlides bool
 	// OldEffectMode performs somewhat different operations for some effects:
 	// On:
 	//  - Vibrato does not operate on tick 0 and has double depth

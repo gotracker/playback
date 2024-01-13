@@ -10,10 +10,14 @@ import (
 
 	"github.com/gotracker/playback"
 	xmNote "github.com/gotracker/playback/format/xm/note"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
+	"github.com/gotracker/playback/player/machine/instruction"
 	"github.com/gotracker/playback/player/op"
 	"github.com/gotracker/playback/song"
 )
@@ -35,7 +39,7 @@ func (c Command) ToRune() rune {
 type DataEffect uint8
 
 // Data is the data for the channel
-type Data struct {
+type Data[TPeriod period.Period] struct {
 	What            xmfile.ChannelFlags
 	Note            uint8
 	Instrument      uint8
@@ -45,22 +49,22 @@ type Data struct {
 }
 
 // HasNote returns true if there exists a note on the channel
-func (d Data) HasNote() bool {
+func (d Data[TPeriod]) HasNote() bool {
 	return d.What.HasNote()
 }
 
 // GetNote returns the note for the channel
-func (d Data) GetNote() note.Note {
+func (d Data[TPeriod]) GetNote() note.Note {
 	return xmNote.FromXmNote(d.Note)
 }
 
 // HasInstrument returns true if there exists an instrument on the channel
-func (d Data) HasInstrument() bool {
+func (d Data[TPeriod]) HasInstrument() bool {
 	return d.What.HasInstrument()
 }
 
 // GetInstrument returns the instrument for the channel
-func (d Data) GetInstrument(stmem note.Semitone) instrument.ID {
+func (d Data[TPeriod]) GetInstrument(stmem note.Semitone) instrument.ID {
 	st := stmem
 	if d.HasNote() {
 		n := d.GetNote()
@@ -75,7 +79,7 @@ func (d Data) GetInstrument(stmem note.Semitone) instrument.ID {
 }
 
 // HasVolume returns true if there exists a volume on the channel
-func (d Data) HasVolume() bool {
+func (d Data[TPeriod]) HasVolume() bool {
 	if !d.What.HasVolume() {
 		return false
 	}
@@ -84,12 +88,16 @@ func (d Data) HasVolume() bool {
 }
 
 // GetVolume returns the volume for the channel
-func (d Data) GetVolume() volume.Volume {
+func (d Data[TPeriod]) GetVolumeGeneric() volume.Volume {
 	return d.Volume.Volume()
 }
 
+func (d Data[TPeriod]) GetVolume() xmVolume.XmVolume {
+	return xmVolume.XmVolume(d.Volume.Volume() * 64)
+}
+
 // HasCommand returns true if there exists a command on the channel
-func (d Data) HasCommand() bool {
+func (d Data[TPeriod]) HasCommand() bool {
 	if d.What.HasEffect() || d.What.HasEffectParameter() {
 		return true
 	}
@@ -102,27 +110,18 @@ func (d Data) HasCommand() bool {
 }
 
 // Channel returns the channel ID for the channel
-func (d Data) Channel() uint8 {
+func (d Data[TPeriod]) Channel() uint8 {
 	return 0
 }
 
-func (d Data) GetEffects(mem *Memory, periodType period.Period) []playback.Effect {
-	switch periodType.(type) {
-	case period.Linear:
-		if e := EffectFactory[period.Linear](mem, d); e != nil {
-			return []playback.Effect{e}
-		}
-	case period.Amiga:
-		if e := EffectFactory[period.Amiga](mem, d); e != nil {
-			return []playback.Effect{e}
-		}
-	default:
-		panic("unhandled period type")
+func (d Data[TPeriod]) GetEffects(mem *Memory, periodType period.Period) []playback.Effect {
+	if e := EffectFactory[TPeriod](mem, d); e != nil {
+		return []playback.Effect{e}
 	}
 	return nil
 }
 
-func (Data) getNoteString(n note.Note) string {
+func (Data[TPeriod]) getNoteString(n note.Note) string {
 	switch note.Type(n) {
 	case note.SpecialTypeRelease:
 		return "== "
@@ -133,7 +132,7 @@ func (Data) getNoteString(n note.Note) string {
 	}
 }
 
-func (d Data) String() string {
+func (d Data[TPeriod]) String() string {
 	pieces := []string{
 		"...", // note
 		"  ",  // inst
@@ -156,14 +155,29 @@ func (d Data) String() string {
 	return strings.Join(pieces, " ")
 }
 
-func (d Data) ShortString() string {
+func (d Data[TPeriod]) ShortString() string {
 	if d.HasNote() {
 		return d.getNoteString(d.GetNote())
 	}
 	return "..."
 }
 
-func GetTargetsFromData[TPeriod period.Period](out *op.ChannelTargets[TPeriod], d Data, s song.Data, cs playback.Channel[TPeriod, Memory, Data]) error {
+func (d Data[TPeriod]) ToInstructions(m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], ch index.Channel, songData song.Data) ([]instruction.Instruction, error) {
+	var instructions []instruction.Instruction
+
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return nil, err
+	}
+
+	if e := EffectFactory[TPeriod](mem, d); e != nil {
+		instructions = append(instructions, e)
+	}
+
+	return instructions, nil
+}
+
+func GetTargetsFromData[TPeriod period.Period](out *op.ChannelTargets[TPeriod, xmVolume.XmVolume, xmPanning.Panning], d Data[TPeriod], s song.Data, cs playback.Channel[TPeriod, *Memory, Data[TPeriod], xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) error {
 	var n note.Note = note.EmptyNote{}
 	inst := cs.GetActiveState().Instrument
 	prevInst := inst
@@ -198,7 +212,7 @@ func GetTargetsFromData[TPeriod period.Period](out *op.ChannelTargets[TPeriod], 
 			out.TargetPos.Set(sampling.Pos{})
 			if inst != nil {
 				if wantRetriggerVol {
-					out.TargetVolume.Set(inst.GetDefaultVolume())
+					out.TargetVolume.Set(xmVolume.ToVolumeXM(inst.GetDefaultVolumeGeneric()))
 				}
 				out.NoteAction.Set(note.ActionRetrigger)
 				out.TargetNewNoteAction.Set(inst.GetNewNoteAction())
@@ -223,9 +237,9 @@ func GetTargetsFromData[TPeriod period.Period](out *op.ChannelTargets[TPeriod], 
 
 	if d.HasVolume() {
 		v := d.GetVolume()
-		if v == volume.VolumeUseInstVol {
+		if v.IsUseInstrumentVol() {
 			if inst != nil {
-				v = inst.GetDefaultVolume()
+				v = xmVolume.ToVolumeXM(inst.GetDefaultVolumeGeneric())
 			}
 		}
 		out.TargetVolume.Set(v)

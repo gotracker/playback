@@ -3,23 +3,17 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // UnhandledCommand is an unhandled command
 type UnhandledCommand[TPeriod period.Period] struct {
 	Command Command
 	Info    DataEffect
-}
-
-// PreStart triggers when the effect enters onto the channel state
-func (e UnhandledCommand[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory, Data], m XM) error {
-	if !m.IgnoreUnknownEffect() {
-		panic("unhandled command")
-	}
-	return nil
 }
 
 func (e UnhandledCommand[TPeriod]) String() string {
@@ -32,17 +26,22 @@ func (e UnhandledCommand[TPeriod]) Names() []string {
 	}
 }
 
-// UnhandledVolCommand is an unhandled volume command
-type UnhandledVolCommand[TPeriod period.Period] struct {
-	Vol xmVolume.VolEffect
-}
-
-// PreStart triggers when the effect enters onto the channel state
-func (e UnhandledVolCommand[TPeriod]) PreStart(cs playback.Channel[TPeriod, Memory, Data], m XM) error {
+func (e UnhandledCommand[TPeriod]) RowStart(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) error {
 	if !m.IgnoreUnknownEffect() {
 		panic("unhandled command")
 	}
 	return nil
+}
+
+func (e UnhandledCommand[TPeriod]) TraceData() string {
+	return e.String()
+}
+
+////////
+
+// UnhandledVolCommand is an unhandled volume command
+type UnhandledVolCommand[TPeriod period.Period] struct {
+	Vol xmVolume.VolEffect
 }
 
 func (e UnhandledVolCommand[TPeriod]) String() string {
@@ -53,4 +52,15 @@ func (e UnhandledVolCommand[TPeriod]) Names() []string {
 	return []string{
 		fmt.Sprintf("UnhandledVolCommand(%s)", e.String()),
 	}
+}
+
+func (e UnhandledVolCommand[TPeriod]) RowStart(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) error {
+	if !m.IgnoreUnknownEffect() {
+		panic("unhandled command")
+	}
+	return nil
+}
+
+func (e UnhandledVolCommand[TPeriod]) TraceData() string {
+	return e.String()
 }

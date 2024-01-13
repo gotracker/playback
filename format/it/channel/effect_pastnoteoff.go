@@ -3,20 +3,25 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // PastNoteOff defines a past note off effect
 type PastNoteOff[TPeriod period.Period] DataEffect // 'S71'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e PastNoteOff[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.DoPastNoteEffect(note.ActionRelease)
-	return nil
-}
-
 func (e PastNoteOff[TPeriod]) String() string {
 	return fmt.Sprintf("S%0.2x", DataEffect(e))
+}
+
+func (e PastNoteOff[TPeriod]) RowStart(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]) error {
+	return m.DoChannelPastNoteEffect(ch, note.ActionRelease)
+}
+
+func (e PastNoteOff[TPeriod]) TraceData() string {
+	return e.String()
 }

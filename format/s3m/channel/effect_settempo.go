@@ -3,57 +3,56 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // SetTempo defines a set tempo effect
 type SetTempo ChannelCommand // 'T'
 
-// PreStart triggers when the effect enters onto the channel state
-func (e SetTempo) PreStart(cs S3MChannel, p playback.Playback) error {
-	if e > 0x20 {
-		m := p.(S3M)
-		if err := m.SetTempo(int(e)); err != nil {
-			return err
-		}
-	}
-	return nil
+func (e SetTempo) String() string {
+	return fmt.Sprintf("T%0.2x", DataEffect(e))
 }
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e SetTempo) Start(cs S3MChannel, p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
-
-// Tick is called on every tick
-func (e SetTempo) Tick(cs S3MChannel, p playback.Playback, currentTick int) error {
-	m := p.(S3M)
+func (e SetTempo) Tick(ch index.Channel, m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], tick int) error {
 	switch DataEffect(e >> 4) {
 	case 0: // decrease tempo
-		if currentTick != 0 {
-			mem := cs.GetMemory()
+		if tick != 0 {
+			mem, err := machine.GetChannelMemory[*Memory](m, ch)
+			if err != nil {
+				return err
+			}
+
 			val := int(mem.TempoDecrease(DataEffect(e & 0x0F)))
-			if err := m.DecreaseTempo(val); err != nil {
+			if err := m.SlideBPM(-val); err != nil {
 				return err
 			}
 		}
 	case 1: // increase tempo
-		if currentTick != 0 {
-			mem := cs.GetMemory()
+		if tick != 0 {
+			mem, err := machine.GetChannelMemory[*Memory](m, ch)
+			if err != nil {
+				return err
+			}
+
 			val := int(mem.TempoIncrease(DataEffect(e & 0x0F)))
-			if err := m.IncreaseTempo(val); err != nil {
+			if err := m.SlideBPM(val); err != nil {
 				return err
 			}
 		}
 	default:
-		if err := m.SetTempo(int(e)); err != nil {
-			return err
+		if tick == 0 {
+			if err := m.SetBPM(int(e)); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
 }
 
-func (e SetTempo) String() string {
-	return fmt.Sprintf("T%0.2x", DataEffect(e))
+func (e SetTempo) TraceData() string {
+	return e.String()
 }

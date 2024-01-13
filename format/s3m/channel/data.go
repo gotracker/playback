@@ -9,10 +9,14 @@ import (
 	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/playback"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
+	"github.com/gotracker/playback/player/machine/instruction"
 	"github.com/gotracker/playback/player/op"
 	"github.com/gotracker/playback/song"
 )
@@ -25,7 +29,7 @@ type Data struct {
 	What       s3mfile.PatternFlags
 	Note       s3mfile.Note
 	Instrument InstID
-	Volume     s3mfile.Volume
+	Volume     s3mVolume.Volume
 	Command    uint8
 	Info       DataEffect
 }
@@ -55,9 +59,13 @@ func (d Data) HasVolume() bool {
 	return d.What.HasVolume()
 }
 
+func (d Data) GetVolumeGeneric() volume.Volume {
+	return d.Volume.ToVolume()
+}
+
 // GetVolume returns the volume for the channel
-func (d Data) GetVolume() volume.Volume {
-	return s3mVolume.VolumeFromS3M(d.Volume)
+func (d Data) GetVolume() s3mVolume.Volume {
+	return d.Volume
 }
 
 // HasCommand returns true if there exists a command on the channel
@@ -109,6 +117,21 @@ func (d Data) ShortString() string {
 	return "..."
 }
 
+func (d Data) ToInstructions(m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], ch index.Channel, songData song.Data) ([]instruction.Instruction, error) {
+	var instructions []instruction.Instruction
+
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return nil, err
+	}
+
+	if e := EffectFactory(mem, d); e != nil {
+		instructions = append(instructions, e)
+	}
+
+	return instructions, nil
+}
+
 // NoteFromS3MNote converts an S3M file note into a player note
 func NoteFromS3MNote(sn s3mfile.Note) note.Note {
 	switch {
@@ -127,7 +150,7 @@ func NoteFromS3MNote(sn s3mfile.Note) note.Note {
 	return note.InvalidNote{}
 }
 
-func GetTargetsFromData(out *op.ChannelTargets[period.Amiga], d Data, s song.Data, cs playback.Channel[period.Amiga, Memory, Data]) error {
+func GetTargetsFromData(out *op.ChannelTargets[period.Amiga, s3mVolume.Volume, s3mPanning.Panning], d Data, s song.Data, cs playback.Channel[period.Amiga, *Memory, Data, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) error {
 	var n note.Note = note.EmptyNote{}
 	inst := cs.GetActiveState().Instrument
 	prevInst := inst
@@ -162,7 +185,7 @@ func GetTargetsFromData(out *op.ChannelTargets[period.Amiga], d Data, s song.Dat
 			out.TargetPos.Set(sampling.Pos{})
 			if inst != nil {
 				if wantRetriggerVol {
-					out.TargetVolume.Set(inst.GetDefaultVolume())
+					out.TargetVolume.Set(s3mVolume.VolumeToS3M(inst.GetDefaultVolumeGeneric()))
 				}
 				out.NoteAction.Set(note.ActionRetrigger)
 				out.TargetNewNoteAction.Set(inst.GetNewNoteAction())
@@ -187,9 +210,9 @@ func GetTargetsFromData(out *op.ChannelTargets[period.Amiga], d Data, s song.Dat
 
 	if d.HasVolume() {
 		v := d.GetVolume()
-		if v == volume.VolumeUseInstVol {
+		if v.IsUseInstrumentVol() {
 			if inst != nil {
-				v = inst.GetDefaultVolume()
+				v = s3mVolume.VolumeToS3M(inst.GetDefaultVolumeGeneric())
 			}
 		}
 		out.TargetVolume.Set(v)

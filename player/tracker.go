@@ -2,7 +2,6 @@ package player
 
 import (
 	"errors"
-	"os"
 	"time"
 
 	"github.com/gotracker/gomixing/mixing"
@@ -11,8 +10,12 @@ import (
 	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
+	"github.com/gotracker/playback/player/machine"
+	"github.com/gotracker/playback/player/machine/settings"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/player/sampler"
+	"github.com/gotracker/playback/song"
+	"github.com/gotracker/playback/tracing"
 	voiceRender "github.com/gotracker/playback/voice/render"
 )
 
@@ -24,11 +27,7 @@ type Premixable interface {
 // Tracker is an extensible music tracker
 type Tracker struct {
 	BaseClockRate period.Frequency
-	PreTickable   PreTickable
-	Tickable      Tickable
-	PostTickable  PostTickable
 	Premixable    Premixable
-	Traceable     Traceable
 
 	s    *sampler.Sampler
 	opl2 voiceRender.OPL2Chip
@@ -37,19 +36,23 @@ type Tracker struct {
 	mixerVolume  volume.Volume
 
 	ignoreUnknownEffect feature.IgnoreUnknownEffect
-	tracingFile         *os.File
-	tracingState        tracingState
-	outputChannels      map[int]*render.Channel
+	outputChannels      map[int]render.ChannelIntf
+
+	tracing.Tracing
+
+	M                 machine.MachineTicker
+	LongChannelOutput bool
+}
+
+func (t *Tracker) SetupMachine(s song.Data, us settings.UserSettings) error {
+	var err error
+	t.M, err = machine.NewMachine(s, us)
+	return err
 }
 
 func (t *Tracker) Close() {
-	if t.tracingState.c != nil {
-		close(t.tracingState.c)
-	}
-	if t.tracingFile != nil {
-		t.tracingFile.Close()
-	}
-	t.tracingState.wg.Wait()
+	t.Trace("Close")
+	t.Tracing.Close()
 }
 
 // Update runs processing on the tracker, producing premixed sound data
@@ -66,68 +69,16 @@ func (t *Tracker) Update(deltaTime time.Duration, out chan<- *output.PremixData)
 	return nil
 }
 
-// Generate runs processing on the tracker, then returns the premixed sound data (if possible)
 func (t *Tracker) Generate(deltaTime time.Duration) (*output.PremixData, error) {
-	premix, err := t.renderTick()
-	if err != nil {
-		return nil, err
-	}
+	defer t.OutputTraces()
 
-	if premix != nil {
-		if len(premix.Data) == 0 {
-			cd := mixing.ChannelData{
-				mixing.Data{
-					Data:       nil,
-					Pan:        panning.CenterAhead,
-					Volume:     volume.Volume(0),
-					SamplesLen: premix.SamplesLen,
-				},
-			}
-			premix.Data = append(premix.Data, cd)
+	var premix *output.PremixData
+	var err error
+	if t.M != nil {
+		premix, err = t.M.Tick(t.s)
+		if err != nil {
+			return nil, err
 		}
-		return premix, nil
-	}
-
-	return nil, nil
-}
-
-// GetRenderChannel returns the output channel for the provided index `ch`
-func (t *Tracker) GetRenderChannel(ch int, init func(ch int) *render.Channel) *render.Channel {
-	if t.outputChannels == nil {
-		t.outputChannels = make(map[int]*render.Channel)
-	}
-
-	if oc, ok := t.outputChannels[ch]; ok {
-		return oc
-	}
-	oc := init(ch)
-	t.outputChannels[ch] = oc
-	return oc
-}
-
-// GetSampleRate returns the sample rate of the sampler
-func (t *Tracker) GetSampleRate() period.Frequency {
-	return period.Frequency(t.GetSampler().SampleRate)
-}
-
-func (t *Tracker) renderTick() (*output.PremixData, error) {
-	if err := DoPreTick(t.PreTickable); err != nil {
-		return nil, err
-	}
-
-	t.OutputTraces()
-
-	if err := DoTick(t.Tickable); err != nil {
-		return nil, err
-	}
-
-	if err := DoPostTick(t.PostTickable); err != nil {
-		return nil, err
-	}
-
-	premix, err := t.Premixable.GetPremixData()
-	if err != nil {
-		return nil, err
 	}
 
 	if t.opl2 != nil {
@@ -148,7 +99,27 @@ func (t *Tracker) renderTick() (*output.PremixData, error) {
 		mv := premix.MixerVolume
 		premix.MixerVolume /= (mv + 1)
 	}
+
 	return premix, nil
+}
+
+// GetRenderChannel returns the output channel for the provided index `ch`
+func (t *Tracker) GetRenderChannel(ch int, init func(ch int) render.ChannelIntf) render.ChannelIntf {
+	if t.outputChannels == nil {
+		t.outputChannels = make(map[int]render.ChannelIntf)
+	}
+
+	if oc, ok := t.outputChannels[ch]; ok {
+		return oc
+	}
+	oc := init(ch)
+	t.outputChannels[ch] = oc
+	return oc
+}
+
+// GetSampleRate returns the sample rate of the sampler
+func (t *Tracker) GetSampleRate() period.Frequency {
+	return period.Frequency(t.GetSampler().SampleRate)
 }
 
 func (t *Tracker) renderOPL2Tick(mixerData *mixing.Data, mix *mixing.Mixer, tickSamples int) {
@@ -205,6 +176,7 @@ func (t *Tracker) GetGlobalVolume() volume.Volume {
 
 // SetGlobalVolume sets the global volume to the specified `vol` value
 func (t *Tracker) SetGlobalVolume(vol volume.Volume) {
+	t.TraceValueChange("SetGlobalVolume", t.globalVolume, vol)
 	t.globalVolume = vol
 }
 
@@ -215,6 +187,7 @@ func (t *Tracker) GetMixerVolume() volume.Volume {
 
 // SetMixerVolume sets the mixer volume to the specified `vol` value
 func (t *Tracker) SetMixerVolume(vol volume.Volume) {
+	t.TraceValueChange("SetMixerVolume", t.mixerVolume, vol)
 	t.mixerVolume = vol
 }
 
@@ -224,18 +197,23 @@ func (t *Tracker) IgnoreUnknownEffect() bool {
 }
 
 // Configure sets specified features
-func (t *Tracker) Configure(features []feature.Feature) error {
+func (t *Tracker) Configure(features []feature.Feature) (settings.UserSettings, error) {
+	us := settings.UserSettings{
+		LongChannelOutput:    true,
+		EnableNewNoteActions: true,
+	}
+
 	for _, feat := range features {
 		switch f := feat.(type) {
 		case feature.IgnoreUnknownEffect:
 			t.ignoreUnknownEffect = f
+			us.IgnoreUnknownEffect = f.Enabled
 		case feature.EnableTracing:
-			var err error
-			t.tracingFile, err = os.Create(f.Filename)
-			if err != nil {
-				return err
+			if err := t.EnableTracing(f.Filename); err != nil {
+				return us, err
 			}
+			us.Tracer = &t.Tracing
 		}
 	}
-	return nil
+	return us, nil
 }

@@ -3,34 +3,40 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // Vibrato defines a vibrato effect
 type Vibrato[TPeriod period.Period] DataEffect // 'H'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e Vibrato[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	cs.UnfreezePlayback()
-	return nil
-}
-
-// Tick is called on every tick
-func (e Vibrato[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
-	mem := cs.GetMemory()
-	x, y := mem.Vibrato(DataEffect(e))
-	if mem.Shared.OldEffectMode {
-		if currentTick != 0 {
-			return doVibrato(cs, currentTick, x, y, 8)
-		}
-	} else {
-		return doVibrato(cs, currentTick, x, y, 4)
-	}
-	return nil
-}
-
 func (e Vibrato[TPeriod]) String() string {
 	return fmt.Sprintf("H%0.2x", DataEffect(e))
+}
+
+func (e Vibrato[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], tick int) error {
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
+
+	x, y := mem.Vibrato(DataEffect(e))
+
+	mul := float32(4)
+	if mem.Shared.OldEffectMode {
+		if tick == 0 {
+			return nil
+		}
+		mul = 8
+	}
+	return withOscillatorDo(ch, m, int(x), float32(y)*mul, machine.OscillatorVibrato, func(value float32) error {
+		return m.SetChannelPeriodDelta(ch, period.Delta(value))
+	})
+}
+
+func (e Vibrato[TPeriod]) TraceData() string {
+	return e.String()
 }

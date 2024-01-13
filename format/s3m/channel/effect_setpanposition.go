@@ -3,23 +3,24 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // SetPanPosition defines a set pan position effect
 type SetPanPosition ChannelCommand // 'S8x'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e SetPanPosition) Start(cs S3MChannel, p playback.Playback) error {
-	cs.ResetRetriggerCount()
-
-	x := uint8(e) & 0xf
-
-	cs.GetActiveState().Pan = s3mPanning.PanningFromS3M(x)
-	return nil
-}
-
 func (e SetPanPosition) String() string {
 	return fmt.Sprintf("S%0.2x", DataEffect(e))
+}
+
+func (e SetPanPosition) Tick(ch index.Channel, m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], tick int) error {
+	return m.SetChannelPan(ch, s3mPanning.Panning(uint8(e)&0xf))
+}
+
+func (e SetPanPosition) TraceData() string {
+	return e.String()
 }

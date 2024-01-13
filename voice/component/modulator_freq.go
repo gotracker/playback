@@ -1,109 +1,60 @@
 package component
 
 import (
+	"fmt"
+
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/voice"
-	"github.com/gotracker/playback/voice/oscillator"
+	"github.com/gotracker/playback/tracing"
 )
 
 // FreqModulator is a frequency (pitch) modulator
 type FreqModulator[TPeriod period.Period] struct {
-	period             TPeriod
-	delta              period.Delta
-	autoVibratoEnabled bool
-	autoVibrato        oscillator.Oscillator
-	autoVibratoDepth   float32
-	autoVibratoRate    int
-	autoVibratoSweep   int // maximum age when oscillator is at max depth (in ticks)
-	autoVibratoAge     int // current age of oscillator (in ticks)
+	settings FreqModulatorSettings[TPeriod]
+	period   TPeriod
+	delta    period.Delta
 }
 
-func (a FreqModulator[TPeriod]) Clone() FreqModulator[TPeriod] {
-	return FreqModulator[TPeriod]{
-		period:             a.period,
-		delta:              a.delta,
-		autoVibratoEnabled: a.autoVibratoEnabled,
-		autoVibrato:        a.autoVibrato.Clone(),
-		autoVibratoDepth:   a.autoVibratoDepth,
-		autoVibratoRate:    a.autoVibratoRate,
-		autoVibratoSweep:   a.autoVibratoSweep,
-		autoVibratoAge:     0,
-	}
+type FreqModulatorSettings[TPeriod period.Period] struct {
+}
+
+func (f *FreqModulator[TPeriod]) Setup(settings FreqModulatorSettings[TPeriod]) {
+	f.settings = settings
+}
+
+func (f FreqModulator[TPeriod]) Clone() FreqModulator[TPeriod] {
+	m := f
+	return m
 }
 
 // SetPeriod sets the current period (before AutoVibrato and Delta calculation)
-func (a *FreqModulator[TPeriod]) SetPeriod(period TPeriod) {
-	a.period = period
+func (f *FreqModulator[TPeriod]) SetPeriod(period TPeriod) {
+	f.period = period
 }
 
 // GetPeriod returns the current period (before AutoVibrato and Delta calculation)
-func (a *FreqModulator[TPeriod]) GetPeriod() TPeriod {
-	return a.period
+func (f *FreqModulator[TPeriod]) GetPeriod() TPeriod {
+	return f.period
 }
 
-// SetDelta sets the current period delta (before AutoVibrato calculation)
-func (a *FreqModulator[TPeriod]) SetDelta(delta period.Delta) {
-	a.delta = delta
+// SetPeriodDelta sets the current period delta (before AutoVibrato calculation)
+func (f *FreqModulator[TPeriod]) SetPeriodDelta(delta period.Delta) {
+	f.delta = delta
 }
 
 // GetDelta returns the current period delta (before AutoVibrato calculation)
-func (a *FreqModulator[TPeriod]) GetDelta() period.Delta {
-	return a.delta
-}
-
-// SetAutoVibratoEnabled sets the status of the AutoVibrato enablement flag
-func (a *FreqModulator[TPeriod]) SetAutoVibratoEnabled(enabled bool) {
-	a.autoVibratoEnabled = enabled
-}
-
-// ConfigureAutoVibrato sets the AutoVibrato oscillator settings
-func (a *FreqModulator[TPeriod]) ConfigureAutoVibrato(av voice.AutoVibrato) {
-	a.autoVibrato = av.Generate()
-	a.autoVibratoRate = int(av.Rate)
-	a.autoVibratoDepth = av.Depth
-}
-
-// ResetAutoVibrato resets the current AutoVibrato
-func (a *FreqModulator[TPeriod]) ResetAutoVibrato() {
-	if a.autoVibrato != nil {
-		a.autoVibrato.HardReset()
-	}
-
-	a.autoVibratoAge = 0
-}
-
-func (a *FreqModulator[TPeriod]) ResetAutoVibratoAndSweep(sweep int) {
-	a.ResetAutoVibrato()
-	a.autoVibratoSweep = sweep
-}
-
-// IsAutoVibratoEnabled returns the status of the AutoVibrato enablement flag
-func (a *FreqModulator[TPeriod]) IsAutoVibratoEnabled() bool {
-	return a.autoVibratoEnabled
+func (f *FreqModulator[TPeriod]) GetPeriodDelta() period.Delta {
+	return f.delta
 }
 
 // GetFinalPeriod returns the current period (after AutoVibrato and Delta calculation)
-func (a *FreqModulator[TPeriod]) GetFinalPeriod() TPeriod {
-	p := period.AddDelta(a.period, a.delta)
-	if a.autoVibratoEnabled {
-		depth := a.autoVibratoDepth
-		if a.autoVibratoSweep > a.autoVibratoAge {
-			depth *= float32(a.autoVibratoAge) / float32(a.autoVibratoSweep)
-		}
-		avDelta := a.autoVibrato.GetWave(depth)
-		d := period.Delta(avDelta)
-		p = period.AddDelta(p, d)
-	}
-
-	return p
+func (f *FreqModulator[TPeriod]) GetFinalPeriod() TPeriod {
+	return period.AddDelta(f.period, f.delta)
 }
 
-// Advance advances the autoVibrato value by 1 tick
-func (a *FreqModulator[TPeriod]) Advance() {
-	if !a.autoVibratoEnabled {
-		return
-	}
-
-	a.autoVibrato.Advance(a.autoVibratoRate)
-	a.autoVibratoAge++
+func (f FreqModulator[TPeriod]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
+	t.TraceChannelWithComment(ch, fmt.Sprintf("period{%v} delta{%v}",
+		f.period,
+		f.delta,
+	), comment)
 }

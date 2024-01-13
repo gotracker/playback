@@ -3,28 +3,35 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
+	"github.com/gotracker/playback/voice/types"
 )
 
 // Tremolo defines a tremolo effect
 type Tremolo[TPeriod period.Period] DataEffect // '7'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e Tremolo[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
+func (e Tremolo[TPeriod]) String() string {
+	return fmt.Sprintf("7%0.2x", DataEffect(e))
 }
 
-// Tick is called on every tick
-func (e Tremolo[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
-	mem := cs.GetMemory()
+func (e Tremolo[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], tick int) error {
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
+
 	x, y := mem.Tremolo(DataEffect(e))
 	// NOTE: JBC - XM updates on tick 0, but MOD does not.
 	// Just have to eat this incompatibility, I guess...
-	return doTremolo(cs, currentTick, x, y, 4)
+	return withOscillatorDo[TPeriod](ch, m, int(x), float32(y)*4, machine.OscillatorTremolo, func(value float32) error {
+		return m.SetChannelVolumeDelta(ch, types.VolumeDelta(value))
+	})
 }
 
-func (e Tremolo[TPeriod]) String() string {
-	return fmt.Sprintf("7%0.2x", DataEffect(e))
+func (e Tremolo[TPeriod]) TraceData() string {
+	return e.String()
 }

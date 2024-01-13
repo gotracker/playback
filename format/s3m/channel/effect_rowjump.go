@@ -3,27 +3,28 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // RowJump defines a row jump effect
 type RowJump ChannelCommand // 'C'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e RowJump) Start(cs S3MChannel, p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
+func (e RowJump) String() string {
+	return fmt.Sprintf("C%0.2x", DataEffect(e))
 }
 
-// Stop is called on the last tick of the row, but after the Tick() function is called
-func (e RowJump) Stop(cs S3MChannel, p playback.Playback, lastTick int) error {
+func (e RowJump) RowEnd(ch index.Channel, m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) error {
 	r := DataEffect(e)
 	rowIdx := index.Row((r >> 4) * 10)
 	rowIdx += index.Row(r & 0xf)
-	return p.SetNextRow(rowIdx)
+
+	return m.SetRow(rowIdx, true)
 }
 
-func (e RowJump) String() string {
-	return fmt.Sprintf("C%0.2x", DataEffect(e))
+func (e RowJump) TraceData() string {
+	return e.String()
 }

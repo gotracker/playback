@@ -1,5 +1,11 @@
 package index
 
+import "errors"
+
+var (
+	ErrNextPattern = errors.New("go to next pattern")
+)
+
 // Pattern is an index into the pattern list
 type Pattern uint8
 

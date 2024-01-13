@@ -3,29 +3,32 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // VolumeSlideUp defines a volume slide up effect
 type VolumeSlideUp[TPeriod period.Period] DataEffect // 'D'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e VolumeSlideUp[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
-
-// Tick is called on every tick
-func (e VolumeSlideUp[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
-	mem := cs.GetMemory()
-	x, _ := mem.VolumeSlide(DataEffect(e))
-
-	return doVolSlide(cs, float32(x), 1.0)
-}
-
 func (e VolumeSlideUp[TPeriod]) String() string {
 	return fmt.Sprintf("D%0.2x", DataEffect(e))
+}
+
+func (e VolumeSlideUp[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], tick int) error {
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
+
+	x, _ := mem.VolumeSlide(DataEffect(e))
+	return m.SlideChannelVolume(ch, 1, float32(x))
+}
+
+func (e VolumeSlideUp[TPeriod]) TraceData() string {
+	return e.String()
 }
 
 //====================================================
@@ -33,14 +36,20 @@ func (e VolumeSlideUp[TPeriod]) String() string {
 // VolChanVolumeSlideUp defines a volume slide up effect (from the volume channel)
 type VolChanVolumeSlideUp[TPeriod period.Period] DataEffect // 'd'
 
-// Tick is called on every tick
-func (e VolChanVolumeSlideUp[TPeriod]) Tick(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback, currentTick int) error {
-	mem := cs.GetMemory()
-	x := mem.VolChanVolumeSlide(DataEffect(e))
-
-	return doVolSlide(cs, float32(x), 1.0)
-}
-
 func (e VolChanVolumeSlideUp[TPeriod]) String() string {
 	return fmt.Sprintf("d%x0", DataEffect(e))
+}
+
+func (e VolChanVolumeSlideUp[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], tick int) error {
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
+
+	x := mem.VolChanVolumeSlide(DataEffect(e))
+	return m.SlideChannelVolume(ch, 1, float32(x))
+}
+
+func (e VolChanVolumeSlideUp[TPeriod]) TraceData() string {
+	return e.String()
 }

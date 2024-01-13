@@ -1,26 +1,33 @@
 package render
 
 import (
+	"github.com/gotracker/gomixing/volume"
+
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/song"
+	channelfilter "github.com/gotracker/playback/voice/filter"
 	"github.com/gotracker/playback/voice/render"
-
-	"github.com/gotracker/gomixing/volume"
 )
 
+type ChannelIntf interface {
+	channelfilter.Applier
+	GetPremixVolume() volume.Volume
+}
+
 // Channel is the important bits to make output to a particular downmixing channel work
-type Channel struct {
+type Channel[TGlobalVolume, TMixingVolume song.Volume, TPanning song.Panning] struct {
 	ChannelNum       int
 	Filter           filter.Filter
 	GetSampleRate    func() period.Frequency
-	SetGlobalVolume  func(volume.Volume)
+	SetGlobalVolume  func(TGlobalVolume) error
 	GetOPL2Chip      func() render.OPL2Chip
-	ChannelVolume    volume.Volume
-	LastGlobalVolume volume.Volume // this is the channel's version of the GlobalVolume
+	ChannelVolume    TMixingVolume
+	LastGlobalVolume TGlobalVolume // this is the channel's version of the GlobalVolume
 }
 
 // ApplyFilter will apply the channel filter, if there is one.
-func (oc *Channel) ApplyFilter(dry volume.Matrix) volume.Matrix {
+func (oc *Channel[TGlobalVolume, TMixingVolume, TPanning]) ApplyFilter(dry volume.Matrix) volume.Matrix {
 	if dry.Channels == 0 {
 		return volume.Matrix{}
 	}
@@ -33,12 +40,12 @@ func (oc *Channel) ApplyFilter(dry volume.Matrix) volume.Matrix {
 }
 
 // GetPremixVolume returns the premix volume of the output channel
-func (oc *Channel) GetPremixVolume() volume.Volume {
-	return oc.LastGlobalVolume * oc.ChannelVolume
+func (oc *Channel[TGlobalVolume, TMixingVolume, TPanning]) GetPremixVolume() volume.Volume {
+	return oc.LastGlobalVolume.ToVolume() * oc.ChannelVolume.ToVolume()
 }
 
 // SetFilterEnvelopeValue updates the filter on the channel with the new envelope value
-func (oc *Channel) SetFilterEnvelopeValue(envVal uint8) {
+func (oc *Channel[TGlobalVolume, TMixingVolume, TPanning]) SetFilterEnvelopeValue(envVal uint8) {
 	if oc.Filter != nil {
 		oc.Filter.UpdateEnv(envVal)
 	}

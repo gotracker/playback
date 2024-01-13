@@ -5,13 +5,14 @@ import (
 
 	"github.com/gotracker/playback"
 	"github.com/gotracker/playback/player/feature"
+	"github.com/gotracker/playback/song"
 )
 
-type ReaderFunc[TSong any] func(r io.Reader, features []feature.Feature) (*TSong, error)
+type ReaderFunc func(r io.Reader, features []feature.Feature) (song.Data, error)
 
-type ManagerFactory[TSong any] func(*TSong) (playback.Playback, error)
+type ManagerFactory func(song.Data) (playback.Playback, error)
 
-func Load[TSong any](r io.Reader, reader ReaderFunc[TSong], factory ManagerFactory[TSong], features []feature.Feature) (playback.Playback, error) {
+func Load(r io.Reader, reader ReaderFunc, factory ManagerFactory, features []feature.Feature) (playback.Playback, error) {
 	song, err := reader(r, features)
 	if err != nil {
 		return nil, err

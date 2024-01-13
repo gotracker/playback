@@ -3,25 +3,25 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
 )
 
 // SetCoarsePanPosition defines a set pan position effect
 type SetCoarsePanPosition[TPeriod period.Period] DataEffect // 'E8x'
 
-// Start triggers on the first tick, but before the Tick() function is called
-func (e SetCoarsePanPosition[TPeriod]) Start(cs playback.Channel[TPeriod, Memory, Data], p playback.Playback) error {
-	cs.ResetRetriggerCount()
-
-	xy := DataEffect(e)
-	y := xy & 0x0F
-
-	cs.GetActiveState().Pan = xmPanning.PanningFromXm(uint8(y) << 4)
-	return nil
-}
-
 func (e SetCoarsePanPosition[TPeriod]) String() string {
 	return fmt.Sprintf("E%0.2x", DataEffect(e))
+}
+
+func (e SetCoarsePanPosition[TPeriod]) RowStart(ch index.Channel, m machine.Machine[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) error {
+	pan := xmPanning.Panning((e & 0x0F) << 4)
+	return m.SetChannelPan(ch, pan)
+}
+
+func (e SetCoarsePanPosition[TPeriod]) TraceData() string {
+	return e.String()
 }
