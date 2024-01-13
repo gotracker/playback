@@ -107,11 +107,11 @@ type Machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	SetChannelPitchEnvelopeEnable(ch index.Channel, enabled bool) error
 
 	// Instructions
+	DoInstructionOrderStart(ch index.Channel, i instruction.Instruction) error
 	DoInstructionRowStart(ch index.Channel, i instruction.Instruction) error
-	DoInstructionPreTick(ch index.Channel, i instruction.Instruction) error
 	DoInstructionTick(ch index.Channel, i instruction.Instruction) error
-	DoInstructionPostTick(ch index.Channel, i instruction.Instruction) error
 	DoInstructionRowEnd(ch index.Channel, i instruction.Instruction) error
+	DoInstructionOrderEnd(ch index.Channel, i instruction.Instruction) error
 }
 
 type machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] struct {

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
-	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/playback"
@@ -18,7 +17,6 @@ import (
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/machine"
 	"github.com/gotracker/playback/player/machine/instruction"
-	"github.com/gotracker/playback/player/op"
 	"github.com/gotracker/playback/song"
 )
 
@@ -177,75 +175,4 @@ func (d Data[TPeriod]) ToInstructions(m machine.Machine[TPeriod, itVolume.FineVo
 	}
 
 	return instructions, nil
-}
-
-func GetTargetsFromData[TPeriod period.Period](out *op.ChannelTargets[TPeriod, itVolume.Volume, itPanning.Panning], d Data[TPeriod], s song.Data, cs playback.Channel[TPeriod, *Memory, Data[TPeriod], itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]) error {
-	var n note.Note = note.EmptyNote{}
-	inst := cs.GetActiveState().Instrument
-	prevInst := inst
-
-	if d.HasNote() || d.HasInstrument() {
-		instID := d.GetInstrument(cs.GetNoteSemitone())
-		n = d.GetNote()
-		var (
-			wantRetrigger    bool
-			wantRetriggerVol bool
-		)
-		if instID.IsEmpty() {
-			// use current
-			inst = prevInst
-			wantRetrigger = true
-		} else if !s.IsValidInstrumentID(instID) {
-			out.TargetInst.Set(nil)
-			n = note.InvalidNote{}
-		} else {
-			var str note.Semitone
-			inst, str = s.GetInstrument(instID)
-			n = note.CoalesceNoteSemitone(n, str)
-			if !note.IsEmpty(n) && inst == nil {
-				inst = prevInst
-			}
-			wantRetrigger = true
-			wantRetriggerVol = true
-		}
-
-		if wantRetrigger {
-			out.TargetInst.Set(inst)
-			out.TargetPos.Set(sampling.Pos{})
-			if inst != nil {
-				if wantRetriggerVol {
-					out.TargetVolume.Set(itVolume.ToItVolume(inst.GetDefaultVolumeGeneric()))
-				}
-				out.NoteAction.Set(note.ActionRetrigger)
-				out.TargetNewNoteAction.Set(inst.GetNewNoteAction())
-			}
-		}
-	}
-
-	if note.IsInvalid(n) {
-		out.TargetPeriod.Reset()
-		out.NoteAction.Set(note.ActionCut)
-	} else if note.IsRelease(n) {
-		out.NoteAction.Set(note.ActionRelease)
-	} else if !note.IsEmpty(n) {
-		if nn, ok := n.(note.Normal); ok {
-			st := note.Semitone(nn)
-			out.TargetStoredSemitone.Set(st)
-			out.NoteCalcST.Set(st)
-		} else {
-			out.NoteAction.Set(note.ActionCut)
-		}
-	}
-
-	if d.HasVolume() {
-		v := d.GetVolume()
-		if v.IsUseInstrumentVol() {
-			if inst != nil {
-				v = itVolume.ToItVolume(inst.GetDefaultVolumeGeneric())
-			}
-		}
-		out.TargetVolume.Set(v)
-	}
-
-	return nil
 }

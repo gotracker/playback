@@ -4,8 +4,7 @@ import (
 	"github.com/gotracker/gomixing/mixing"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/note"
-	playerRender "github.com/gotracker/playback/player/render"
-	"github.com/gotracker/playback/player/state/render"
+	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/voice"
 )
 
@@ -78,7 +77,7 @@ func (o *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Do
 	}
 }
 
-func (p *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Render(centerAheadPan volume.Matrix, details render.Details, rc *playerRender.Channel[TGlobalVolume, TMixingVolume, TPanning]) ([]mixing.Data, error) {
+func (p *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Render(centerAheadPan volume.Matrix, details render.Details, rc *render.Channel[TGlobalVolume, TMixingVolume, TPanning]) ([]mixing.Data, error) {
 	var mixData []mixing.Data
 
 	for _, pn := range p.pn {

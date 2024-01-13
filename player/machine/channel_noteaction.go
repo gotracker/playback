@@ -9,7 +9,7 @@ import (
 	"github.com/gotracker/playback/voice/vol0optimization"
 )
 
-func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doNoteAction(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
+func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNoteAction(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 	na, set := c.target.ActionTick.Get()
 	if !set {
 		// assume continue

@@ -9,6 +9,11 @@ import (
 	"github.com/gotracker/playback/voice"
 )
 
+func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) OrderStart(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
+	c.memory.StartOrder()
+	return nil
+}
+
 func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) RowStart(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 	traceChannelOptionalValueResetWithComment(m, ch, "target.ActionTick", c.target.ActionTick, "channel.RowStart")
 	c.target.ActionTick.Reset()
@@ -102,19 +107,6 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) RowS
 	return nil
 }
 
-func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) PreTick(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
-	for _, i := range c.instructions {
-		if err := m.DoInstructionPreTick(ch, i); err != nil {
-			return err
-		}
-	}
-
-	if err := c.doNoteAction(ch, m); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 	for _, i := range c.instructions {
 		if err := m.DoInstructionTick(ch, i); err != nil {
@@ -122,15 +114,6 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick
 		}
 	}
 
-	return nil
-}
-
-func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) PostTick(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
-	for _, i := range c.instructions {
-		if err := m.DoInstructionPostTick(ch, i); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
@@ -165,5 +148,9 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) RowE
 			return m.SetRow(nr, false)
 		}
 	}
+	return nil
+}
+
+func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) OrderEnd(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 	return nil
 }

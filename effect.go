@@ -186,18 +186,18 @@ func DoEffect[TPeriod period.Period, TMemory song.ChannelMemory, TChannelData so
 
 ////////
 
-func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) RowStart(ch index.Channel, m machine.Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
+func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) OrderStart(ch index.Channel, m machine.Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 	for _, effect := range e.Effects {
-		if err := m.DoInstructionRowStart(ch, effect); err != nil {
+		if err := m.DoInstructionOrderStart(ch, effect); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) PreTick(ch index.Channel, m machine.Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], tick int) error {
+func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) RowStart(ch index.Channel, m machine.Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 	for _, effect := range e.Effects {
-		if err := m.DoInstructionPreTick(ch, effect); err != nil {
+		if err := m.DoInstructionRowStart(ch, effect); err != nil {
 			return err
 		}
 	}
@@ -213,18 +213,18 @@ func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning,
 	return nil
 }
 
-func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) PostTick(ch index.Channel, m machine.Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], tick int) error {
+func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) RowEnd(ch index.Channel, m machine.Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 	for _, effect := range e.Effects {
-		if err := m.DoInstructionPostTick(ch, effect); err != nil {
+		if err := m.DoInstructionRowEnd(ch, effect); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) RowEnd(ch index.Channel, m machine.Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
+func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) OrderEnd(ch index.Channel, m machine.Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 	for _, effect := range e.Effects {
-		if err := m.DoInstructionRowEnd(ch, effect); err != nil {
+		if err := m.DoInstructionOrderEnd(ch, effect); err != nil {
 			return err
 		}
 	}

@@ -67,7 +67,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 			},
 			VolEnv: envelope.Envelope[itVolume.Volume]{
 				Enabled: (inst.Flags & itfile.IMPIOldFlagUseVolumeEnvelope) != 0,
-				Values:  make([]envelope.EnvPoint[itVolume.Volume], 0),
+				Values:  make([]envelope.Point[itVolume.Volume], 0),
 			},
 		}
 
@@ -102,7 +102,7 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 			}
 
 			for i := range inst.VolumeEnvelope {
-				var out envelope.EnvPoint[itVolume.Volume]
+				var out envelope.Point[itVolume.Volume]
 				in1 := inst.VolumeEnvelope[i]
 				vol := itVolume.Volume(uint8(in1))
 				if vol > itVolume.Volume(itVolume.MaxItVolume) {
@@ -265,20 +265,20 @@ func convertEnvelope[T any](outEnv *envelope.Envelope[T], inEnv *itfile.Envelope
 	if enabled := (inEnv.Flags & itfile.EnvelopeFlagSustainLoopOn) != 0; enabled {
 		envSustainMode = loop.ModeNormal
 	}
-	outEnv.Values = make([]envelope.EnvPoint[T], int(inEnv.Count))
+	outEnv.Values = make([]envelope.Point[T], int(inEnv.Count))
 	for i := range outEnv.Values {
 		in1 := inEnv.NodePoints[i]
 		y := convert(in1.Y)
 		if i+1 < len(outEnv.Values) {
 			in2 := inEnv.NodePoints[i+1]
 			ticks := int(in2.Tick) - int(in1.Tick)
-			var out envelope.EnvPoint[T]
+			var out envelope.Point[T]
 			out.Length = ticks
 			out.Pos = int(in1.Tick)
 			out.Y = y
 			outEnv.Values[i] = out
 		} else {
-			outEnv.Values[i] = envelope.EnvPoint[T]{
+			outEnv.Values[i] = envelope.Point[T]{
 				Pos:    int(in1.Tick),
 				Length: math.MaxInt,
 				Y:      y,

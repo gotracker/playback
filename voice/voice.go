@@ -7,8 +7,7 @@ import (
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
-	playerRender "github.com/gotracker/playback/player/render"
-	"github.com/gotracker/playback/player/state/render"
+	render "github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/tracing"
 	"github.com/gotracker/playback/voice/loop"
 	"github.com/gotracker/playback/voice/pcm"
@@ -43,7 +42,7 @@ type RenderVoice[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, T
 	SetPCM(sample pcm.Sample, wholeLoop loop.Loop, sustainLoop loop.Loop, defaultVolume TVolume)
 
 	// Render
-	Render(panningMatrix volume.Matrix, details render.Details, renderChannel *playerRender.Channel[TGlobalVolume, TMixingVolume, TPanning]) (*mixing.Data, error)
+	Render(panningMatrix volume.Matrix, details render.Details, renderChannel *render.Channel[TGlobalVolume, TMixingVolume, TPanning]) (*mixing.Data, error)
 }
 
 type AmpModulator[TGlobalVolume, TMixingVolume, TVolume Volume] interface {

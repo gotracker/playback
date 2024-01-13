@@ -1,6 +1,7 @@
 package machine
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/gotracker/gomixing/mixing"
@@ -11,7 +12,7 @@ import (
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/player/sampler"
-	stateRender "github.com/gotracker/playback/player/state/render"
+	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice"
 )
 
@@ -21,7 +22,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick
 	}
 
 	for i := range m.channels {
-		if err := m.channels[i].PreTick(index.Channel(i), m); err != nil {
+		if err := m.channels[i].DoNoteAction(index.Channel(i), m); err != nil {
 			return nil, err
 		}
 	}
@@ -48,11 +49,14 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick
 		renderRow.RowText = m.rowStringer
 	}
 
-	if err := runTick(&m.ticker, m); err != nil {
-		return nil, err
+	tickErr := runTick(&m.ticker, m)
+	if tickErr != nil {
+		if !errors.Is(tickErr, song.ErrStopSong) {
+			return nil, tickErr
+		}
 	}
 
-	details := stateRender.Details{
+	details := render.Details{
 		Mix:          s.Mixer(),
 		Panmixer:     s.GetPanMixer(),
 		SamplerSpeed: s.GetSamplerSpeed(),
@@ -79,7 +83,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick
 		c.cv.DumpState(ch, m.us.Tracer)
 		data, err := c.cv.Render(centerAheadPan, details, rc)
 		if err != nil {
-			return nil, err
+			return nil, errors.Join(tickErr, err)
 		}
 		c.cv.Advance()
 		if data != nil {
@@ -88,7 +92,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick
 
 		pnData, err := c.pn.Render(centerAheadPan, details, rc)
 		if err != nil {
-			return nil, err
+			return nil, errors.Join(tickErr, err)
 		}
 		if len(pnData) > 0 {
 			mixData = append(mixData, pnData...)
@@ -112,7 +116,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick
 	}
 
 	m.age++
-	return &premix, nil
+	return &premix, tickErr
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onTick() error {
@@ -125,12 +129,16 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onTi
 		c.pn.UpdatePastNotes()
 	}
 
-	for i := range m.channels {
-		c := &m.channels[i]
-		if err := c.PostTick(index.Channel(i), m); err != nil {
+	return nil
+}
+
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onOrderStart() error {
+	for ch := range m.channels {
+		if err := m.channels[ch].OrderStart(index.Channel(ch), m); err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -162,9 +170,18 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onRo
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onRowEnd() error {
-	for i := range m.channels {
-		c := &m.channels[i]
-		if err := c.RowEnd(index.Channel(i), m); err != nil {
+	for ch := range m.channels {
+		if err := m.channels[ch].RowEnd(index.Channel(ch), m); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onOrderEnd() error {
+	for ch := range m.channels {
+		if err := m.channels[ch].OrderEnd(index.Channel(ch), m); err != nil {
 			return err
 		}
 	}

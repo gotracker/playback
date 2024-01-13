@@ -58,25 +58,23 @@ func (t *Tracker) Close() {
 // Update runs processing on the tracker, producing premixed sound data
 func (t *Tracker) Update(deltaTime time.Duration, out chan<- *output.PremixData) error {
 	premix, err := t.Generate(deltaTime)
-	if err != nil {
-		return err
-	}
-
 	if premix != nil && len(premix.Data) > 0 {
 		out <- premix
 	}
 
-	return nil
+	return err
 }
 
 func (t *Tracker) Generate(deltaTime time.Duration) (*output.PremixData, error) {
 	defer t.OutputTraces()
 
-	var premix *output.PremixData
-	var err error
+	var (
+		premix *output.PremixData
+		err    error
+	)
 	if t.M != nil {
 		premix, err = t.M.Tick(t.s)
-		if err != nil {
+		if err != nil && !errors.Is(err, song.ErrStopSong) {
 			return nil, err
 		}
 	}
@@ -100,7 +98,7 @@ func (t *Tracker) Generate(deltaTime time.Duration) (*output.PremixData, error) 
 		premix.MixerVolume /= (mv + 1)
 	}
 
-	return premix, nil
+	return premix, err
 }
 
 // GetRenderChannel returns the output channel for the provided index `ch`

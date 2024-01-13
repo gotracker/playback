@@ -20,19 +20,7 @@ func (e FilterEnvelope) Clone() FilterEnvelope {
 	return m
 }
 
-func (e *FilterEnvelope) calc() uint8 {
-	cur, next, t := e.state.GetCurrentValue(e.keyOn, e.prevKeyOn)
-
-	var y0 filter.PitchFiltValue
-	if cur != nil {
-		y0 = cur.Y
-	}
-
-	var y1 filter.PitchFiltValue
-	if next != nil {
-		y1 = next.Y
-	}
-
-	v := util.Lerp(float64(t), y0, y1)
+func (e *FilterEnvelope) calc(y0, y1 filter.PitchFiltValue, t float64) uint8 {
+	v := util.Lerp(t, y0, y1)
 	return uint8(32 + v)
 }

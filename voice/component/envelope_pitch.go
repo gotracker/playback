@@ -21,18 +21,6 @@ func (e PitchEnvelope) Clone() PitchEnvelope {
 	return m
 }
 
-func (e *PitchEnvelope) calc() period.Delta {
-	cur, next, t := e.state.GetCurrentValue(e.keyOn, e.prevKeyOn)
-
-	var y0 filter.PitchFiltValue
-	if cur != nil {
-		y0 = cur.Y
-	}
-
-	var y1 filter.PitchFiltValue
-	if next != nil {
-		y1 = next.Y
-	}
-
-	return -period.Delta(util.Lerp(float64(t), y0, y1))
+func (e *PitchEnvelope) calc(y0, y1 filter.PitchFiltValue, t float64) period.Delta {
+	return -period.Delta(util.Lerp(t, y0, y1))
 }

@@ -32,14 +32,23 @@ func initTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPan
 	t.next.row.Set(setup.Row)
 	t.next.order.Set(setup.Order)
 
-	row, order, err := advanceRowOrder(t, m)
+	nextRow, nextOrder, err := advanceRowOrder(t, m)
 	if err != nil {
 		return err
 	}
 
-	t.current.row = row
-	t.current.order = order
+	if row, set := nextRow.Get(); set {
+		t.current.row = row
+	}
+	if order, set := nextOrder.Get(); set {
+		t.current.order = order
+	}
+
 	m.us.SetTracingTick(t.current.order, t.current.row, t.current.tick)
+
+	if err := m.onOrderStart(); err != nil {
+		return err
+	}
 
 	return m.onRowStart()
 }
@@ -53,6 +62,7 @@ func runTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	row := t.current.row
 	order := t.current.order
 	rowAdvanced := false
+	orderAdvanced := false
 	done := false
 	if tick >= m.tempo {
 		tick = 0
@@ -64,10 +74,26 @@ func runTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 			return err
 		}
 
-		var err error
-		row, order, err = advanceRowOrder(t, m)
-		if err != nil && !errors.Is(err, song.ErrStopSong) {
-			return err
+		nextRow, nextOrder, err := advanceRowOrder(t, m)
+		if err != nil {
+			if !errors.Is(err, song.ErrStopSong) {
+				return err
+			}
+
+			done = true
+		}
+
+		if r, set := nextRow.Get(); set {
+			row = r
+		}
+
+		if o, set := nextOrder.Get(); set {
+			order = o
+			orderAdvanced = true
+
+			if err := m.onOrderEnd(); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -81,7 +107,14 @@ func runTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 
 	if done {
 		return song.ErrStopSong
-	} else if rowAdvanced {
+	}
+
+	if orderAdvanced {
+		if err := m.onOrderStart(); err != nil {
+			return err
+		}
+	}
+	if rowAdvanced {
 		if err := m.onRowStart(); err != nil {
 			return err
 		}
@@ -89,24 +122,33 @@ func runTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	return nil
 }
 
-func advanceRowOrder[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](t *ticker, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) (index.Row, index.Order, error) {
+func advanceRowOrder[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](t *ticker, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) (optional.Value[index.Row], optional.Value[index.Order], error) {
 	row := int(t.current.row)
+	rowUpdated := false
 	order := int(t.current.order)
+	orderUpdated := false
 
 	desiredRow, rowSet := t.next.row.Get()
 	desiredOrder, orderSet := t.next.order.Get()
 
 	if rowSet && orderSet {
 		row = int(desiredRow)
+		rowUpdated = true
 		order = int(desiredOrder)
+		orderUpdated = true
 	} else if rowSet {
 		row = int(desiredRow)
+		rowUpdated = true
 		order++
+		orderUpdated = true
 	} else if orderSet {
 		order = int(desiredOrder)
+		orderUpdated = true
 		row = 0
+		rowUpdated = true
 	} else {
 		row++
+		rowUpdated = true
 	}
 
 	t.next.row.Reset()
@@ -116,26 +158,47 @@ func advanceRowOrder[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 	orderScanIter := 0
 orderScan:
 	if orderScanIter >= orderScanMax {
-		return index.Row(row), index.Order(order), song.ErrStopSong
+		var (
+			emptyRow   optional.Value[index.Row]
+			emptyOrder optional.Value[index.Order]
+		)
+		return emptyRow, emptyOrder, song.ErrStopSong
 	}
 
 	pat, err := m.songData.GetPatternIntfByOrder(index.Order(order))
 	if err != nil {
 		if errors.Is(err, index.ErrNextPattern) {
 			order++
+			orderUpdated = true
 			orderScanIter++
 			// don't update row here
 			goto orderScan
 		}
-		return index.Row(row), index.Order(order), err
+		var (
+			emptyRow   optional.Value[index.Row]
+			emptyOrder optional.Value[index.Order]
+		)
+		return emptyRow, emptyOrder, err
 	}
 
 	if row >= pat.NumRows() {
 		order++
+		orderUpdated = true
 		orderScanIter++
 		row = 0
+		rowUpdated = true
 		goto orderScan
 	}
 
-	return index.Row(row), index.Order(order), nil
+	var outRow optional.Value[index.Row]
+	if rowUpdated {
+		outRow.Set(index.Row(row))
+	}
+
+	var outOrder optional.Value[index.Order]
+	if orderUpdated {
+		outOrder.Set(index.Order(order))
+	}
+
+	return outRow, outOrder, nil
 }

@@ -5,11 +5,10 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
-	playerRender "github.com/gotracker/playback/player/render"
-	"github.com/gotracker/playback/player/state/render"
+	"github.com/gotracker/playback/player/render"
 )
 
-func (v *s3mVoice) Render(centerAheadPan volume.Matrix, details render.Details, renderChannel *playerRender.Channel[s3mVolume.Volume, s3mVolume.FineVolume, s3mPanning.Panning]) (*mixing.Data, error) {
+func (v *s3mVoice) Render(centerAheadPan volume.Matrix, details render.Details, renderChannel *render.Channel[s3mVolume.Volume, s3mVolume.FineVolume, s3mPanning.Panning]) (*mixing.Data, error) {
 	if v.IsDone() {
 		return nil, nil
 	}

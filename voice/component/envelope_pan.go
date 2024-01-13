@@ -20,18 +20,6 @@ func (e PanEnvelope[TPanning]) Clone() PanEnvelope[TPanning] {
 	return m
 }
 
-func (e *PanEnvelope[TPanning]) calc() TPanning {
-	cur, next, t := e.state.GetCurrentValue(e.keyOn, e.prevKeyOn)
-
-	var y0 TPanning
-	if cur != nil {
-		y0 = cur.Y
-	}
-
-	var y1 TPanning
-	if next != nil {
-		y1 = next.Y
-	}
-
-	return util.Lerp(float64(t), y0, y1)
+func (e *PanEnvelope[TPanning]) calc(y0, y1 TPanning, t float64) TPanning {
+	return util.Lerp(t, y0, y1)
 }

@@ -3,7 +3,6 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
@@ -13,13 +12,6 @@ import (
 
 // Vibrato defines a vibrato effect
 type Vibrato ChannelCommand // 'H'
-
-// Start triggers on the first tick, but before the Tick() function is called
-func (e Vibrato) Start(cs S3MChannel, p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	cs.UnfreezePlayback()
-	return nil
-}
 
 func (e Vibrato) String() string {
 	return fmt.Sprintf("H%0.2x", DataEffect(e))

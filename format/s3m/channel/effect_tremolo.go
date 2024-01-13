@@ -3,7 +3,6 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
@@ -14,12 +13,6 @@ import (
 
 // Tremolo defines a tremolo effect
 type Tremolo ChannelCommand // 'R'
-
-// Start triggers on the first tick, but before the Tick() function is called
-func (e Tremolo) Start(cs S3MChannel, p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
 
 func (e Tremolo) String() string {
 	return fmt.Sprintf("R%0.2x", DataEffect(e))

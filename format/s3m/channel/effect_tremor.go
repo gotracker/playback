@@ -3,7 +3,6 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/playback"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
@@ -13,12 +12,6 @@ import (
 
 // Tremor defines a tremor effect
 type Tremor ChannelCommand // 'I'
-
-// Start triggers on the first tick, but before the Tick() function is called
-func (e Tremor) Start(cs S3MChannel, p playback.Playback) error {
-	cs.ResetRetriggerCount()
-	return nil
-}
 
 func (e Tremor) String() string {
 	return fmt.Sprintf("I%0.2x", DataEffect(e))

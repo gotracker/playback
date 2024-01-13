@@ -1,6 +1,7 @@
 package channel
 
 import (
+	"github.com/gotracker/playback"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/song"
 )
@@ -8,7 +9,7 @@ import (
 type ChannelCommand DataEffect
 
 // Factory produces an effect for the provided channel pattern data
-func EffectFactory(mem *Memory, data song.ChannelData[s3mVolume.Volume]) EffectS3M {
+func EffectFactory(mem *Memory, data song.ChannelData[s3mVolume.Volume]) playback.Effect {
 	if data == nil {
 		return nil
 	}
@@ -85,7 +86,7 @@ func EffectFactory(mem *Memory, data song.ChannelData[s3mVolume.Volume]) EffectS
 	return UnhandledCommand{Command: d.Command, Info: d.Info}
 }
 
-func specialEffect(mem *Memory, data Data) EffectS3M {
+func specialEffect(mem *Memory, data Data) playback.Effect {
 	var cmd = mem.LastNonZero(data.Info)
 	switch cmd >> 4 {
 	case 0x0: // Set Filter on/off
@@ -124,7 +125,7 @@ func specialEffect(mem *Memory, data Data) EffectS3M {
 	return UnhandledCommand{Command: data.Command, Info: data.Info}
 }
 
-func volumeSlideFactory(mem *Memory, cd uint8, ce DataEffect) EffectS3M {
+func volumeSlideFactory(mem *Memory, cd uint8, ce DataEffect) playback.Effect {
 	xy := mem.LastNonZero(ce)
 	x := DataEffect(xy >> 4)
 	y := DataEffect(xy & 0x0F)
@@ -147,7 +148,7 @@ func volumeSlideFactory(mem *Memory, cd uint8, ce DataEffect) EffectS3M {
 	//return UnhandledCommand{Command: cd, Info: xy}
 }
 
-func soundControlEffect(data Data) EffectS3M {
+func soundControlEffect(data Data) playback.Effect {
 	switch data.Info & 0xF {
 	case 0x0: // Surround Off
 	case 0x1: // Surround On

@@ -5,11 +5,10 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
-	playerRender "github.com/gotracker/playback/player/render"
-	"github.com/gotracker/playback/player/state/render"
+	"github.com/gotracker/playback/player/render"
 )
 
-func (v *xmVoice[TPeriod]) Render(centerAheadPan volume.Matrix, details render.Details, renderChannel *playerRender.Channel[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) (*mixing.Data, error) {
+func (v *xmVoice[TPeriod]) Render(centerAheadPan volume.Matrix, details render.Details, renderChannel *render.Channel[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) (*mixing.Data, error) {
 	if v.IsDone() {
 		return nil, nil
 	}

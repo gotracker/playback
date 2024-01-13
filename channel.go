@@ -2,7 +2,6 @@ package playback
 
 import (
 	"github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/player/op"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice"
@@ -56,5 +55,3 @@ type Channel[TPeriod period.Period, TMemory song.ChannelMemory, TChannelData son
 	GetActiveState() *ChannelState[TPeriod, TVolume, TPanning]
 	GetTargetState() *ChannelState[TPeriod, TVolume, TPanning]
 }
-
-type ChannelTargeter[TPeriod period.Period, TMemory song.ChannelMemory, TChannelData song.ChannelData[TVolume], TGlobalVolume, TMixingVolume, TVolume song.Volume, TPanning song.Panning] func(out *op.ChannelTargets[TPeriod, TVolume, TPanning], d TChannelData, s song.Data, cs Channel[TPeriod, TMemory, TChannelData, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error

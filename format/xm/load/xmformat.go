@@ -146,7 +146,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				volEnvSustainMode = loop.ModeNormal
 			}
 
-			ii.VolEnv.Values = make([]envelope.EnvPoint[xmVolume.XmVolume], int(inst.VolPoints))
+			ii.VolEnv.Values = make([]envelope.Point[xmVolume.XmVolume], int(inst.VolPoints))
 			for i := range ii.VolEnv.Values {
 				x1 := int(inst.VolEnv[i].X)
 				y1 := uint8(inst.VolEnv[i].Y)
@@ -172,7 +172,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 				panEnvSustainMode = loop.ModeNormal
 			}
 
-			ii.PanEnv.Values = make([]envelope.EnvPoint[xmPanning.Panning], int(inst.VolPoints))
+			ii.PanEnv.Values = make([]envelope.Point[xmPanning.Panning], int(inst.VolPoints))
 			for i := range ii.PanEnv.Values {
 				x1 := int(inst.PanEnv[i].X)
 				// XM stores pan envelope values in 0..64
