@@ -36,7 +36,15 @@ type PanningFMA[TPanning Panning] interface {
 	FMA(multiplier, add float32) TPanning
 }
 
+type MachineInfo interface {
+	GetNumOrders() int
+	CanOrderLoop() bool
+	GetName() string
+}
+
 type MachineTicker interface {
+	MachineInfo
+
 	Tick(s *sampler.Sampler) (*output.PremixData, error)
 }
 
@@ -125,6 +133,7 @@ type machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	songData song.Data
 	ms       *settings.MachineSettings[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
 	us       settings.UserSettings
+	opl2     render.OPL2Chip
 
 	rowStringer render.RowStringer
 
@@ -161,6 +170,18 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Conv
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) IgnoreUnknownEffect() bool {
 	return m.us.IgnoreUnknownEffect
+}
+
+func (m machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetNumOrders() int {
+	return len(m.songData.GetOrderList())
+}
+
+func (m machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) CanOrderLoop() bool {
+	return m.us.SongLoop.Count != 0
+}
+
+func (m machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetName() string {
+	return m.songData.GetName()
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) getChannel(ch index.Channel) (*channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], error) {

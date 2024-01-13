@@ -7,7 +7,6 @@ import (
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/song"
 	channelfilter "github.com/gotracker/playback/voice/filter"
-	"github.com/gotracker/playback/voice/render"
 )
 
 type ChannelIntf interface {
@@ -20,8 +19,7 @@ type Channel[TGlobalVolume, TMixingVolume song.Volume, TPanning song.Panning] st
 	ChannelNum       int
 	Filter           filter.Filter
 	GetSampleRate    func() period.Frequency
-	SetGlobalVolume  func(TGlobalVolume) error
-	GetOPL2Chip      func() render.OPL2Chip
+	GetOPL2Chip      func() OPL2Chip
 	ChannelVolume    TMixingVolume
 	LastGlobalVolume TGlobalVolume // this is the channel's version of the GlobalVolume
 }

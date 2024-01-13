@@ -7,10 +7,9 @@ import (
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/machine/settings"
-	playerRender "github.com/gotracker/playback/player/render"
+	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice"
-	"github.com/gotracker/playback/voice/render"
 	"github.com/gotracker/playback/voice/types"
 )
 
@@ -98,7 +97,7 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 
 		m.channels = make([]channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], channels)
 		// make at least 64 output channels
-		m.outputChannels = make([]playerRender.Channel[TGlobalVolume, TMixingVolume, TPanning], channels)
+		m.outputChannels = make([]render.Channel[TGlobalVolume, TMixingVolume, TPanning], channels)
 		for i := 0; i < channels; i++ {
 			ch := index.Channel(i)
 			cs := songData.GetChannelSettings(ch)
@@ -107,7 +106,6 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 			rc.ChannelNum = i
 			rc.Filter = nil
 			rc.GetSampleRate = m.getSampleRate
-			rc.SetGlobalVolume = m.SetGlobalVolume
 			rc.GetOPL2Chip = func() render.OPL2Chip {
 				// TODO: add OPL2 back in
 				return nil

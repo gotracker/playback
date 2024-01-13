@@ -33,6 +33,7 @@ var (
 		GetTremoloFactory:   tremoloFactory,
 		GetPanbrelloFactory: panbrelloFactory,
 		VoiceFactory:        amigaVoiceFactory,
+		OPL2Enabled:         false,
 	}
 
 	linearMachine = settings.MachineSettings[period.Linear, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]{
@@ -42,6 +43,7 @@ var (
 		GetTremoloFactory:   tremoloFactory,
 		GetPanbrelloFactory: panbrelloFactory,
 		VoiceFactory:        linearVoiceFactory,
+		OPL2Enabled:         false,
 	}
 )
 

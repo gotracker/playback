@@ -23,4 +23,5 @@ type MachineSettings[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 	GetTremoloFactory   func() (oscillator.Oscillator, error)
 	GetPanbrelloFactory func() (oscillator.Oscillator, error)
 	VoiceFactory        voice.VoiceFactory[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
+	OPL2Enabled         bool
 }

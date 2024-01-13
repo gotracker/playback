@@ -6,8 +6,8 @@ import (
 
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/tracing"
-	"github.com/gotracker/playback/voice/render"
 	"github.com/gotracker/playback/voice/types"
 )
 

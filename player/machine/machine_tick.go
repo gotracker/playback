@@ -56,10 +56,12 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick
 		}
 	}
 
+	sys := m.songData.GetSystem()
+
 	details := render.Details{
 		Mix:          s.Mixer(),
 		Panmixer:     s.GetPanMixer(),
-		SamplerSpeed: s.GetSamplerSpeed(),
+		SamplerSpeed: sys.GetSamplerSpeed(period.Frequency(s.SampleRate)),
 		Samples:      premix.SamplesLen,
 		Duration:     tickDuration,
 	}
@@ -101,6 +103,25 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick
 		if len(mixData) > 0 {
 			premix.Data = append(premix.Data, mixData)
 		}
+	}
+
+	if m.opl2 != nil {
+		rr := [1]mixing.Data{}
+		if err := m.renderOPL2Tick(&rr[0], s.Mixer(), premix.SamplesLen); err != nil {
+			return nil, errors.Join(tickErr, err)
+		}
+		premix.Data = append(premix.Data, rr[:])
+
+		// make room in the mixer for the OPL2 data
+		// effectively, we can do this by calculating the new number (+1) of channels from the mixer volume (channels = reciprocal of mixer volume):
+		//   numChannels = (1/mv) + 1
+		// then by taking the reciprocal of it:
+		//   1 / numChannels
+		// but that ends up being simplified to:
+		//   mv / (mv + 1)
+		// and we get protection from div/0 in the process - provided, of course, that the mixerVolume is not exactly -1...
+		mv := premix.MixerVolume
+		premix.MixerVolume /= (mv + 1)
 	}
 
 	if len(premix.Data) == 0 {

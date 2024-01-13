@@ -14,22 +14,14 @@ type Sampler struct {
 }
 
 // NewSampler returns a new sampler object based on the input settings
-func NewSampler(samplesPerSec, channels int, baseClockRate period.Frequency) *Sampler {
+func NewSampler(samplesPerSec, channels int) *Sampler {
 	s := Sampler{
-		SampleRate:    samplesPerSec,
-		BaseClockRate: baseClockRate,
+		SampleRate: samplesPerSec,
 		mixer: mixing.Mixer{
 			Channels: channels,
 		},
 	}
 	return &s
-}
-
-// GetSamplerSpeed returns the current sampler speed
-// which is a product of the base sampler clock rate and the inverse
-// of the output render rate (the sample rate)
-func (s *Sampler) GetSamplerSpeed() float32 {
-	return float32(s.BaseClockRate) / float32(s.SampleRate)
 }
 
 // Mixer returns a pointer to the current mixer object

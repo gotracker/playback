@@ -25,6 +25,7 @@ var (
 		GetTremoloFactory:   tremoloFactory,
 		GetPanbrelloFactory: panbrelloFactory,
 		VoiceFactory:        amigaVoiceFactory,
+		OPL2Enabled:         true,
 	}
 )
 
