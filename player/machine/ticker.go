@@ -9,28 +9,44 @@ import (
 )
 
 type ticker struct {
-	current struct {
+	settings tickerSettings
+	current  struct {
 		tick  int
 		row   index.Row
 		order index.Order
 	}
 	next struct {
-		row   optional.Value[index.Row]
+		row   optional.Value[tickerRowBreak]
 		order optional.Value[index.Order]
+	}
+	songLoop struct {
+		current int
+		detect  map[index.Order]struct{}
 	}
 }
 
-type tickerSettings struct {
-	Order index.Order
-	Row   index.Row
+type tickerRowBreak struct {
+	row        index.Row
+	breakOrder bool
 }
 
-func initTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](t *ticker, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], setup tickerSettings) error {
+type tickerSettings struct {
+	InitialOrder          index.Order
+	InitialRow            index.Row
+	SongLoopStartingOrder index.Order
+	SongLoopCount         int
+}
+
+func initTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](t *ticker, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], settings tickerSettings) error {
+	t.settings = settings
 	t.current.tick = 0
 	t.current.row = 0
 	t.current.order = 0
-	t.next.row.Set(setup.Row)
-	t.next.order.Set(setup.Order)
+	t.next.row.Set(tickerRowBreak{
+		row:        settings.InitialRow,
+		breakOrder: false,
+	})
+	t.next.order.Set(settings.InitialOrder)
 
 	nextRow, nextOrder, err := advanceRowOrder(t, m)
 	if err != nil {
@@ -43,6 +59,12 @@ func initTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPan
 	if order, set := nextOrder.Get(); set {
 		t.current.order = order
 	}
+
+	if t.songLoop.detect == nil {
+		t.songLoop.detect = make(map[index.Order]struct{})
+	}
+
+	t.songLoop.detect[t.current.order] = struct{}{}
 
 	m.us.SetTracingTick(t.current.order, t.current.row, t.current.tick)
 
@@ -132,15 +154,17 @@ func advanceRowOrder[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 	desiredOrder, orderSet := t.next.order.Get()
 
 	if rowSet && orderSet {
-		row = int(desiredRow)
+		row = int(desiredRow.row)
 		rowUpdated = true
 		order = int(desiredOrder)
 		orderUpdated = true
 	} else if rowSet {
-		row = int(desiredRow)
+		row = int(desiredRow.row)
 		rowUpdated = true
-		order++
-		orderUpdated = true
+		if desiredRow.breakOrder {
+			order++
+			orderUpdated = true
+		}
 	} else if orderSet {
 		order = int(desiredOrder)
 		orderUpdated = true
@@ -158,11 +182,8 @@ func advanceRowOrder[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 	orderScanIter := 0
 orderScan:
 	if orderScanIter >= orderScanMax {
-		var (
-			emptyRow   optional.Value[index.Row]
-			emptyOrder optional.Value[index.Order]
-		)
-		return emptyRow, emptyOrder, song.ErrStopSong
+		order = int(t.settings.SongLoopStartingOrder)
+		orderUpdated = true
 	}
 
 	pat, err := m.songData.GetPatternIntfByOrder(index.Order(order))
@@ -188,6 +209,23 @@ orderScan:
 		row = 0
 		rowUpdated = true
 		goto orderScan
+	}
+
+	if orderUpdated && order != int(t.current.order) && t.settings.SongLoopCount >= 0 {
+		if _, found := t.songLoop.detect[index.Order(order)]; found {
+			t.songLoop.current++
+			if t.settings.SongLoopCount >= 0 && t.songLoop.current >= t.settings.SongLoopCount {
+				var (
+					emptyRow   optional.Value[index.Row]
+					emptyOrder optional.Value[index.Order]
+				)
+				return emptyRow, emptyOrder, song.ErrStopSong
+			}
+
+			// allow and clear
+			t.songLoop.detect = make(map[index.Order]struct{})
+		}
+		t.songLoop.detect[index.Order(order)] = struct{}{}
 	}
 
 	var outRow optional.Value[index.Row]

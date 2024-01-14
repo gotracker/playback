@@ -35,7 +35,9 @@ func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
 		InitialSpeed:     int(fh.InitialSpeed),
 		InitialTempo:     int(fh.InitialTempo),
 		GlobalVolume:     itVolume.FineVolume(fh.GlobalVolume),
+		MixingVolume:     itVolume.FineVolume(fh.MixingVolume),
 		LinearFreqSlides: fh.Flags.IsLinearSlides(),
+		InitialOrder:     0,
 	}
 	switch {
 	case fh.TrackerCompatVersion < 0x200:
@@ -104,6 +106,8 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 	linearFrequencySlides := f.Head.Flags.IsLinearSlides()
 	oldEffectMode := f.Head.Flags.IsOldEffects()
 	efgLinkMode := f.Head.Flags.IsEFGLinking()
+	stereoMode := f.Head.Flags.IsStereo()
+	vol0Enabled := f.Head.Flags.IsVol0Optimizations()
 
 	songData := &layout.Song[TPeriod]{
 		System:            itSystem.ITSystem,
@@ -189,10 +193,12 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 			Enabled:          true,
 			InitialVolume:    itVolume.Volume(itVolume.DefaultItVolume),
 			ChannelVolume:    min(itVolume.FineVolume(f.Head.ChannelVol[chNum]*2), itVolume.MaxItFineVolume),
+			PanEnabled:       stereoMode,
 			InitialPanning:   itPanning.Panning(f.Head.ChannelPan[chNum]),
 			Memory: channel.Memory{
 				Shared: &sharedMem,
 			},
+			Vol0OptEnabled: vol0Enabled,
 		}
 
 		cs.Memory.ResetOscillators()

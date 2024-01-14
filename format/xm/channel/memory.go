@@ -6,7 +6,6 @@ import (
 	"github.com/gotracker/playback/memory"
 	oscillatorImpl "github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/tremor"
-	formatutil "github.com/gotracker/playback/util"
 )
 
 // Memory is the storage object for custom effect/effect values
@@ -33,7 +32,6 @@ type Memory struct {
 	tremorMem         tremor.Tremor
 	vibratoOscillator oscillator.Oscillator
 	tremoloOscillator oscillator.Oscillator
-	patternLoop       formatutil.PatternLoop
 
 	Shared *SharedMemory
 }
@@ -154,11 +152,6 @@ func (m *Memory) Retrigger() {
 	for _, osc := range []oscillator.Oscillator{m.VibratoOscillator(), m.TremoloOscillator()} {
 		osc.Reset()
 	}
-}
-
-// GetPatternLoop returns the pattern loop object from the memory
-func (m *Memory) GetPatternLoop() *formatutil.PatternLoop {
-	return &m.patternLoop
 }
 
 // StartOrder is called when the first order's row at tick 0 is started

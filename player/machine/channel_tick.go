@@ -11,6 +11,7 @@ import (
 
 func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) OrderStart(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 	c.memory.StartOrder()
+	c.resetPatternLoop()
 	return nil
 }
 
@@ -143,11 +144,10 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) RowE
 		c.prev.Period = p
 	}
 
-	if c.patternLoop.Enabled {
-		if nr, ok := c.patternLoop.ContinueLoop(m.ticker.current.row); ok {
-			return m.SetRow(nr, false)
-		}
+	if err := c.doPatternLoop(ch, m); err != nil {
+		return nil
 	}
+
 	return nil
 }
 

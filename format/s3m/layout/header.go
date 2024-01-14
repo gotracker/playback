@@ -12,6 +12,5 @@ type Header struct {
 	InitialTempo int
 	GlobalVolume s3mVolume.Volume
 	MixingVolume s3mVolume.FineVolume
-	Stereo       bool
 	InitialOrder index.Order
 }

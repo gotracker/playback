@@ -131,8 +131,12 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetO
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetRow(r index.Row, breakOrder bool) error {
-	traceOptionalValueChangeWithComment(m, "nextRow", m.ticker.next.row, r, "SetRow")
-	m.ticker.next.row.Set(r)
+	rb := tickerRowBreak{
+		row:        r,
+		breakOrder: breakOrder,
+	}
+	traceOptionalValueChangeWithComment(m, "nextRow", m.ticker.next.row, rb, "SetRow")
+	m.ticker.next.row.Set(rb)
 
 	return nil
 }

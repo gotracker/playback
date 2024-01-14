@@ -63,6 +63,7 @@ func (e *EchoFilter) Clone() Filter {
 		writePos:           e.writePos,
 	}
 	for i := range clone.delay {
+		clone.delay[i].buf = make([]volume.Volume, len(e.delay[i].buf))
 		copy(clone.delay[i].buf, e.delay[i].buf)
 	}
 	return &clone

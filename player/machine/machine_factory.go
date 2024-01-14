@@ -185,8 +185,10 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 		}
 
 		if err := initTick(&m.ticker, &m, tickerSettings{
-			Order: order,
-			Row:   row,
+			InitialOrder:          order,
+			InitialRow:            row,
+			SongLoopStartingOrder: 0,
+			SongLoopCount:         us.SongLoop.Count,
 		}); err != nil {
 			return nil, err
 		}

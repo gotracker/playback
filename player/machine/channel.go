@@ -3,12 +3,12 @@ package machine
 import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/playback/filter"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/memory"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/machine/instruction"
 	"github.com/gotracker/playback/song"
-	"github.com/gotracker/playback/util"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/oscillator"
 	"github.com/heucuva/optional"
@@ -18,7 +18,12 @@ type channel[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	enabled     bool
 	memory      song.ChannelMemory
 	osc         [NumOscillators]oscillator.Oscillator
-	patternLoop util.PatternLoop
+	patternLoop struct {
+		Start index.Row
+		End   index.Row
+		Total int
+		Count int
+	}
 
 	prev struct {
 		Period   TPeriod

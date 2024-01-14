@@ -14,8 +14,10 @@ type ChannelSetting struct {
 	OutputChannelNum int
 	InitialVolume    itVolume.Volume
 	ChannelVolume    itVolume.FineVolume
+	PanEnabled       bool
 	InitialPanning   itPanning.Panning
 	Memory           channel.Memory
+	Vol0OptEnabled   bool
 }
 
 var _ song.ChannelSettings = (*ChannelSetting)(nil)
@@ -37,7 +39,10 @@ func (c ChannelSetting) GetMixingVolume() itVolume.FineVolume {
 }
 
 func (c ChannelSetting) GetInitialPanning() itPanning.Panning {
-	return c.InitialPanning
+	if c.PanEnabled {
+		return c.InitialPanning
+	}
+	return itPanning.DefaultPanning
 }
 
 func (c ChannelSetting) GetMemory() song.ChannelMemory {
@@ -45,7 +50,7 @@ func (c ChannelSetting) GetMemory() song.ChannelMemory {
 }
 
 func (c ChannelSetting) IsPanEnabled() bool {
-	return true
+	return c.PanEnabled
 }
 
 func (c ChannelSetting) GetDefaultFilterName() string {
@@ -58,7 +63,7 @@ func (c ChannelSetting) IsDefaultFilterEnabled() bool {
 
 func (c ChannelSetting) GetVol0OptimizationSettings() vol0optimization.Vol0OptimizationSettings {
 	return vol0optimization.Vol0OptimizationSettings{
-		Enabled:     true,
+		Enabled:     c.Vol0OptEnabled,
 		MaxTicksAt0: 3,
 	}
 }

@@ -41,6 +41,7 @@ func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {
 		GlobalVolume:     xmVolume.DefaultXmVolume,
 		MixingVolume:     xmVolume.DefaultXmMixingVolume,
 		LinearFreqSlides: fh.Flags.IsLinearSlides(),
+		InitialOrder:     0,
 	}
 	return &head, nil
 }

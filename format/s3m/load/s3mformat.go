@@ -34,7 +34,8 @@ func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*layout.Header, error) {
 		InitialSpeed: int(fh.InitialSpeed),
 		InitialTempo: int(fh.InitialTempo),
 		GlobalVolume: s3mVolume.Volume(fh.GlobalVolume),
-		Stereo:       (fh.MixingVolume & 0x80) != 0,
+		MixingVolume: s3mVolume.FineVolume(fh.MixingVolume &^ 0x80),
+		InitialOrder: 0,
 	}
 
 	z := uint32(fh.MixingVolume & 0x7f)
@@ -267,6 +268,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		signedSamples = true
 	}
 
+	stereoMode := (f.Head.MixingVolume & 0x80) != 0
 	st2Vibrato := (f.Head.Flags & 0x0001) != 0
 	st2Tempo := (f.Head.Flags & 0x0002) != 0
 	amigaSlides := (f.Head.Flags & 0x0004) != 0
@@ -330,7 +332,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 			Category:         chn.GetChannelCategory(),
 			OutputChannelNum: int(ch.GetChannel() & 0x07),
 			InitialVolume:    s3mVolume.Volume(s3mfile.DefaultVolume),
-			PanEnabled:       h.Stereo,
+			PanEnabled:       stereoMode,
 			InitialPanning:   s3mPanning.DefaultPanning,
 			Memory: channel.Memory{
 				Shared: &sharedMem,
