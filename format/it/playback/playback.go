@@ -50,20 +50,10 @@ func (m *manager[TPeriod]) Configure(features []feature.Feature) error {
 	}
 	for _, feat := range features {
 		switch f := feat.(type) {
-		case feature.SongLoop:
-			us.SongLoop = f
-		case feature.StartOrderAndRow:
-			us.StartOrderAndRow = f
-		case feature.PlayUntilOrderAndRow:
-			us.PlayUntilOrderAndRow = f
 		case itFeature.LongChannelOutput:
 			us.LongChannelOutput = f.Enabled
 		case itFeature.NewNoteActions:
 			us.EnableNewNoteActions = f.Enabled
-		case feature.SetDefaultTempo:
-			us.StartTempo = f.Tempo
-		case feature.SetDefaultBPM:
-			us.StartBPM = f.BPM
 		}
 	}
 	return m.SetupMachine(m.song, us)

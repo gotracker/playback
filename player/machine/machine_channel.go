@@ -17,6 +17,10 @@ import (
 	"github.com/gotracker/playback/voice/types"
 )
 
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) canPastNote() bool {
+	return len(m.virtualOutputs) > 0
+}
+
 func withChannel[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, fn func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error) error {
 	c, err := m.getChannel(ch)
 	if err != nil {
@@ -509,8 +513,10 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetC
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoChannelPastNoteEffect(ch index.Channel, na note.Action) error {
-	m.doPastNoteAction(ch, na)
-	return nil
+	return withChannel(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
+		c.doPastNoteAction(na)
+		return nil
+	})
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetChannelNewNoteAction(ch index.Channel, na note.Action) error {

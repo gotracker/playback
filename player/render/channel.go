@@ -1,11 +1,14 @@
 package render
 
 import (
+	"github.com/gotracker/gomixing/mixing"
 	"github.com/gotracker/gomixing/volume"
 
 	"github.com/gotracker/playback/filter"
-	"github.com/gotracker/playback/song"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/voice"
 	channelfilter "github.com/gotracker/playback/voice/filter"
+	"github.com/gotracker/playback/voice/mixer"
 )
 
 type ChannelIntf interface {
@@ -14,34 +17,58 @@ type ChannelIntf interface {
 }
 
 // Channel is the important bits to make output to a particular downmixing channel work
-type Channel[TGlobalVolume, TMixingVolume song.Volume, TPanning song.Panning] struct {
-	ChannelNum   int
-	Filter       filter.Filter
+type Channel[TPeriod period.Period] struct {
+	PluginFilter filter.Filter
+	OutputFilter filter.Filter
 	GetOPL2Chip  func() OPL2Chip
 	GlobalVolume volume.Volume // this is the channel's version of the GlobalVolume
+	Voice        voice.Voice
+}
+
+func (c *Channel[TPeriod]) RenderAndAdvance(pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details) ([]mixing.Data, error) {
+	if filt := c.PluginFilter; filt != nil {
+		filt.SetPlaybackRate(details.SampleRate)
+	}
+
+	if filt := c.OutputFilter; filt != nil {
+		filt.SetPlaybackRate(details.SampleRate)
+	}
+
+	data, err := voice.RenderAndAdvance(c.Voice, pc, centerAheadPan, details, c)
+	if err != nil {
+		return nil, err
+	}
+
+	if data == nil {
+		return nil, nil
+	}
+	return []mixing.Data{*data}, nil
+}
+
+func (c *Channel[TPeriod]) StopVoice() {
+	if c.Voice == nil {
+		return
+	}
+
+	c.Voice.Stop()
+	c.Voice = nil
 }
 
 // ApplyFilter will apply the channel filter, if there is one.
-func (oc *Channel[TGlobalVolume, TMixingVolume, TPanning]) ApplyFilter(dry volume.Matrix) volume.Matrix {
+func (c *Channel[TPeriod]) ApplyFilter(dry volume.Matrix) volume.Matrix {
 	if dry.Channels == 0 {
-		return volume.Matrix{}
+		return dry
 	}
-	premix := oc.GetPremixVolume()
-	wet := dry.Apply(premix)
-	if oc.Filter != nil {
-		return oc.Filter.Filter(wet)
+	wet := dry
+	if c.PluginFilter != nil {
+		wet = c.PluginFilter.Filter(wet)
+	}
+	wet = wet.Apply(c.GlobalVolume)
+	if c.OutputFilter != nil {
+		wet = c.OutputFilter.Filter(wet)
 	}
 	return wet
 }
 
-// GetPremixVolume returns the premix volume of the output channel
-func (oc *Channel[TGlobalVolume, TMixingVolume, TPanning]) GetPremixVolume() volume.Volume {
-	return oc.GlobalVolume
-}
-
-// SetFilterEnvelopeValue updates the filter on the channel with the new envelope value
-func (oc *Channel[TGlobalVolume, TMixingVolume, TPanning]) SetFilterEnvelopeValue(envVal uint8) {
-	if oc.Filter != nil {
-		oc.Filter.UpdateEnv(envVal)
-	}
+func (Channel[TPeriod]) SetFilterEnvelopeValue(envVal uint8) {
 }

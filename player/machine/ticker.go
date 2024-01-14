@@ -223,6 +223,9 @@ orderScan:
 			}
 
 			// allow and clear
+			t.songLoop.detect = nil
+		}
+		if t.songLoop.detect == nil {
 			t.songLoop.detect = make(map[index.Order]struct{})
 		}
 		t.songLoop.detect[index.Order(order)] = struct{}{}

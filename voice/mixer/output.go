@@ -1,4 +1,4 @@
-package component
+package mixer
 
 import (
 	"github.com/gotracker/gomixing/sampling"
@@ -6,14 +6,15 @@ import (
 	"github.com/gotracker/playback/voice/filter"
 )
 
-// OutputFilter applies a filter to a sample stream
-type OutputFilter struct {
+// Output applies a filter to a sample stream
+type Output struct {
 	Input  sampling.SampleStream
 	Output filter.Applier
 }
 
 // GetSample operates the filter
-func (o *OutputFilter) GetSample(pos sampling.Pos) volume.Matrix {
+// must be pointer receiver
+func (o *Output) GetSample(pos sampling.Pos) volume.Matrix {
 	dry := o.Input.GetSample(pos)
 	return o.Output.ApplyFilter(dry)
 }

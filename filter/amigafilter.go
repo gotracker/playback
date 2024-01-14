@@ -39,6 +39,11 @@ func (f *AmigaLPF) Clone() Filter {
 }
 
 func (f *AmigaLPF) SetPlaybackRate(playback period.Frequency) {
+	if f.playbackRate == playback {
+		return
+	}
+	f.playbackRate = playback
+
 	freq := 3275.0
 
 	f2 := float64(playback) / 2.0

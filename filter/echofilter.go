@@ -42,9 +42,15 @@ type EchoFilter struct {
 	initialFeedback volume.Volume
 	writePos        int
 	delay           [2]delayInfo // L,R
+	playbackRate    period.Frequency
 }
 
 func (e *EchoFilter) SetPlaybackRate(playback period.Frequency) {
+	if e.playbackRate == playback {
+		return
+	}
+	e.playbackRate = playback
+
 	e.initialFeedback = volume.Volume(math.Sqrt(float64(1.0 - (e.Feedback * e.Feedback))))
 
 	playbackRate := float32(playback)

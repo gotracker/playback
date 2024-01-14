@@ -13,6 +13,8 @@ type PeriodCalculatorIntf interface {
 }
 
 type PeriodCalculator[TPeriod period.Period] interface {
+	PeriodCalculatorIntf
+
 	GetPeriod(note.Note) TPeriod
 	PortaToNote(TPeriod, period.Delta, TPeriod) (TPeriod, error)
 	PortaDown(TPeriod, period.Delta) (TPeriod, error)

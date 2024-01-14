@@ -96,15 +96,19 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 		channels := songData.GetNumChannels()
 
 		m.channels = make([]channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], channels)
-		// make at least 64 output channels
-		m.outputChannels = make([]render.Channel[TGlobalVolume, TMixingVolume, TPanning], channels)
+		m.actualOutputs = make([]render.Channel[TPeriod], channels)
+
+		mpnpc := sys.GetMaxPastNotesPerChannel()
+		if mpnpc > 0 {
+			m.virtualOutputs = make([]render.Channel[TPeriod], channels*mpnpc)
+		}
+
 		for i := 0; i < channels; i++ {
 			ch := index.Channel(i)
 			cs := songData.GetChannelSettings(ch)
 
-			rc := &m.outputChannels[ch]
-			rc.ChannelNum = i
-			rc.Filter = nil
+			rc := &m.actualOutputs[ch]
+			rc.OutputFilter = nil
 
 			if cs.IsDefaultFilterEnabled() {
 				name := cs.GetDefaultFilterName()
@@ -118,7 +122,7 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 					return nil, err
 				}
 
-				rc.Filter = filt
+				rc.OutputFilter = filt
 			}
 			rc.GetOPL2Chip = func() render.OPL2Chip {
 				return m.opl2
@@ -151,6 +155,7 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 				Vol0Optimization: cs.GetVol0OptimizationSettings(),
 			})
 			c.memory = cs.GetMemory()
+			rc.Voice = c.cv
 			c.target.ActionTick.Reset()
 
 			c.nna = note.ActionCut

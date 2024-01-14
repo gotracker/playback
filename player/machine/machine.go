@@ -126,7 +126,7 @@ type machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	globals[TGlobalVolume]
 	singleRow
 	channels  []channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
-	pastNotes []index.Channel
+	pastNotes []pastNote[TPeriod]
 
 	ticker ticker
 	age    int
@@ -136,8 +136,11 @@ type machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	us       settings.UserSettings
 	opl2     render.OPL2Chip
 
-	rowStringer    render.RowStringer
-	outputChannels []render.Channel[TGlobalVolume, TMixingVolume, TPanning]
+	rowStringer render.RowStringer
+	// 1:1 with channels
+	actualOutputs []render.Channel[TPeriod]
+	// extra channels for pastNotes playback
+	virtualOutputs []render.Channel[TPeriod]
 }
 
 func NewMachine(songData song.Data, us settings.UserSettings) (MachineTicker, error) {

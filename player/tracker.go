@@ -116,6 +116,16 @@ func (t *Tracker) Configure(features []feature.Feature) (settings.UserSettings, 
 
 	for _, feat := range features {
 		switch f := feat.(type) {
+		case feature.SongLoop:
+			us.SongLoop = f
+		case feature.StartOrderAndRow:
+			us.StartOrderAndRow = f
+		case feature.PlayUntilOrderAndRow:
+			us.PlayUntilOrderAndRow = f
+		case feature.SetDefaultTempo:
+			us.StartTempo = f.Tempo
+		case feature.SetDefaultBPM:
+			us.StartBPM = f.BPM
 		case feature.IgnoreUnknownEffect:
 			us.IgnoreUnknownEffect = f.Enabled
 		case feature.EnableTracing:

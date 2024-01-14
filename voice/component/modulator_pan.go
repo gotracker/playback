@@ -3,6 +3,7 @@ package component
 import (
 	"fmt"
 
+	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/tracing"
 	"github.com/gotracker/playback/voice/types"
@@ -17,7 +18,7 @@ type PanModulator[TPanning types.Panning] struct {
 	keyed struct {
 		delta types.PanDelta
 	}
-	final TPanning
+	final panning.Position
 }
 
 type PanModulatorSettings[TPanning types.Panning] struct {
@@ -68,7 +69,7 @@ func (p PanModulator[TPanning]) GetPanDelta() types.PanDelta {
 }
 
 // GetFinalPan returns the current panning
-func (p PanModulator[TPanning]) GetFinalPan() TPanning {
+func (p PanModulator[TPanning]) GetFinalPan() panning.Position {
 	return p.final
 }
 
@@ -80,5 +81,5 @@ func (p PanModulator[TPanning]) DumpState(ch index.Channel, t tracing.Tracer, co
 }
 
 func (p *PanModulator[TPanning]) updateFinal() {
-	p.final = types.AddPanningDelta(p.unkeyed.pan, p.keyed.delta)
+	p.final = types.AddPanningDelta(p.unkeyed.pan, p.keyed.delta).ToPosition()
 }

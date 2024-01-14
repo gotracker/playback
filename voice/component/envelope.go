@@ -206,7 +206,7 @@ func (e *baseEnvelope[TIn, TOut]) stateAdvance(keyOn bool) bool {
 	}
 
 	e.keyed.pos++
-	curTick, _ := loop.CalcLoopPos(e.settings.Envelope.Loop, e.settings.Envelope.Sustain, e.keyed.pos, e.settings.Envelope.Length, keyOn)
+	curTick, looped := loop.CalcLoopPos(e.settings.Envelope.Loop, e.settings.Envelope.Sustain, e.keyed.pos, e.settings.Envelope.Length, keyOn)
 
 	found := false
 	for _, i := range e.settings.Envelope.Values {
@@ -218,6 +218,11 @@ func (e *baseEnvelope[TIn, TOut]) stateAdvance(keyOn bool) bool {
 
 	if !found {
 		e.keyed.done = true
+		return true
+	}
+
+	if !keyOn && !looped && curTick >= e.settings.Length {
+		e.keyed.done = false
 		return true
 	}
 

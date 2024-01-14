@@ -5,6 +5,7 @@ import (
 
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice"
 )
@@ -103,6 +104,13 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) RowS
 	if na, set := info.ActionTick.Get(); set {
 		traceChannelOptionalValueChangeWithComment(m, ch, "target.ActionTick", c.target.ActionTick, na, "channel.RowStart")
 		c.target.ActionTick.Set(na)
+	}
+
+	if c.target.Pos.IsSet() && !c.target.ActionTick.IsSet() {
+		c.target.ActionTick.Set(ActionTick{
+			Action: note.ActionRetrigger,
+			Tick:   0,
+		})
 	}
 
 	return nil

@@ -40,7 +40,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onTi
 			return err
 		}
 
-		c.pn.UpdatePastNotes()
+		c.updatePastNotes()
 	}
 
 	return nil

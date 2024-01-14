@@ -1,6 +1,7 @@
 package voice
 
 import (
+	"github.com/gotracker/gomixing/panning"
 	itPanning "github.com/gotracker/playback/format/it/panning"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/voice/types"
@@ -40,6 +41,6 @@ func (v itVoice[TPeriod]) IsPitchPanEnabled() bool {
 	return v.pitchPan.IsPitchPanEnabled()
 }
 
-func (v itVoice[TPeriod]) GetFinalPan() itPanning.Panning {
+func (v itVoice[TPeriod]) GetFinalPan() panning.Position {
 	return v.finalPan
 }

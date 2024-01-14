@@ -42,6 +42,10 @@ func (f FreqModulator[TPeriod]) Clone() FreqModulator[TPeriod] {
 
 // SetPeriod sets the current period (before AutoVibrato and Delta calculation)
 func (f *FreqModulator[TPeriod]) SetPeriod(period TPeriod) {
+	if period.IsInvalid() {
+		return
+	}
+
 	f.unkeyed.period = period
 	f.updateFinal()
 }

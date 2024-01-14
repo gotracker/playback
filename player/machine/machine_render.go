@@ -12,7 +12,7 @@ import (
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/player/sampler"
 	"github.com/gotracker/playback/system"
-	"github.com/gotracker/playback/voice"
+	"github.com/gotracker/playback/voice/mixer"
 )
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) render(s *sampler.Sampler) (*output.PremixData, error) {
@@ -40,9 +40,10 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 
 	sys := m.songData.GetSystem()
 
-	details := render.Details{
+	details := mixer.Details{
 		Mix:          s.Mixer(),
 		Panmixer:     s.GetPanMixer(),
+		SampleRate:   system.Frequency(s.SampleRate),
 		SamplerSpeed: sys.GetSamplerSpeed(period.Frequency(s.SampleRate)),
 		Samples:      premix.SamplesLen,
 		Duration:     tickDuration,
@@ -50,46 +51,45 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 
 	centerAheadPan := details.Panmixer.GetMixingMatrix(panning.CenterAhead)
 
-	for i := range m.channels {
-		ch := index.Channel(i)
-		c := &m.channels[ch]
-		var mixData []mixing.Data
+	var mixData []mixing.Data
+	for i := range m.actualOutputs {
+		rc := &m.actualOutputs[i]
 
-		if pos, set := c.target.Pos.Get(); set {
-			if samp, ok := c.cv.(voice.Sampler); ok {
-				samp.SetPos(pos)
-			}
-			c.target.Pos.Reset()
+		rc.GlobalVolume = m.gv.ToVolume()
+
+		rc.Voice.DumpState(index.Channel(i), m.us.Tracer)
+		data, err := rc.RenderAndAdvance(m.ms.PeriodConverter, centerAheadPan, details)
+		if err != nil {
+			return nil, err
 		}
 
-		rc := &m.outputChannels[ch]
-		if filt := rc.Filter; filt != nil {
-			filt.SetPlaybackRate(system.Frequency(s.SampleRate))
+		if data != nil {
+			mixData = append(mixData, data...)
+		}
+	}
+
+	for i := range m.virtualOutputs {
+		rc := &m.virtualOutputs[i]
+
+		if rc.Voice == nil {
+			continue
 		}
 
 		rc.GlobalVolume = m.gv.ToVolume()
 
-		c.cv.DumpState(ch, m.us.Tracer)
-		data, err := c.cv.Render(centerAheadPan, details, rc)
+		//rc.Voice.DumpState(index.Channel(i), m.us.Tracer)
+		data, err := rc.RenderAndAdvance(m.ms.PeriodConverter, centerAheadPan, details)
 		if err != nil {
 			return nil, err
 		}
-		c.cv.Advance()
+
 		if data != nil {
-			mixData = append(mixData, *data)
+			mixData = append(mixData, data...)
 		}
+	}
 
-		pnData, err := c.pn.RenderAndAdvance(centerAheadPan, details, rc)
-		if err != nil {
-			return nil, err
-		}
-		if len(pnData) > 0 {
-			mixData = append(mixData, pnData...)
-		}
-
-		if len(mixData) > 0 {
-			premix.Data = append(premix.Data, mixData)
-		}
+	if len(mixData) > 0 {
+		premix.Data = append(premix.Data, mixData)
 	}
 
 	if m.opl2 != nil {

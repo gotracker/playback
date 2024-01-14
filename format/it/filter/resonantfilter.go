@@ -28,9 +28,10 @@ type ResonantFilter struct {
 	highpass            bool
 	extendedFilterRange bool
 
-	f2  float64
-	fr  float64
-	efr float64
+	f2           float64
+	fr           float64
+	efr          float64
+	playbackRate period.Frequency
 }
 
 // NewResonantFilter creates a new resonant filter with the provided cutoff and resonance values
@@ -53,6 +54,11 @@ func NewResonantFilter(cutoff uint8, resonance uint8, extendedFilterRange bool, 
 }
 
 func (f *ResonantFilter) SetPlaybackRate(playback period.Frequency) {
+	if f.playbackRate == playback {
+		return
+	}
+	f.playbackRate = playback
+
 	f.f2 = float64(playback) / 2.0
 
 	f.fr = float64(playback)
@@ -162,7 +168,7 @@ func (f *ResonantFilter) recalculate(v uint8) {
 	} else if freq > 20000 {
 		freq = 20000
 	}
-	if freq > f.f2 {
+	if freq > f.f2 && f.f2 >= 120.0 {
 		freq = f.f2
 	}
 
@@ -176,8 +182,13 @@ func (f *ResonantFilter) recalculate(v uint8) {
 		if d > 2.0 {
 			d = 2.0
 		}
-		d = (2.0*dampingFactor - d) / r
-		e = 1.0 / (r * r)
+		if r != 0 {
+			d = (2.0*dampingFactor - d) / r
+			e = 1.0 / (r * r)
+		} else {
+			d = 0
+			e = 0
+		}
 	} else {
 		r := f.fr / fc
 
@@ -196,6 +207,16 @@ func (f *ResonantFilter) recalculate(v uint8) {
 			// prevent silence at extremely low cutoff and very high sampling rate
 			a = 1.0
 		}
+	}
+
+	if math.IsNaN(a) {
+		panic("a")
+	}
+	if math.IsNaN(b) {
+		panic("b")
+	}
+	if math.IsNaN(c) {
+		panic("c")
 	}
 
 	f.a0 = volume.Volume(a)

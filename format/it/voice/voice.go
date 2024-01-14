@@ -1,11 +1,11 @@
 package voice
 
 import (
+	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 	itPanning "github.com/gotracker/playback/format/it/panning"
 	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/player/machine/settings"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/component"
 	"github.com/gotracker/playback/voice/fadeout"
@@ -18,7 +18,6 @@ type Period interface {
 }
 
 type itVoice[TPeriod Period] struct {
-	ms     *settings.MachineSettings[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]
 	config voice.InstrumentConfig[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]
 
 	pitchAndFilterEnvShared bool
@@ -43,7 +42,7 @@ type itVoice[TPeriod Period] struct {
 	// finals
 	finalVol    volume.Volume
 	finalPeriod TPeriod
-	finalPan    itPanning.Panning
+	finalPan    panning.Position
 }
 
 var (
@@ -59,9 +58,8 @@ var (
 	_ voice.FilterEnvelope                                                            = (*itVoice[period.Linear])(nil)
 )
 
-func New[TPeriod Period](config voice.VoiceConfig[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], ms *settings.MachineSettings[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]) voice.RenderVoice[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning] {
+func New[TPeriod Period](config voice.VoiceConfig[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]) voice.RenderVoice[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning] {
 	v := &itVoice[TPeriod]{
-		ms:                      ms,
 		pitchAndFilterEnvShared: true,
 	}
 
@@ -263,7 +261,6 @@ func (v *itVoice[TPeriod]) Advance() {
 
 func (v *itVoice[TPeriod]) Clone() voice.Voice {
 	vv := itVoice[TPeriod]{
-		ms:                      v.ms,
 		config:                  v.config,
 		pitchAndFilterEnvShared: v.pitchAndFilterEnvShared,
 		filterEnvActive:         v.filterEnvActive,
@@ -298,10 +295,6 @@ func (v *itVoice[TPeriod]) Clone() voice.Voice {
 
 	if v.config.VoiceFilter != nil {
 		vv.config.VoiceFilter = v.config.VoiceFilter.Clone()
-	}
-
-	if v.config.PluginFilter != nil {
-		vv.config.PluginFilter = v.config.PluginFilter.Clone()
 	}
 
 	return &vv
@@ -348,6 +341,6 @@ func (v *itVoice[TPeriod]) updateFinal() {
 		v.finalPan = v.pan.GetFinalPan()
 	} else {
 		envPan := v.panEnv.GetCurrentValue()
-		v.finalPan = v.pitchPan.GetSeparatedPan(envPan)
+		v.finalPan = v.pitchPan.GetSeparatedPan(envPan).ToPosition()
 	}
 }

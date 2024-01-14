@@ -1,13 +1,12 @@
 package voice
 
 import (
-	"github.com/gotracker/gomixing/mixing"
+	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
-	render "github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/tracing"
 	"github.com/gotracker/playback/voice/loop"
 	"github.com/gotracker/playback/voice/pcm"
@@ -32,6 +31,7 @@ type Voice interface {
 
 	// General Parameters
 	IsDone() bool
+	GetSampleRate() period.Frequency
 }
 
 type RenderVoice[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] interface {
@@ -40,9 +40,6 @@ type RenderVoice[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, T
 	// Configuration
 	Setup(config InstrumentConfig[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning])
 	SetPCM(sample pcm.Sample, wholeLoop loop.Loop, sustainLoop loop.Loop, mixVolume TMixingVolume, defaultVolume TVolume)
-
-	// Render
-	Render(panningMatrix volume.Matrix, details render.Details, renderChannel *render.Channel[TGlobalVolume, TMixingVolume, TPanning]) (*mixing.Data, error)
 }
 
 type AmpModulator[TGlobalVolume, TMixingVolume, TVolume Volume] interface {
@@ -78,13 +75,27 @@ type Sampler interface {
 	GetPos() (sampling.Pos, error)
 }
 
+type RenderSampler[TPeriod Period] interface {
+	Voice
+	sampling.SampleStream
+
+	IsActive() bool
+
+	SetPos(pos sampling.Pos) error
+	GetPos() (sampling.Pos, error)
+
+	GetFinalPeriod() TPeriod
+	GetFinalVolume() volume.Volume
+	GetFinalPan() panning.Position
+}
+
 type PanModulator[TPanning Panning] interface {
 	// Pan Parameters
 	GetPan() TPanning
 	SetPan(pan TPanning)
 	GetPanDelta() types.PanDelta
 	SetPanDelta(d types.PanDelta)
-	GetFinalPan() TPanning
+	GetFinalPan() panning.Position
 }
 
 type PitchPanModulator[TPanning Panning] interface {

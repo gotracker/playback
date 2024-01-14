@@ -4,7 +4,6 @@ import (
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
 	"github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/player/machine/settings"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/component"
 	"github.com/gotracker/playback/voice/fadeout"
@@ -17,7 +16,6 @@ type Period interface {
 }
 
 type xmVoice[TPeriod Period] struct {
-	ms     *settings.MachineSettings[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
 	config voice.InstrumentConfig[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
 
 	fadeoutMode fadeout.Mode
@@ -45,10 +43,8 @@ var (
 	_ voice.PanEnvelope[xmPanning.Panning]                                          = (*xmVoice[period.Linear])(nil)
 )
 
-func New[TPeriod Period](config voice.VoiceConfig[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], ms *settings.MachineSettings[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) voice.RenderVoice[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning] {
-	v := &xmVoice[TPeriod]{
-		ms: ms,
-	}
+func New[TPeriod Period](config voice.VoiceConfig[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) voice.RenderVoice[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning] {
+	v := &xmVoice[TPeriod]{}
 
 	v.KeyModulator.Setup(component.KeyModulatorSettings{
 		Attack:          v.doAttack,
@@ -200,7 +196,6 @@ func (v *xmVoice[TPeriod]) Advance() {
 
 func (v *xmVoice[TPeriod]) Clone() voice.Voice {
 	vv := xmVoice[TPeriod]{
-		ms:          v.ms,
 		config:      v.config,
 		fadeoutMode: v.fadeoutMode,
 		amp:         v.amp.Clone(),
@@ -230,10 +225,6 @@ func (v *xmVoice[TPeriod]) Clone() voice.Voice {
 
 	if v.config.VoiceFilter != nil {
 		vv.config.VoiceFilter = v.config.VoiceFilter.Clone()
-	}
-
-	if v.config.PluginFilter != nil {
-		vv.config.PluginFilter = v.config.PluginFilter.Clone()
 	}
 
 	return &vv

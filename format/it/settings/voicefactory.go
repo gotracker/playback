@@ -11,7 +11,7 @@ import (
 type voiceFactory[TPeriod period.Period] struct{}
 
 func (voiceFactory[TPeriod]) NewVoice(config voice.VoiceConfig[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]) voice.RenderVoice[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning] {
-	return itVoice.New(config, GetMachineSettings[TPeriod]())
+	return itVoice.New(config)
 }
 
 var (

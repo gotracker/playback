@@ -27,17 +27,20 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNo
 	c.target.ActionTick.Reset()
 
 	// perform new note action
-	if m.canPastNote() {
-		pn := c.cv.Clone()
+	if na.Action != note.ActionContinue && m.canPastNote() {
+		var pn voice.Voice
 		switch c.nna {
 		case note.ActionCut:
-			pn.Stop()
+			c.cv.Stop()
 		case note.ActionRelease:
+			pn = c.cv.Clone()
 			pn.Release()
 		case note.ActionFadeout:
+			pn = c.cv.Clone()
 			pn.Release()
 			pn.Fadeout()
 		case note.ActionRetrigger:
+			pn = c.cv.Clone()
 			pn.Release()
 			pn.Attack()
 
@@ -47,16 +50,15 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNo
 			// nothing
 		}
 
-		m.addPastNote(ch, pn.(voice.RenderVoice[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]))
-	}
-
-	if pitchPanMod, ok := c.cv.(voice.PitchPanModulator[TPanning]); ok {
-		pitchPanMod.SetPitchPanNote(c.prev.Semitone.Coalesce(0))
+		if pn != nil {
+			c.addPastNote(m, pn.(voice.RenderVoice[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]))
+		}
 	}
 
 	switch na.Action {
 	case note.ActionCut:
 		c.cv.Stop()
+		return nil
 
 	case note.ActionRelease:
 		c.cv.Release()
@@ -77,13 +79,7 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNo
 			o.Reset()
 		}
 
-		if ampMod, ok := c.cv.(voice.AmpModulator[TGlobalVolume, TMixingVolume, TVolume]); ok {
-			ampMod.SetVolumeDelta(0)
-		}
-
-		if freqMod, ok := c.cv.(voice.FreqModulator[TPeriod]); ok {
-			freqMod.SetPeriodDelta(0)
-		}
+		c.cv.Reset()
 
 		c.cv.Attack()
 
@@ -92,6 +88,18 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNo
 	default:
 		// nothing
 	}
+
+	if pitchPanMod, ok := c.cv.(voice.PitchPanModulator[TPanning]); ok {
+		pitchPanMod.SetPitchPanNote(c.prev.Semitone.Coalesce(0))
+	}
+
+	if pos, set := c.target.Pos.Get(); set {
+		if samp, ok := c.cv.(voice.Sampler); ok {
+			samp.SetPos(pos)
+		}
+		c.target.Pos.Reset()
+	}
+
 	return nil
 }
 
@@ -116,8 +124,6 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSe
 			default:
 				panic("unhandled instrument kind")
 			}
-		} else {
-			c.cv.Reset()
 		}
 	} else {
 		c.cv.Stop()
@@ -126,17 +132,18 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSe
 }
 
 func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSetupPCM(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], inst *instrument.Instrument[TMixingVolume, TVolume, TPanning], d *instrument.PCM[TMixingVolume, TVolume, TPanning], outputRate system.Frequency) error {
-	var (
-		voiceFilter  filter.Filter
-		pluginFilter filter.Filter
-	)
+	var voiceFilter filter.Filter
 	if factory := inst.GetFilterFactory(); factory != nil {
 		voiceFilter = factory(inst.SampleRate)
 		voiceFilter.SetPlaybackRate(outputRate)
 	}
+
+	rc := &m.actualOutputs[ch]
 	if factory := inst.GetPluginFilterFactory(); factory != nil {
-		pluginFilter = factory(inst.SampleRate)
-		pluginFilter.SetPlaybackRate(outputRate)
+		rc.PluginFilter = factory(inst.SampleRate)
+		rc.PluginFilter.SetPlaybackRate(outputRate)
+	} else {
+		rc.PluginFilter = nil
 	}
 
 	c.cv.Setup(voice.InstrumentConfig[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]{
@@ -144,7 +151,6 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSe
 		AutoVibrato:          inst.GetAutoVibrato(),
 		Data:                 d,
 		VoiceFilter:          voiceFilter,
-		PluginFilter:         pluginFilter,
 		FadeOut:              d.FadeOut,
 		PitchPan:             d.PitchPan,
 		VolEnv:               d.VolEnv,

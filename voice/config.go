@@ -22,7 +22,6 @@ type InstrumentConfig[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volu
 	AutoVibrato          autovibrato.AutoVibratoSettings
 	Data                 instrument.Data
 	VoiceFilter          filter.Filter
-	PluginFilter         filter.Filter
 	FadeOut              fadeout.Settings
 	PitchPan             instrument.PitchPan
 	VolEnv               envelope.Envelope[TVolume]

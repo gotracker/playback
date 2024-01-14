@@ -4,7 +4,6 @@ import (
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/player/machine/settings"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/component"
 	"github.com/gotracker/playback/voice/loop"
@@ -16,7 +15,6 @@ type Period interface {
 }
 
 type s3mVoice struct {
-	ms     *settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
 	config voice.InstrumentConfig[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
 
 	component.KeyModulator
@@ -35,10 +33,8 @@ var (
 	_ voice.PanModulator[s3mPanning.Panning]                                       = (*s3mVoice)(nil)
 )
 
-func New(config voice.VoiceConfig[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], ms *settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) voice.RenderVoice[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning] {
-	v := &s3mVoice{
-		ms: ms,
-	}
+func New(config voice.VoiceConfig[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) voice.RenderVoice[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning] {
+	v := &s3mVoice{}
 
 	v.KeyModulator.Setup(component.KeyModulatorSettings{
 		Attack:          v.doAttack,
@@ -53,6 +49,8 @@ func New(config voice.VoiceConfig[period.Amiga, s3mVolume.Volume, s3mVolume.Fine
 		DefaultMixingVolume: config.InitialMixing,
 		DefaultVolume:       config.InitialVolume,
 	})
+
+	v.FreqModulator.Setup(component.FreqModulatorSettings[period.Amiga]{})
 
 	v.PanModulator.Setup(component.PanModulatorSettings[s3mPanning.Panning]{
 		Enabled:    config.PanEnabled,
@@ -95,12 +93,14 @@ func (v *s3mVoice) doDeferredRelease() {
 func (v *s3mVoice) Setup(config voice.InstrumentConfig[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) {
 	v.config = config
 
-	v.FreqModulator.Setup(component.FreqModulatorSettings[period.Amiga]{})
 	v.KeyModulator.Release()
 	v.Reset()
 }
 
 func (v *s3mVoice) Reset() {
+	v.AmpModulator.Reset()
+	v.FreqModulator.Reset()
+	v.PanModulator.Reset()
 	v.vol0Opt.Reset()
 }
 
@@ -126,7 +126,6 @@ func (v *s3mVoice) Advance() {
 
 func (v *s3mVoice) Clone() voice.Voice {
 	vv := s3mVoice{
-		ms:            v.ms,
 		config:        v.config,
 		AmpModulator:  v.AmpModulator.Clone(),
 		FreqModulator: v.FreqModulator.Clone(),
@@ -148,10 +147,6 @@ func (v *s3mVoice) Clone() voice.Voice {
 
 	if v.config.VoiceFilter != nil {
 		vv.config.VoiceFilter = v.config.VoiceFilter.Clone()
-	}
-
-	if v.config.PluginFilter != nil {
-		vv.config.PluginFilter = v.config.PluginFilter.Clone()
 	}
 
 	return &vv
