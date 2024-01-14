@@ -14,46 +14,29 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) canP
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) addPastNote(ch index.Channel, pn voice.RenderVoice[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) {
 	type pastNoteAges struct {
-		i   int
-		age int
+		holder int
+		entry  pastNote[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
 	}
 
 	// first pass, try to add it to the channel listed
-	{
+	maxNotes := len(m.channels) * m.songData.GetSystem().GetMaxPastNotesPerChannel()
+	if len(m.pastNotes) < maxNotes {
 		c := &m.channels[ch]
 
-		if c.pn.CanAddPastNote() {
-			c.pn.AddPastNote(ch, pn, m.age)
-			return
-		}
+		m.pastNotes = append(m.pastNotes, ch)
+		c.pn.AddPastNote(ch, pn, m.age)
+		return
 	}
 
 	ages := make([]pastNoteAges, 0, len(m.outputChannels))
-	// second pass, try to bump the oldest listed for the channel
+	// second pass, try to bump the oldest
 	for i := range m.channels {
 		c := &m.channels[i]
 
-		if c.pn.HasPastNoteForChannel(ch) {
+		if oldest := c.pn.GetOldest(); oldest != nil {
 			ages = append(ages, pastNoteAges{
-				i:   i,
-				age: c.pn.GetAge(),
-			})
-		}
-	}
-
-	// optional third pass, if no entries with existing past notes, then find any possible
-	if len(ages) == 0 {
-		for i := range m.channels {
-			c := &m.channels[i]
-
-			if c.pn.CanAddPastNote() {
-				c.pn.AddPastNote(ch, pn, m.age)
-				return
-			}
-
-			ages = append(ages, pastNoteAges{
-				i:   i,
-				age: c.pn.GetAge(),
+				holder: i,
+				entry:  *oldest,
 			})
 		}
 	}
@@ -66,12 +49,22 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) addP
 
 	// find the oldest
 	sort.Slice(ages, func(i, j int) bool {
-		return ages[i].age < ages[j].age
+		return ages[i].entry.age < ages[j].entry.age
 	})
 
 	// jam it in
-	oldest := ages[0].i
-	m.channels[oldest].pn.AddPastNote(ch, pn, m.age)
+	oldestHolder := ages[0].holder
+	m.channels[oldestHolder].pn.AddPastNote(ch, pn, m.age)
+	m.pastNotes = append(m.pastNotes, ch)
+
+	if over := len(m.pastNotes) - maxNotes; over > 0 {
+		for _, n := range m.pastNotes[0:over] {
+			if oldest := m.channels[n].pn.GetOldest(); oldest != nil {
+				oldest.v.Stop()
+			}
+		}
+		m.pastNotes = m.pastNotes[over:]
+	}
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doPastNoteAction(ch index.Channel, na note.Action) {

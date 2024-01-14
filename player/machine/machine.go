@@ -125,7 +125,8 @@ type Machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 type machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] struct {
 	globals[TGlobalVolume]
 	singleRow
-	channels []channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
+	channels  []channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
+	pastNotes []index.Channel
 
 	ticker ticker
 	age    int

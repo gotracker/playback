@@ -143,7 +143,6 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 
 			c := &m.channels[ch]
 			c.enabled = cs.GetEnabled()
-			c.pn.MaxPastNotes = sys.GetMaxPastNotesPerChannel()
 			c.cv = m.ms.VoiceFactory.NewVoice(voice.VoiceConfig[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]{
 				InitialVolume:    initialVolume,
 				InitialMixing:    initialMixing,

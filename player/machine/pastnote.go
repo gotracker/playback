@@ -16,12 +16,7 @@ type pastNote[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPan
 }
 
 type pastNotes[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] struct {
-	MaxPastNotes int
-	pn           []pastNote[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
-}
-
-func (o *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) CanAddPastNote() bool {
-	return len(o.pn) < o.MaxPastNotes
+	pn []pastNote[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
 }
 
 func (o *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) AddPastNote(ch index.Channel, v voice.RenderVoice[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], age int) {
@@ -30,20 +25,15 @@ func (o *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Ad
 		ch:  ch,
 		age: age,
 	})
-	if over := len(o.pn) - o.MaxPastNotes; over > 0 {
-		for _, n := range o.pn[0:over] {
-			n.v.Stop()
-		}
-		o.pn = o.pn[over:]
-	}
 }
 
-func (o pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetAge() int {
+func (o pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetOldest() *pastNote[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning] {
 	if len(o.pn) == 0 {
-		return 0
+		return nil
 	}
 
-	return o.pn[0].age
+	oldest := o.pn[0]
+	return &oldest
 }
 
 func (o *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) UpdatePastNotes() {
