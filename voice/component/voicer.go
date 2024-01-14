@@ -6,8 +6,8 @@ import (
 	"github.com/gotracker/playback/voice/types"
 )
 
-type Voicer[TPeriod types.Period, TVolume types.Volume] interface {
-	Clone() Voicer[TPeriod, TVolume]
+type Voicer[TPeriod types.Period, TMixingVolume, TVolume types.Volume] interface {
+	Clone() Voicer[TPeriod, TMixingVolume, TVolume]
 	GetDefaultVolume() TVolume
 	GetNumChannels() int
 	Attack()

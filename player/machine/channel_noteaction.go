@@ -7,6 +7,7 @@ import (
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/system"
 	"github.com/gotracker/playback/voice"
+	"github.com/gotracker/playback/voice/types"
 )
 
 func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNoteAction(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], outputRate system.Frequency) error {
@@ -46,7 +47,7 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNo
 			// nothing
 		}
 
-		m.addPastNote(pn.(voice.RenderVoice[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]))
+		m.addPastNote(ch, pn.(voice.RenderVoice[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]))
 	}
 
 	if pitchPanMod, ok := c.cv.(voice.PitchPanModulator[TPanning]); ok {
@@ -153,7 +154,14 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSe
 		PitchFiltEnv:         d.PitchFiltEnv,
 	})
 
-	c.cv.SetPCM(d.Sample, d.Loop, d.SustainLoop, inst.GetDefaultVolume())
+	var mixVol TMixingVolume
+	if mv, set := d.MixingVolume.Get(); set {
+		mixVol = mv
+	} else {
+		mixVol = types.GetMaxVolume[TMixingVolume]()
+	}
+
+	c.cv.SetPCM(d.Sample, d.Loop, d.SustainLoop, mixVol, inst.GetDefaultVolume())
 
 	return nil
 }

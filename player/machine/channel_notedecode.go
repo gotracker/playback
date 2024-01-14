@@ -68,8 +68,9 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) deco
 	}
 
 	if n != nil {
-		p := m.ConvertToPeriod(n)
-		changeNote.Period.Set(p)
+		if p := m.ConvertToPeriod(n); !p.IsInvalid() {
+			changeNote.Period.Set(p)
+		}
 	}
 
 	if na != note.ActionContinue {
@@ -110,9 +111,6 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) deco
 	switch inst.GetKind() {
 	case instrument.KindPCM:
 		if d, ok := inst.GetData().(*instrument.PCM[TMixingVolume, TVolume, TPanning]); ok {
-			if mv, set := d.MixingVolume.Get(); set {
-				changeNote.MixVol.Set(mv)
-			}
 			if pan, set := d.Panning.Get(); set {
 				changeNote.Pan.Set(pan)
 			}

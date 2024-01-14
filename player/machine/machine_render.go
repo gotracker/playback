@@ -79,7 +79,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 			mixData = append(mixData, *data)
 		}
 
-		pnData, err := c.pn.Render(centerAheadPan, details, rc)
+		pnData, err := c.pn.RenderAndAdvance(centerAheadPan, details, rc)
 		if err != nil {
 			return nil, err
 		}

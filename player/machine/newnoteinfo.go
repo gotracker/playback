@@ -23,6 +23,17 @@ type NewNoteInfo[TPeriod Period, TMixingVolume, TVolume Volume, TPanning Panning
 	NewNoteAction optional.Value[note.Action]
 }
 
+func (n *NewNoteInfo[TPeriod, TMixingVolume, TVolume, TPanning]) Reset() {
+	n.Period.Reset()
+	n.Inst.Reset()
+	n.Pos.Reset()
+	n.MixVol.Reset()
+	n.Vol.Reset()
+	n.Pan.Reset()
+	n.ActionTick.Reset()
+	n.NewNoteAction.Reset()
+}
+
 func (n NewNoteInfo[TPeriod, TMixingVolume, TVolume, TPanning]) IsSet() bool {
 	return n.Period.IsSet() ||
 		n.Inst.IsSet() ||

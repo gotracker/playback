@@ -33,7 +33,7 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) RowS
 	}
 
 	info := c.newNote
-	c.newNote = NewNoteInfo[TPeriod, TMixingVolume, TVolume, TPanning]{}
+	c.newNote.Reset()
 
 	if tp, set := info.Period.Get(); set {
 		if freqMod, ok := c.cv.(voice.FreqModulator[TPeriod]); ok {

@@ -12,14 +12,19 @@ import (
 
 // AutoVibratoModulator is a frequency (pitch) modulator
 type AutoVibratoModulator[TPeriod period.Period] struct {
-	settings    autovibrato.AutoVibratoSettings
-	enabled     bool
+	settings autovibrato.AutoVibratoSettings
+	unkeyed  struct {
+		enabled bool
+	}
+	keyed struct {
+		age int // current age of oscillator (in ticks)
+	}
 	autoVibrato oscillator.Oscillator
-	age         int // current age of oscillator (in ticks)
 }
 
 func (f *AutoVibratoModulator[TPeriod]) Setup(settings autovibrato.AutoVibratoSettings) {
 	f.settings = settings
+	f.unkeyed.enabled = f.settings.Enabled
 	f.Reset()
 }
 
@@ -32,14 +37,14 @@ func (f AutoVibratoModulator[TPeriod]) Clone() AutoVibratoModulator[TPeriod] {
 }
 
 func (f *AutoVibratoModulator[TPeriod]) Reset() {
-	f.enabled = f.settings.Enabled
+	f.keyed.age = 0
 	f.autoVibrato = f.settings.Generate()
 	f.ResetAutoVibrato()
 }
 
 // SetEnabled sets the status of the AutoVibrato enablement flag
 func (f *AutoVibratoModulator[TPeriod]) SetEnabled(enabled bool) {
-	f.enabled = enabled
+	f.unkeyed.enabled = enabled
 }
 
 // ConfigureAutoVibrato sets the AutoVibrato oscillator settings
@@ -53,23 +58,23 @@ func (f *AutoVibratoModulator[TPeriod]) ResetAutoVibrato() {
 		f.autoVibrato.HardReset()
 	}
 
-	f.age = 0
+	f.keyed.age = 0
 }
 
 // IsAutoVibratoEnabled returns the status of the AutoVibrato enablement flag
 func (f *AutoVibratoModulator[TPeriod]) IsAutoVibratoEnabled() bool {
-	return f.enabled
+	return f.unkeyed.enabled
 }
 
 // GetFinalPeriod returns the current period (after AutoVibrato and Delta calculation)
 func (f *AutoVibratoModulator[TPeriod]) GetAdjustedPeriod(in TPeriod) TPeriod {
-	if !f.enabled {
+	if !f.unkeyed.enabled {
 		return in
 	}
 
 	depth := f.settings.Depth
-	if f.settings.Sweep > f.age {
-		depth *= float32(f.age) / float32(f.settings.Sweep)
+	if f.settings.Sweep > f.keyed.age {
+		depth *= float32(f.keyed.age) / float32(f.settings.Sweep)
 	}
 	avDelta := f.autoVibrato.GetWave(depth)
 	d := period.Delta(avDelta)
@@ -78,17 +83,17 @@ func (f *AutoVibratoModulator[TPeriod]) GetAdjustedPeriod(in TPeriod) TPeriod {
 
 // Advance advances the autoVibrato value by 1 tick
 func (f *AutoVibratoModulator[TPeriod]) Advance() {
-	if !f.enabled {
+	if !f.unkeyed.enabled {
 		return
 	}
 
 	f.autoVibrato.Advance(f.settings.Rate)
-	f.age++
+	f.keyed.age++
 }
 
 func (f AutoVibratoModulator[TPeriod]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
 	t.TraceChannelWithComment(ch, fmt.Sprintf("enabled{%v} age{%v}",
-		f.enabled,
-		f.age,
+		f.unkeyed.enabled,
+		f.keyed.age,
 	), comment)
 }

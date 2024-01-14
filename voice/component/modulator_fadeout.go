@@ -11,17 +11,23 @@ import (
 // FadeoutModulator is an amplitude (volume) modulator
 type FadeoutModulator struct {
 	settings FadeoutModulatorSettings
-	active   bool
-	vol      volume.Volume
+	unkeyed  struct {
+		enabled bool
+	}
+	keyed struct {
+		vol volume.Volume
+	}
 }
 
 type FadeoutModulatorSettings struct {
-	GetEnabled func() bool
-	Amount     volume.Volume
+	Enabled   bool
+	GetActive func() bool
+	Amount    volume.Volume
 }
 
 func (a *FadeoutModulator) Setup(settings FadeoutModulatorSettings) {
 	a.settings = settings
+	a.unkeyed.enabled = settings.Enabled
 	a.Reset()
 }
 
@@ -32,51 +38,45 @@ func (a FadeoutModulator) Clone() FadeoutModulator {
 
 // Reset disables the fadeout and resets its volume
 func (a *FadeoutModulator) Reset() {
-	a.active = false
-	a.vol = volume.Volume(1)
+	a.keyed.vol = volume.Volume(1)
 }
 
-// Fadeout activates the fadeout
-func (a *FadeoutModulator) Fadeout() {
-	a.active = a.settings.Amount != 0
-}
-
-// SetActive sets the status of the fadeout active flag
-func (a *FadeoutModulator) SetActive(active bool) {
-	a.active = active
+// SetEnabled sets the status of the fadeout enable flag
+func (a *FadeoutModulator) SetEnabled(enabled bool) {
+	a.unkeyed.enabled = enabled
 }
 
 // IsEnabled returns the status of the fadeout enablement flag
 func (a FadeoutModulator) IsActive() bool {
-	if a.settings.GetEnabled == nil {
+	if !a.unkeyed.enabled || a.settings.GetActive == nil {
 		return false
 	}
 
-	return a.settings.GetEnabled() && a.active
+	return a.settings.GetActive()
 }
 
 // GetVolume returns the value of the fadeout volume
 func (a FadeoutModulator) GetVolume() volume.Volume {
-	return a.vol
+	return a.keyed.vol
 }
 
 func (a FadeoutModulator) GetFinalVolume() volume.Volume {
 	if !a.IsActive() {
 		return volume.Volume(1)
 	}
-	return a.vol
+	return a.keyed.vol
 }
 
 // Advance advances the fadeout value by 1 tick
 func (a *FadeoutModulator) Advance() {
-	if a.IsActive() && a.vol > 0 {
-		a.vol = min(max(a.vol-a.settings.Amount, 0), 1)
+	if a.IsActive() && a.keyed.vol > 0 {
+		a.keyed.vol = min(max(a.keyed.vol-a.settings.Amount, 0), 1)
 	}
 }
 
 func (a FadeoutModulator) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
-	t.TraceChannelWithComment(ch, fmt.Sprintf("active{%v} vol{%v}",
-		a.active,
-		a.vol,
+	t.TraceChannelWithComment(ch, fmt.Sprintf("enabled{%v} vol{%v}",
+		a.unkeyed.enabled,
+		a.keyed.vol,
 	), comment)
 }

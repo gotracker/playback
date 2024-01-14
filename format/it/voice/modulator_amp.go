@@ -54,9 +54,5 @@ func (v itVoice[TPeriod]) GetFadeoutVolume() volume.Volume {
 }
 
 func (v itVoice[TPeriod]) GetFinalVolume() volume.Volume {
-	vol := v.amp.GetFinalVolume()
-	if v.IsVolumeEnvelopeEnabled() {
-		vol *= v.GetCurrentVolumeEnvelope().ToVolume()
-	}
-	return vol * v.fadeout.GetFinalVolume()
+	return v.finalVol
 }

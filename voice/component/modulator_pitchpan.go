@@ -11,10 +11,13 @@ import (
 
 // PitchPanModulator is an pan (spatial) modulator
 type PitchPanModulator[TPanning types.Panning] struct {
-	settings        PitchPanModulatorSettings[TPanning]
-	pitchPanEnabled bool
-	pitch           note.Semitone
-	panSep          float32
+	settings PitchPanModulatorSettings[TPanning]
+	unkeyed  struct {
+		enabled bool
+		pitch   note.Semitone
+	}
+	keyed  struct{}
+	panSep float32
 }
 
 type PitchPanModulatorSettings[TPanning types.Panning] struct {
@@ -25,8 +28,8 @@ type PitchPanModulatorSettings[TPanning types.Panning] struct {
 
 func (p *PitchPanModulator[TPanning]) Setup(settings PitchPanModulatorSettings[TPanning]) {
 	p.settings = settings
-	p.pitchPanEnabled = settings.PitchPanEnable
-	p.pitch = settings.PitchPanCenter
+	p.unkeyed.enabled = settings.PitchPanEnable
+	p.unkeyed.pitch = settings.PitchPanCenter
 	p.Reset()
 }
 
@@ -41,18 +44,18 @@ func (p *PitchPanModulator[TPanning]) Reset() {
 
 // SetPitch updates the pan separation modulated by the provided pitch
 func (p *PitchPanModulator[TPanning]) SetPitch(st note.Semitone) {
-	p.pitch = st
+	p.unkeyed.pitch = st
 	p.updatePitchPan()
 }
 
 // IsPitchPanEnabled returns the enablement of the pitch-pan separation function
 func (p PitchPanModulator[TPanning]) IsPitchPanEnabled() bool {
-	return p.pitchPanEnabled
+	return p.unkeyed.enabled
 }
 
 // EnablePitchPan enables the pitch-pan separation function
 func (p *PitchPanModulator[TPanning]) EnablePitchPan(enabled bool) {
-	p.pitchPanEnabled = enabled
+	p.unkeyed.enabled = enabled
 	p.updatePitchPan()
 }
 
@@ -62,7 +65,7 @@ func (p PitchPanModulator[TPanning]) GetPanSeparation() float32 {
 }
 
 func (p PitchPanModulator[TPanning]) GetSeparatedPan(pan TPanning) TPanning {
-	if !p.pitchPanEnabled || p.panSep == 0 {
+	if !p.unkeyed.enabled || p.panSep == 0 {
 		return pan
 	}
 
@@ -76,17 +79,17 @@ func (p *PitchPanModulator[TPanning]) Advance() {
 }
 
 func (p *PitchPanModulator[TPanning]) updatePitchPan() {
-	if !p.pitchPanEnabled {
+	if !p.unkeyed.enabled {
 		return
 	}
 
-	p.panSep = (float32(p.pitch) - float32(p.settings.PitchPanCenter)) * p.settings.PitchPanSeparation
+	p.panSep = (float32(p.unkeyed.pitch) - float32(p.settings.PitchPanCenter)) * p.settings.PitchPanSeparation
 }
 
 func (p PitchPanModulator[TPanning]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
-	t.TraceChannelWithComment(ch, fmt.Sprintf("pitchPanEnabled{%v} pitch{%v} panSep{%v}",
-		p.pitchPanEnabled,
-		p.pitch,
+	t.TraceChannelWithComment(ch, fmt.Sprintf("enabled{%v} pitch{%v} panSep{%v}",
+		p.unkeyed.enabled,
+		p.unkeyed.pitch,
 		p.panSep,
 	), comment)
 }

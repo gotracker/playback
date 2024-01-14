@@ -39,7 +39,7 @@ type RenderVoice[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, T
 
 	// Configuration
 	Setup(config InstrumentConfig[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning])
-	SetPCM(sample pcm.Sample, wholeLoop loop.Loop, sustainLoop loop.Loop, defaultVolume TVolume)
+	SetPCM(sample pcm.Sample, wholeLoop loop.Loop, sustainLoop loop.Loop, mixVolume TMixingVolume, defaultVolume TVolume)
 
 	// Render
 	Render(panningMatrix volume.Matrix, details render.Details, renderChannel *render.Channel[TGlobalVolume, TMixingVolume, TPanning]) (*mixing.Data, error)

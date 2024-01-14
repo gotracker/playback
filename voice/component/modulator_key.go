@@ -45,7 +45,7 @@ func (k *KeyModulator) Attack() {
 	k.slimKeyModulator.Attack()
 	k.fadeout = false
 
-	if k.settings.Attack != nil && k.keyOn != k.prevKeyOn {
+	if k.settings.Attack != nil {
 		k.settings.Attack()
 	}
 }
@@ -53,7 +53,7 @@ func (k *KeyModulator) Attack() {
 func (k *KeyModulator) Release() {
 	k.slimKeyModulator.Release()
 
-	if k.settings.Release != nil && k.keyOn != k.prevKeyOn {
+	if k.settings.Release != nil {
 		k.settings.Release()
 	}
 }
@@ -84,4 +84,15 @@ func (k KeyModulator) DumpState(ch index.Channel, t tracing.Tracer, comment stri
 		k.keyOn,
 		k.prevKeyOn,
 	), comment)
+}
+
+func (k KeyModulator) String() string {
+	switch {
+	case k.fadeout:
+		return "Fadeout"
+	case k.keyOn:
+		return "Attack"
+	default:
+		return "Release"
+	}
 }

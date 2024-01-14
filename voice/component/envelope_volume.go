@@ -2,6 +2,7 @@ package component
 
 import (
 	"github.com/gotracker/playback/util"
+	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/types"
 )
 
@@ -14,9 +15,9 @@ func (e *VolumeEnvelope[TVolume]) Setup(settings EnvelopeSettings[TVolume, TVolu
 	e.baseEnvelope.Setup(settings, e.calc)
 }
 
-func (e VolumeEnvelope[TVolume]) Clone() VolumeEnvelope[TVolume] {
+func (e VolumeEnvelope[TVolume]) Clone(onFinished voice.Callback) VolumeEnvelope[TVolume] {
 	var m VolumeEnvelope[TVolume]
-	m.baseEnvelope = e.baseEnvelope.Clone(m.calc)
+	m.baseEnvelope = e.baseEnvelope.Clone(m.calc, onFinished)
 	return m
 }
 

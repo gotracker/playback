@@ -12,11 +12,16 @@ import (
 // AmpModulator is an amplitude (volume) modulator
 type AmpModulator[TMixingVolume, TVolume types.Volume] struct {
 	settings AmpModulatorSettings[TMixingVolume, TVolume]
-	active   bool
-	vol      TVolume
-	delta    types.VolumeDelta
-	mixing   TMixingVolume
-	final    volume.Volume // = active? * mixing * vol
+
+	unkeyed struct {
+		active bool
+		vol    TVolume
+		mixing TMixingVolume
+	}
+	keyed struct {
+		delta types.VolumeDelta
+	}
+	final volume.Volume // = active? * mixing * vol
 }
 
 type AmpModulatorSettings[TMixingVolume, TVolume types.Volume] struct {
@@ -27,11 +32,10 @@ type AmpModulatorSettings[TMixingVolume, TVolume types.Volume] struct {
 
 func (a *AmpModulator[TMixingVolume, TVolume]) Setup(settings AmpModulatorSettings[TMixingVolume, TVolume]) {
 	a.settings = settings
-	a.active = settings.Active
-	a.vol = settings.DefaultVolume
-	a.delta = 0
-	a.mixing = settings.DefaultMixingVolume
-	a.updateFinal()
+	a.unkeyed.active = settings.Active
+	a.unkeyed.vol = settings.DefaultVolume
+	a.unkeyed.mixing = settings.DefaultMixingVolume
+	a.Reset()
 }
 
 func (a AmpModulator[TMixingVolume, TVolume]) Clone() AmpModulator[TMixingVolume, TVolume] {
@@ -39,26 +43,31 @@ func (a AmpModulator[TMixingVolume, TVolume]) Clone() AmpModulator[TMixingVolume
 	return m
 }
 
+func (a *AmpModulator[TMixingVolume, TVolume]) Reset() {
+	a.keyed.delta = 0
+	a.updateFinal()
+}
+
 func (a *AmpModulator[TMixingVolume, TVolume]) SetActive(active bool) {
-	a.active = active
+	a.unkeyed.active = active
 	a.updateFinal()
 }
 
 func (a AmpModulator[TMixingVolume, TVolume]) IsActive() bool {
-	return a.active
+	return a.unkeyed.active
 }
 
 // SetMixingVolume configures the mixing volume of the modulator
 func (a *AmpModulator[TMixingVolume, TVolume]) SetMixingVolume(mixing TMixingVolume) {
 	if !mixing.IsUseInstrumentVol() {
-		a.mixing = mixing
+		a.unkeyed.mixing = mixing
 		a.updateFinal()
 	}
 }
 
 // GetMixingVolume returns the current mixing volume of the modulator
 func (a AmpModulator[TMixingVolume, TVolume]) GetMixingVolume() TMixingVolume {
-	return a.mixing
+	return a.unkeyed.mixing
 }
 
 // SetVolume sets the current volume (before fadeout calculation)
@@ -66,22 +75,22 @@ func (a *AmpModulator[TMixingVolume, TVolume]) SetVolume(vol TVolume) {
 	if vol.IsUseInstrumentVol() {
 		vol = a.settings.DefaultVolume
 	}
-	a.vol = vol
+	a.unkeyed.vol = vol
 	a.updateFinal()
 }
 
 // GetVolume returns the current volume (before fadeout calculation)
 func (a AmpModulator[TMixingVolume, TVolume]) GetVolume() TVolume {
-	return a.vol
+	return a.unkeyed.vol
 }
 
 func (a *AmpModulator[TMixingVolume, TVolume]) SetVolumeDelta(d types.VolumeDelta) {
-	a.delta = d
+	a.keyed.delta = d
 	a.updateFinal()
 }
 
 func (a AmpModulator[TMixingVolume, TVolume]) GetVolumeDelta() types.VolumeDelta {
-	return a.delta
+	return a.keyed.delta
 }
 
 // GetFinalVolume returns the current volume (after fadeout calculation)
@@ -90,20 +99,21 @@ func (a AmpModulator[TMixingVolume, TVolume]) GetFinalVolume() volume.Volume {
 }
 
 func (a *AmpModulator[TMixingVolume, TVolume]) updateFinal() {
-	if !a.active {
+	if !a.unkeyed.active {
 		a.final = 0
 		return
 	}
 
-	v := types.AddVolumeDelta(a.vol, a.delta)
-	a.final = a.mixing.ToVolume() * v.ToVolume()
+	v := types.AddVolumeDelta(a.unkeyed.vol, a.keyed.delta)
+	a.final = a.unkeyed.mixing.ToVolume() * v.ToVolume()
 }
 
 func (a AmpModulator[TMixingVolume, TVolume]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
-	t.TraceChannelWithComment(ch, fmt.Sprintf("active{%v} vol{%v} mixing{%v} final{%v}",
-		a.active,
-		a.vol,
-		a.mixing,
+	t.TraceChannelWithComment(ch, fmt.Sprintf("active{%v} vol{%v} mixing{%v} delta{%v} final{%v}",
+		a.unkeyed.active,
+		a.unkeyed.vol,
+		a.unkeyed.mixing,
+		a.keyed.delta,
 		a.final,
 	), comment)
 }

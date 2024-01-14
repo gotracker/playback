@@ -41,10 +41,5 @@ func (v itVoice[TPeriod]) IsPitchPanEnabled() bool {
 }
 
 func (v itVoice[TPeriod]) GetFinalPan() itPanning.Panning {
-	if !v.IsPanEnvelopeEnabled() {
-		return v.pan.GetFinalPan()
-	}
-
-	envPan := v.panEnv.GetCurrentValue()
-	return v.pitchPan.GetSeparatedPan(envPan)
+	return v.finalPan
 }

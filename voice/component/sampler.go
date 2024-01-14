@@ -14,70 +14,84 @@ import (
 )
 
 // Sampler is a sampler component
-type Sampler[TPeriod types.Period, TVolume types.Volume] struct {
-	settings     SamplerSettings[TPeriod, TVolume]
-	pos          sampling.Pos
-	loopsEnabled bool
+type Sampler[TPeriod types.Period, TMixingVolume, TVolume types.Volume] struct {
+	settings SamplerSettings[TPeriod, TMixingVolume, TVolume]
+
+	unkeyed struct {
+		pos    sampling.Pos
+		mixVol volume.Volume
+	}
+	keyed struct {
+		loopsEnabled bool
+	}
 
 	slimKeyModulator
 }
 
-type SamplerSettings[TPeriod types.Period, TVolume types.Volume] struct {
+type SamplerSettings[TPeriod types.Period, TMixingVolume, TVolume types.Volume] struct {
 	Sample        pcm.Sample
 	DefaultVolume TVolume
+	MixVolume     TMixingVolume
 	WholeLoop     loop.Loop
 	SustainLoop   loop.Loop
 }
 
-func (s Sampler[TPeriod, TVolume]) Clone() Voicer[TPeriod, TVolume] {
+// Setup sets up the sampler
+func (s *Sampler[TPeriod, TMixingVolume, TVolume]) Setup(settings SamplerSettings[TPeriod, TMixingVolume, TVolume]) {
+	s.settings = settings
+	s.unkeyed.pos = sampling.Pos{}
+	s.unkeyed.mixVol = settings.MixVolume.ToVolume()
+	s.Reset()
+}
+
+func (s *Sampler[TPeriod, TMixingVolume, TVolume]) Reset() {
+	s.keyed.loopsEnabled = false
+}
+
+func (s Sampler[TPeriod, TMixingVolume, TVolume]) Clone() Voicer[TPeriod, TMixingVolume, TVolume] {
 	m := s
 	return &m
 }
 
-// Setup sets up the sampler
-func (s *Sampler[TPeriod, TVolume]) Setup(settings SamplerSettings[TPeriod, TVolume]) {
-	s.settings = settings
-}
-
 // SetPos sets the current position of the sampler in the pcm data (and loops)
-func (s *Sampler[TPeriod, TVolume]) SetPos(pos sampling.Pos) {
-	s.pos = pos
+func (s *Sampler[TPeriod, TMixingVolume, TVolume]) SetPos(pos sampling.Pos) {
+	s.unkeyed.pos = pos
 }
 
 // GetPos returns the current position of the sampler in the pcm data (and loops)
-func (s Sampler[TPeriod, TVolume]) GetPos() sampling.Pos {
-	return s.pos
+func (s Sampler[TPeriod, TMixingVolume, TVolume]) GetPos() sampling.Pos {
+	return s.unkeyed.pos
 }
 
 // Attack sets the key-on value (for loop processing)
-func (s *Sampler[TPeriod, TVolume]) Attack() {
+func (s *Sampler[TPeriod, TMixingVolume, TVolume]) Attack() {
 	s.slimKeyModulator.Attack()
-	s.loopsEnabled = true
+	s.keyed.loopsEnabled = true
 }
 
 // Release releases the key-on value (for loop processing)
-func (s *Sampler[TPeriod, TVolume]) Release() {
+func (s *Sampler[TPeriod, TMixingVolume, TVolume]) Release() {
 	s.slimKeyModulator.Release()
 }
 
 // Fadeout disables the loops (for loop processing)
-func (s *Sampler[TPeriod, TVolume]) Fadeout() {
-	s.loopsEnabled = false
+func (s *Sampler[TPeriod, TMixingVolume, TVolume]) Fadeout() {
+	s.keyed.loopsEnabled = false
 }
 
-func (s *Sampler[TPeriod, TVolume]) DeferredAttack() {
+func (s *Sampler[TPeriod, TMixingVolume, TVolume]) DeferredAttack() {
 	// does nothing
 }
 
-func (s *Sampler[TPeriod, TVolume]) DeferredRelease() {
+func (s *Sampler[TPeriod, TMixingVolume, TVolume]) DeferredRelease() {
 	// does nothing
 }
 
-func (s Sampler[TPeriod, TVolume]) GetDefaultVolume() TVolume {
+func (s Sampler[TPeriod, TMixingVolume, TVolume]) GetDefaultVolume() TVolume {
 	return s.settings.DefaultVolume
 }
 
-func (s Sampler[TPeriod, TVolume]) GetNumChannels() int {
+func (s Sampler[TPeriod, TMixingVolume, TVolume]) GetNumChannels() int {
 	if s.settings.Sample == nil {
 		return 0
 	}
@@ -85,7 +99,7 @@ func (s Sampler[TPeriod, TVolume]) GetNumChannels() int {
 }
 
 // GetSample returns a multi-channel sample at the specified position
-func (s *Sampler[TPeriod, TVolume]) GetSample(pos sampling.Pos) volume.Matrix {
+func (s *Sampler[TPeriod, TMixingVolume, TVolume]) GetSample(pos sampling.Pos) volume.Matrix {
 	v0 := s.getConvertedSample(pos.Pos)
 	if v0.Channels == 0 {
 		if s.canLoop() {
@@ -96,21 +110,22 @@ func (s *Sampler[TPeriod, TVolume]) GetSample(pos sampling.Pos) volume.Matrix {
 	}
 
 	if pos.Frac == 0 {
-		return v0
+		return v0.Apply(s.unkeyed.mixVol)
 	}
 
 	v1 := s.getConvertedSample(pos.Pos + 1)
-	return v0.Lerp(v1, pos.Frac)
+	lerped := v0.Lerp(v1, pos.Frac)
+	return lerped.Apply(s.unkeyed.mixVol)
 }
 
-func (s Sampler[TPeriod, TVolume]) canLoop() bool {
-	if s.loopsEnabled {
+func (s Sampler[TPeriod, TMixingVolume, TVolume]) canLoop() bool {
+	if s.keyed.loopsEnabled {
 		return (s.keyOn && s.settings.SustainLoop.Enabled()) || s.settings.WholeLoop.Enabled()
 	}
 	return false
 }
 
-func (s *Sampler[TPeriod, TVolume]) getConvertedSample(pos int) volume.Matrix {
+func (s *Sampler[TPeriod, TMixingVolume, TVolume]) getConvertedSample(pos int) volume.Matrix {
 	if s.settings.Sample == nil {
 		return volume.Matrix{}
 	}
@@ -146,9 +161,9 @@ func (s *Sampler[TPeriod, TVolume]) getConvertedSample(pos int) volume.Matrix {
 	return data.Apply(atten)
 }
 
-func (s Sampler[TPeriod, TVolume]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
+func (s Sampler[TPeriod, TMixingVolume, TVolume]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
 	t.TraceChannelWithComment(ch, fmt.Sprintf("pos{%v} loopsEnabled{%v}",
-		s.pos,
-		s.loopsEnabled,
+		s.unkeyed.pos,
+		s.keyed.loopsEnabled,
 	), comment)
 }

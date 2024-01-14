@@ -21,7 +21,7 @@ type s3mVoice struct {
 
 	component.KeyModulator
 
-	voicer component.Voicer[period.Amiga, s3mVolume.Volume]
+	voicer component.Voicer[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]
 	component.AmpModulator[s3mVolume.FineVolume, s3mVolume.Volume]
 	component.FreqModulator[period.Amiga]
 	component.PanModulator[s3mPanning.Panning]
@@ -150,14 +150,19 @@ func (v *s3mVoice) Clone() voice.Voice {
 		vv.config.VoiceFilter = v.config.VoiceFilter.Clone()
 	}
 
+	if v.config.PluginFilter != nil {
+		vv.config.PluginFilter = v.config.PluginFilter.Clone()
+	}
+
 	return &vv
 }
 
-func (v *s3mVoice) SetPCM(samp pcm.Sample, wholeLoop, sustainLoop loop.Loop, defVol s3mVolume.Volume) {
-	var s component.Sampler[period.Amiga, s3mVolume.Volume]
-	s.Setup(component.SamplerSettings[period.Amiga, s3mVolume.Volume]{
+func (v *s3mVoice) SetPCM(samp pcm.Sample, wholeLoop, sustainLoop loop.Loop, mixVol s3mVolume.FineVolume, defVol s3mVolume.Volume) {
+	var s component.Sampler[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]
+	s.Setup(component.SamplerSettings[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]{
 		Sample:        samp,
 		DefaultVolume: defVol,
+		MixVolume:     mixVol,
 		WholeLoop:     wholeLoop,
 		SustainLoop:   sustainLoop,
 	})

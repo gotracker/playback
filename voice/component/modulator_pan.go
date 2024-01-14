@@ -11,9 +11,13 @@ import (
 // PanModulator is an pan (spatial) modulator
 type PanModulator[TPanning types.Panning] struct {
 	settings PanModulatorSettings[TPanning]
-	pan      TPanning
-	delta    types.PanDelta
-	final    TPanning
+	unkeyed  struct {
+		pan TPanning
+	}
+	keyed struct {
+		delta types.PanDelta
+	}
+	final TPanning
 }
 
 type PanModulatorSettings[TPanning types.Panning] struct {
@@ -23,8 +27,12 @@ type PanModulatorSettings[TPanning types.Panning] struct {
 
 func (p *PanModulator[TPanning]) Setup(settings PanModulatorSettings[TPanning]) {
 	p.settings = settings
-	p.pan = settings.InitialPan
-	p.delta = 0
+	p.unkeyed.pan = settings.InitialPan
+	p.Reset()
+}
+
+func (p *PanModulator[TPanning]) Reset() {
+	p.keyed.delta = 0
 	p.updateFinal()
 }
 
@@ -36,27 +44,27 @@ func (p PanModulator[TPanning]) Clone() PanModulator[TPanning] {
 // SetPan sets the current panning
 func (p *PanModulator[TPanning]) SetPan(pan TPanning) {
 	if p.settings.Enabled {
-		p.pan = pan
+		p.unkeyed.pan = pan
 		p.updateFinal()
 	}
 }
 
 // GetPan returns the current panning
 func (p PanModulator[TPanning]) GetPan() TPanning {
-	return p.pan
+	return p.unkeyed.pan
 }
 
 // SetPanDelta sets the current panning delta
 func (p *PanModulator[TPanning]) SetPanDelta(d types.PanDelta) {
 	if p.settings.Enabled {
-		p.delta = d
+		p.keyed.delta = d
 		p.updateFinal()
 	}
 }
 
 // GetPanDelta returns the current panning delta
 func (p PanModulator[TPanning]) GetPanDelta() types.PanDelta {
-	return p.delta
+	return p.keyed.delta
 }
 
 // GetFinalPan returns the current panning
@@ -66,11 +74,11 @@ func (p PanModulator[TPanning]) GetFinalPan() TPanning {
 
 func (p PanModulator[TPanning]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
 	t.TraceChannelWithComment(ch, fmt.Sprintf("pan{%v} delta{%v}",
-		p.pan,
-		p.delta,
+		p.unkeyed.pan,
+		p.keyed.delta,
 	), comment)
 }
 
 func (p *PanModulator[TPanning]) updateFinal() {
-	p.final = types.AddPanningDelta(p.pan, p.delta)
+	p.final = types.AddPanningDelta(p.unkeyed.pan, p.keyed.delta)
 }

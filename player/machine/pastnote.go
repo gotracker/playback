@@ -3,6 +3,7 @@ package machine
 import (
 	"github.com/gotracker/gomixing/mixing"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/voice"
@@ -10,6 +11,7 @@ import (
 
 type pastNote[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] struct {
 	v   voice.RenderVoice[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
+	ch  index.Channel
 	age int
 }
 
@@ -22,9 +24,10 @@ func (o *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Ca
 	return len(o.pn) < o.MaxPastNotes
 }
 
-func (o *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) AddPastNote(v voice.RenderVoice[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], age int) {
+func (o *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) AddPastNote(ch index.Channel, v voice.RenderVoice[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], age int) {
 	o.pn = append(o.pn, pastNote[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]{
 		v:   v,
+		ch:  ch,
 		age: age,
 	})
 	if over := len(o.pn) - o.MaxPastNotes; over > 0 {
@@ -55,8 +58,21 @@ func (o *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Up
 	o.pn = updated
 }
 
-func (o *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoPastNoteAction(na note.Action) {
+func (o pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) HasPastNoteForChannel(ch index.Channel) bool {
 	for _, pn := range o.pn {
+		if pn.ch == ch {
+			return true
+		}
+	}
+	return false
+}
+
+func (o *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoPastNoteAction(ch index.Channel, na note.Action) {
+	for _, pn := range o.pn {
+		if pn.ch != ch {
+			continue
+		}
+
 		switch na {
 		case note.ActionCut:
 			pn.v.Stop()
@@ -77,7 +93,7 @@ func (o *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Do
 	}
 }
 
-func (p *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Render(centerAheadPan volume.Matrix, details render.Details, rc *render.Channel[TGlobalVolume, TMixingVolume, TPanning]) ([]mixing.Data, error) {
+func (p *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) RenderAndAdvance(centerAheadPan volume.Matrix, details render.Details, rc *render.Channel[TGlobalVolume, TMixingVolume, TPanning]) ([]mixing.Data, error) {
 	var mixData []mixing.Data
 
 	for _, pn := range p.pn {
@@ -93,6 +109,7 @@ func (p *pastNotes[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Re
 		if err != nil {
 			return nil, err
 		}
+		pn.v.Advance()
 
 		if data != nil {
 			mixData = append(mixData, *data)

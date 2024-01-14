@@ -3,6 +3,7 @@ package component
 import (
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/util"
+	"github.com/gotracker/playback/voice"
 )
 
 // FilterEnvelope is a filter frequency cutoff modulation envelope
@@ -14,9 +15,9 @@ func (e *FilterEnvelope) Setup(settings EnvelopeSettings[filter.PitchFiltValue, 
 	e.baseEnvelope.Setup(settings, e.calc)
 }
 
-func (e FilterEnvelope) Clone() FilterEnvelope {
+func (e FilterEnvelope) Clone(onFinished voice.Callback) FilterEnvelope {
 	var m FilterEnvelope
-	m.baseEnvelope = e.baseEnvelope.Clone(m.calc)
+	m.baseEnvelope = e.baseEnvelope.Clone(m.calc, onFinished)
 	return m
 }
 

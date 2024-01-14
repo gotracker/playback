@@ -24,7 +24,7 @@ type xmVoice[TPeriod Period] struct {
 
 	component.KeyModulator
 
-	voicer      component.Voicer[TPeriod, xmVolume.XmVolume]
+	voicer      component.Voicer[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume]
 	amp         component.AmpModulator[xmVolume.XmVolume, xmVolume.XmVolume]
 	fadeout     component.FadeoutModulator
 	freq        component.FreqModulator[TPeriod]
@@ -103,8 +103,6 @@ func (v *xmVoice[TPeriod]) doFadeout() {
 	if v.voicer != nil {
 		v.voicer.Fadeout()
 	}
-
-	v.fadeout.Fadeout()
 }
 
 func (v *xmVoice[TPeriod]) doDeferredAttack() {
@@ -126,8 +124,9 @@ func (v xmVoice[TPeriod]) getFadeoutEnabled() bool {
 func (v *xmVoice[TPeriod]) Setup(config voice.InstrumentConfig[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) {
 	v.config = config
 	v.fadeout.Setup(component.FadeoutModulatorSettings{
-		GetEnabled: v.getFadeoutEnabled,
-		Amount:     config.FadeOut.Amount,
+		Enabled:   v.config.FadeOut.Mode != fadeout.ModeDisabled,
+		GetActive: v.getFadeoutEnabled,
+		Amount:    config.FadeOut.Amount,
 	})
 	v.freq.Setup(component.FreqModulatorSettings[TPeriod]{})
 	v.autoVibrato.Setup(config.AutoVibrato)
@@ -205,12 +204,17 @@ func (v *xmVoice[TPeriod]) Clone() voice.Voice {
 		config:      v.config,
 		fadeoutMode: v.fadeoutMode,
 		amp:         v.amp.Clone(),
+		fadeout:     v.fadeout.Clone(),
 		freq:        v.freq.Clone(),
+		autoVibrato: v.autoVibrato.Clone(),
 		pan:         v.pan.Clone(),
-		volEnv:      v.volEnv.Clone(),
-		panEnv:      v.panEnv.Clone(),
+		panEnv:      v.panEnv.Clone(nil),
 		vol0Opt:     v.vol0Opt.Clone(),
 	}
+
+	vv.volEnv = v.volEnv.Clone(func(v voice.Voice) {
+		vv.Fadeout()
+	})
 
 	vv.KeyModulator = v.KeyModulator.Clone(component.KeyModulatorSettings{
 		Attack:          vv.doAttack,
@@ -228,14 +232,19 @@ func (v *xmVoice[TPeriod]) Clone() voice.Voice {
 		vv.config.VoiceFilter = v.config.VoiceFilter.Clone()
 	}
 
+	if v.config.PluginFilter != nil {
+		vv.config.PluginFilter = v.config.PluginFilter.Clone()
+	}
+
 	return &vv
 }
 
-func (v *xmVoice[TPeriod]) SetPCM(samp pcm.Sample, wholeLoop, sustainLoop loop.Loop, defVol xmVolume.XmVolume) {
-	var s component.Sampler[TPeriod, xmVolume.XmVolume]
-	s.Setup(component.SamplerSettings[TPeriod, xmVolume.XmVolume]{
+func (v *xmVoice[TPeriod]) SetPCM(samp pcm.Sample, wholeLoop, sustainLoop loop.Loop, mixVol, defVol xmVolume.XmVolume) {
+	var s component.Sampler[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume]
+	s.Setup(component.SamplerSettings[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume]{
 		Sample:        samp,
 		DefaultVolume: defVol,
+		MixVolume:     mixVol,
 		WholeLoop:     wholeLoop,
 		SustainLoop:   sustainLoop,
 	})

@@ -4,6 +4,7 @@ import (
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/util"
+	"github.com/gotracker/playback/voice"
 )
 
 // PitchEnvelope is an frequency modulation envelope
@@ -15,9 +16,9 @@ func (e *PitchEnvelope) Setup(settings EnvelopeSettings[filter.PitchFiltValue, p
 	e.baseEnvelope.Setup(settings, e.calc)
 }
 
-func (e PitchEnvelope) Clone() PitchEnvelope {
+func (e PitchEnvelope) Clone(onFinished voice.Callback) PitchEnvelope {
 	var m PitchEnvelope
-	m.baseEnvelope = e.baseEnvelope.Clone(m.calc)
+	m.baseEnvelope = e.baseEnvelope.Clone(m.calc, onFinished)
 	return m
 }
 

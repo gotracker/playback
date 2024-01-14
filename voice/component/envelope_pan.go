@@ -2,6 +2,7 @@ package component
 
 import (
 	"github.com/gotracker/playback/util"
+	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/types"
 )
 
@@ -14,9 +15,9 @@ func (e *PanEnvelope[TPanning]) Setup(settings EnvelopeSettings[TPanning, TPanni
 	e.baseEnvelope.Setup(settings, e.calc)
 }
 
-func (e PanEnvelope[TPanning]) Clone() PanEnvelope[TPanning] {
+func (e PanEnvelope[TPanning]) Clone(onFinished voice.Callback) PanEnvelope[TPanning] {
 	var m PanEnvelope[TPanning]
-	m.baseEnvelope = e.baseEnvelope.Clone(m.calc)
+	m.baseEnvelope = e.baseEnvelope.Clone(m.calc, onFinished)
 	return m
 }
 

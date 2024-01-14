@@ -2,7 +2,6 @@ package component
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/tracing"
@@ -24,10 +23,13 @@ type Envelope interface {
 type baseEnvelope[TIn, TOut any] struct {
 	settings EnvelopeSettings[TIn, TOut]
 	updater  func(TIn, TIn, float64) TOut
-	enabled  bool
-	pos      int
-	stopped  bool
-	value    TOut
+	unkeyed  struct{}
+	keyed    struct {
+		active bool
+		pos    int
+		done   bool
+	}
+	value TOut
 
 	slimKeyModulator
 }
@@ -43,30 +45,35 @@ func (e *baseEnvelope[TIn, TOut]) Setup(settings EnvelopeSettings[TIn, TOut], up
 	e.Reset()
 }
 
-func (e baseEnvelope[TIn, TOut]) Clone(update func(TIn, TIn, float64) TOut) baseEnvelope[TIn, TOut] {
+func (e baseEnvelope[TIn, TOut]) Clone(update func(TIn, TIn, float64) TOut, onFinished voice.Callback) baseEnvelope[TIn, TOut] {
 	m := e
+	m.settings.OnFinished = onFinished
+	m.updater = update
 	return m
 }
 
 // Reset resets the state to defaults based on the envelope provided
 func (e *baseEnvelope[TIn, TOut]) Reset() {
-	e.enabled = e.settings.Enabled
+	e.keyed.active = e.settings.Enabled
 	e.stateReset()
-	e.updateValue()
+}
+
+func (e baseEnvelope[TIn, TOut]) CanLoop() bool {
+	return e.settings.Loop != nil && e.settings.Loop.Enabled()
 }
 
 // SetEnabled sets the enabled flag for the envelope
 func (e *baseEnvelope[TIn, TOut]) SetEnabled(enabled bool) {
-	e.enabled = enabled
+	e.keyed.active = enabled
 }
 
 // IsEnabled returns the enabled flag for the envelope
 func (e baseEnvelope[TIn, TOut]) IsEnabled() bool {
-	return e.enabled
+	return e.keyed.active
 }
 
 func (e baseEnvelope[TIn, TOut]) IsDone() bool {
-	return e.stopped
+	return e.keyed.done
 }
 
 // GetCurrentValue returns the current cached envelope value
@@ -76,6 +83,9 @@ func (e baseEnvelope[TIn, TOut]) GetCurrentValue() TOut {
 
 // SetEnvelopePosition sets the current position in the envelope
 func (e *baseEnvelope[TIn, TOut]) SetEnvelopePosition(pos int) voice.Callback {
+	prev := e.keyed.active
+	e.keyed.active = true
+	e.keyed.done = false
 	e.stateReset()
 	// TODO: this is gross, but currently the most optimal way to find the correct position
 	for i := 0; i < pos; i++ {
@@ -83,11 +93,12 @@ func (e *baseEnvelope[TIn, TOut]) SetEnvelopePosition(pos int) voice.Callback {
 			return doneCB
 		}
 	}
+	e.keyed.active = prev
 	return nil
 }
 
 func (e baseEnvelope[TIn, TOut]) GetEnvelopePosition() int {
-	return e.pos
+	return e.keyed.pos
 }
 
 // Advance advances the envelope state 1 tick and calculates the current envelope value
@@ -96,84 +107,71 @@ func (e *baseEnvelope[TIn, TOut]) Advance() voice.Callback {
 	if done := e.stateAdvance(e.keyOn); done {
 		doneCB = e.settings.OnFinished
 	}
-	e.updateValue()
 	return doneCB
 }
 
 func (e baseEnvelope[TIn, TOut]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
-	t.TraceChannelWithComment(ch, fmt.Sprintf("enabled{%v} pos{%v} stopped{%v} value{%v}",
-		e.enabled,
-		e.pos,
-		e.stopped,
+	t.TraceChannelWithComment(ch, fmt.Sprintf("active{%v} pos{%v} stopped{%v} value{%v}",
+		e.keyed.active,
+		e.keyed.pos,
+		e.keyed.done,
 		e.value,
 	), comment)
 }
 
-func (e *baseEnvelope[TIn, TOut]) updateValue() {
-	if !e.enabled {
-		return
-	}
-
-	curVal, nextVal, t := e.getCurrentPoints()
-
-	var y0 TIn
-	if curVal != nil {
-		y0 = curVal.Y
-	}
-
-	var y1 TIn
-	if nextVal != nil {
-		y1 = nextVal.Y
-	}
-
-	e.value = e.updater(y0, y1, t)
-}
-
 func (e *baseEnvelope[TIn, TOut]) stateReset() {
 	if !e.settings.Envelope.Enabled {
-		e.stopped = true
+		e.keyed.done = true
 		return
 	}
 
-	e.pos = 0
-	e.stopped = false
+	e.keyed.pos = 0
+	e.keyed.done = false
+	e.updateValue()
 }
 
-func (e *baseEnvelope[TIn, TOut]) getCurrentPoints() (*envelope.Point[TIn], *envelope.Point[TIn], float64) {
-	if e.stopped {
-		return nil, nil, 0
+func (e *baseEnvelope[TIn, TOut]) updateValue() {
+	if !e.keyed.active || e.keyed.done {
+		return
 	}
 
 	nPoints := len(e.settings.Envelope.Values)
 
 	if nPoints == 0 {
-		return nil, nil, 0
+		return
 	}
 
-	curTick, _ := loop.CalcLoopPos(e.settings.Envelope.Loop, e.settings.Envelope.Sustain, e.pos, e.settings.Envelope.Length, e.prevKeyOn)
-	nextTick, _ := loop.CalcLoopPos(e.settings.Envelope.Loop, e.settings.Envelope.Sustain, e.pos+1, e.settings.Envelope.Length, e.keyOn)
+	curTick, _ := loop.CalcLoopPos(e.settings.Envelope.Loop, e.settings.Envelope.Sustain, e.keyed.pos, e.settings.Envelope.Length, e.prevKeyOn)
+	nextTick, _ := loop.CalcLoopPos(e.settings.Envelope.Loop, e.settings.Envelope.Sustain, curTick+1, e.settings.Envelope.Length, e.keyOn)
 
-	var cur envelope.Point[TIn]
-	for _, it := range e.settings.Envelope.Values {
+	curPoint := -1
+	for i, it := range e.settings.Envelope.Values {
 		if it.Pos > curTick {
+			curPoint = i - 1
 			break
 		}
-		cur = it
+	}
+	var cur envelope.Point[TIn]
+	if curPoint >= 0 && curPoint < nPoints {
+		cur = e.settings.Values[curPoint]
+	} else {
+		cur = e.settings.Values[nPoints-1]
 	}
 
-	var next envelope.Point[TIn]
-	foundNext := false
-	for _, it := range e.settings.Envelope.Values {
+	nextPoint := -1
+	for i, it := range e.settings.Envelope.Values {
 		if it.Pos > nextTick {
-			next = it
-			foundNext = true
+			nextPoint = i
 			break
 		}
 	}
 
-	if !foundNext {
-		return &cur, &cur, 0
+	if nextPoint < 0 || nextPoint >= nPoints {
+		e.value = e.updater(cur.Y, cur.Y, 0)
+		return
 	}
+
+	next := e.settings.Values[nextPoint]
 
 	t := float64(0)
 	if cur.Length > 0 {
@@ -181,11 +179,12 @@ func (e *baseEnvelope[TIn, TOut]) getCurrentPoints() (*envelope.Point[TIn], *env
 			t = max(min((float64(tl)/float64(cur.Length)), 1), 0)
 		}
 	}
-	return &cur, &next, t
+
+	e.value = e.updater(cur.Y, next.Y, t)
 }
 
 func (e *baseEnvelope[TIn, TOut]) stateAdvance(keyOn bool) bool {
-	if e.stopped {
+	if e.keyed.done {
 		return false
 	}
 
@@ -202,25 +201,26 @@ func (e *baseEnvelope[TIn, TOut]) stateAdvance(keyOn bool) bool {
 	nPoints := len(e.settings.Envelope.Values)
 
 	if nPoints == 0 {
-		e.stopped = true
+		e.keyed.done = true
 		return true
 	}
 
-	e.pos++
-	curTick, _ := loop.CalcLoopPos(e.settings.Envelope.Loop, e.settings.Envelope.Sustain, e.pos, e.settings.Envelope.Length, keyOn)
+	e.keyed.pos++
+	curTick, _ := loop.CalcLoopPos(e.settings.Envelope.Loop, e.settings.Envelope.Sustain, e.keyed.pos, e.settings.Envelope.Length, keyOn)
 
 	found := false
 	for _, i := range e.settings.Envelope.Values {
-		if i.Pos >= curTick && i.Length != math.MaxInt {
+		if i.Pos >= curTick {
 			found = true
 			break
 		}
 	}
 
 	if !found {
-		e.stopped = true
+		e.keyed.done = true
 		return true
 	}
 
+	e.updateValue()
 	return false
 }

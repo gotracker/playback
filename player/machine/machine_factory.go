@@ -164,9 +164,6 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 			if c.osc[OscillatorPanbrello], err = ms.GetPanbrelloFactory(); err != nil {
 				return nil, err
 			}
-			if freqMod, ok := c.cv.(voice.FreqModulator[TPeriod]); ok {
-				freqMod.SetPeriod(m.ms.PeriodConverter.GetPeriod(note.StopNote{}))
-			}
 			cmv, err := song.GetChannelMixingVolume[TMixingVolume](cs)
 			if err != nil {
 				return nil, fmt.Errorf("channel[%d]: %w", i, err)
