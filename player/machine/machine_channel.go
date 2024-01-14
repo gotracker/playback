@@ -18,7 +18,7 @@ import (
 )
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) canPastNote() bool {
-	return len(m.virtualOutputs) > 0
+	return m.us.EnableNewNoteActions && len(m.virtualOutputs) > 0
 }
 
 func withChannel[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, fn func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error) error {
