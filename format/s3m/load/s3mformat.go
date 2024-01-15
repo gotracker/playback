@@ -12,7 +12,6 @@ import (
 	"github.com/gotracker/playback/format/s3m/channel"
 	"github.com/gotracker/playback/format/s3m/layout"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
-	"github.com/gotracker/playback/format/s3m/pattern"
 	s3mSystem "github.com/gotracker/playback/format/s3m/system"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/frequency"
@@ -185,14 +184,14 @@ func convertSCRSFullToInstrument(scrs *s3mfile.SCRSFull, signedSamples bool, fea
 	return nil, errors.New("unhandled scrs ancillary type")
 }
 
-func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (pattern.Pattern, int) {
-	pat := make(pattern.Pattern, numRows)
+func convertS3MPackedPattern(pkt s3mfile.PackedPattern, numRows uint8) (song.Pattern, int) {
+	pat := make(song.Pattern, numRows)
 
 	buffer := bytes.NewBuffer(pkt.Data)
 
 	maxCh := uint8(0)
 	for rowNum := uint8(0); rowNum < numRows; rowNum++ {
-		row := make(pattern.Row, 0)
+		row := make(layout.Row, 0)
 	channelLoop:
 		for {
 			var what s3mfile.PatternFlags
@@ -256,7 +255,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		return nil, err
 	}
 
-	song := layout.Song{
+	s := layout.Song{
 		System:      s3mSystem.S3MSystem,
 		Head:        *h,
 		Instruments: make([]*instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], len(f.InstrumentPointers)),
@@ -282,10 +281,10 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	//ptrSpecialIsValid := (f.Head.Flags & 0x0080) != 0
 
 	for i, o := range f.OrderList {
-		song.OrderList[i] = index.Pattern(o)
+		s.OrderList[i] = index.Pattern(o)
 	}
 
-	song.Instruments = make([]*instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], len(f.Instruments))
+	s.Instruments = make([]*instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], len(f.Instruments))
 	for instNum, scrs := range f.Instruments {
 		sample, err := convertSCRSFullToInstrument(&scrs, signedSamples, features)
 		if err != nil {
@@ -295,11 +294,11 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 			continue
 		}
 		sample.Static.ID = channel.InstID(uint8(instNum + 1))
-		song.Instruments[instNum] = sample
+		s.Instruments[instNum] = sample
 	}
 
 	maxPatternChannel := 0
-	song.Patterns = make([]pattern.Pattern, len(f.Patterns))
+	s.Patterns = make([]song.Pattern, len(f.Patterns))
 	for patNum, pkt := range f.Patterns {
 		pattern, maxCh := convertS3MPackedPattern(pkt, getPatternLen(patNum))
 		if pattern == nil {
@@ -308,7 +307,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		if maxPatternChannel < maxCh {
 			maxPatternChannel = maxCh
 		}
-		song.Patterns[patNum] = pattern
+		s.Patterns[patNum] = pattern
 	}
 
 	sharedMem := channel.SharedMemory{
@@ -364,10 +363,10 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		}
 	}
 
-	song.NumChannels = lastEnabledChannel + 1
-	song.ChannelSettings = channels[:maxPatternChannel+1]
+	s.NumChannels = lastEnabledChannel + 1
+	s.ChannelSettings = channels[:maxPatternChannel+1]
 
-	return &song, nil
+	return &s, nil
 }
 
 func readS3M(r io.Reader, features []feature.Feature) (song.Data, error) {

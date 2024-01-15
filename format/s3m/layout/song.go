@@ -7,7 +7,6 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/format/s3m/channel"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
-	"github.com/gotracker/playback/format/s3m/pattern"
 	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
@@ -24,7 +23,7 @@ type Song struct {
 	System          system.System
 	Head            Header
 	Instruments     []*instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
-	Patterns        []pattern.Pattern
+	Patterns        []song.Pattern
 	ChannelSettings []ChannelSetting
 	NumChannels     int
 	OrderList       []index.Pattern
@@ -100,20 +99,15 @@ func (s Song) GetTickDuration(bpm int) time.Duration {
 }
 
 // GetPattern returns a specific pattern indexed by `patNum`
-func (s Song) GetPattern(patNum index.Pattern) (song.Pattern[channel.Data, s3mVolume.Volume], error) {
+func (s Song) GetPattern(patNum index.Pattern) (song.Pattern, error) {
 	if int(patNum) >= len(s.Patterns) {
 		return nil, song.ErrStopSong
 	}
 	return s.Patterns[patNum], nil
 }
 
-// GetPattern returns an interface to a specific pattern indexed by `patNum`
-func (s Song) GetPatternIntf(patNum index.Pattern) (song.PatternIntf, error) {
-	return s.GetPattern(patNum)
-}
-
 // GetPatternByOrder returns the pattern specified by the order index provided
-func (s Song) GetPatternIntfByOrder(o index.Order) (song.PatternIntf, error) {
+func (s Song) GetPatternByOrder(o index.Order) (song.Pattern, error) {
 	if int(o) >= len(s.OrderList) {
 		return nil, song.ErrStopSong
 	}
@@ -126,7 +120,7 @@ func (s Song) GetPatternIntfByOrder(o index.Order) (song.PatternIntf, error) {
 		return nil, index.ErrNextPattern
 	}
 
-	return s.GetPatternIntf(pat)
+	return s.GetPattern(pat)
 }
 
 // GetNumChannels returns the number of channels the song has
@@ -183,12 +177,12 @@ func (s Song) GetInitialOrder() index.Order {
 	return s.Head.InitialOrder
 }
 
-func (s Song) GetRowRenderStringer(row song.RowIntf, channels int, longFormat bool) render.RowStringer {
+func (s Song) GetRowRenderStringer(row song.Row, channels int, longFormat bool) render.RowStringer {
 	nch := min(s.NumChannels, channels)
 	rt := render.NewRowText[channel.Data](nch, longFormat)
-	rowData := make(pattern.Row, 0, nch)
-	pr := row.(pattern.Row)
-	nprch := min(pr.GetNumChannels(), nch)
+	rowData := make([]channel.Data, 0, nch)
+	pr := row.(Row)
+	nprch := min(len(pr), nch)
 	for i := 0; i < nprch; i++ {
 		if !s.ChannelSettings[i].Enabled {
 			continue

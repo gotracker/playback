@@ -10,6 +10,7 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 
 	"github.com/gotracker/playback/format/s3m/channel"
+	"github.com/gotracker/playback/format/s3m/layout"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 )
 
@@ -18,7 +19,7 @@ func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error)
 
 	for _, row := range mp {
 		worthwhileChannels := 0
-		unpackedChannels := make([]channel.Data, len(row))
+		unpackedChannels := make(layout.Row, len(row))
 		for c, chn := range row {
 			sampleNumber := chn.Instrument()
 			samplePeriod := chn.Period()

@@ -15,7 +15,6 @@ import (
 	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/format/it/layout"
 	itPanning "github.com/gotracker/playback/format/it/panning"
-	"github.com/gotracker/playback/format/it/pattern"
 	itSystem "github.com/gotracker/playback/format/it/system"
 	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/index"
@@ -48,14 +47,14 @@ func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
 	return &head, nil
 }
 
-func convertItPattern[TPeriod period.Period](pkt itfile.PackedPattern, channels int) (*pattern.Pattern[TPeriod], int, error) {
-	pat := make(song.Pattern[channel.Data[TPeriod], itVolume.Volume], pkt.Rows)
+func convertItPattern[TPeriod period.Period](pkt itfile.PackedPattern, channels int) (song.Pattern, int, error) {
+	pat := make(song.Pattern, pkt.Rows)
 
 	channelMem := make([]itfile.ChannelData, channels)
 	maxCh := uint8(0)
 	pos := 0
 	for rowNum := 0; rowNum < int(pkt.Rows); rowNum++ {
-		row := make([]channel.Data[TPeriod], channels)
+		row := make(layout.Row[TPeriod], channels)
 		pat[rowNum] = row
 	channelLoop:
 		for {
@@ -86,7 +85,7 @@ func convertItPattern[TPeriod period.Period](pkt itfile.PackedPattern, channels 
 		}
 	}
 
-	return &pattern.Pattern[TPeriod]{Pattern: pat}, int(maxCh), nil
+	return pat, int(maxCh), nil
 }
 
 func convertItFileToSong(f *itfile.File, features []feature.Feature) (song.Data, error) {
@@ -114,7 +113,7 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 		Head:              *h,
 		Instruments:       make(map[uint8]*instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]),
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument),
-		Patterns:          make([]pattern.Pattern[TPeriod], len(f.Patterns)),
+		Patterns:          make([]song.Pattern, len(f.Patterns)),
 		OrderList:         make([]index.Pattern, int(f.Head.OrderCount)),
 		FilterPlugins:     make(map[int]filter.Factory),
 	}
@@ -177,7 +176,7 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 		if lastEnabledChannel < maxCh {
 			lastEnabledChannel = maxCh
 		}
-		songData.Patterns[patNum] = *p
+		songData.Patterns[patNum] = p
 	}
 
 	sharedMem := channel.SharedMemory{

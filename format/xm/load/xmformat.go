@@ -12,7 +12,6 @@ import (
 	"github.com/gotracker/playback/format/xm/channel"
 	"github.com/gotracker/playback/format/xm/layout"
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
-	"github.com/gotracker/playback/format/xm/pattern"
 	xmPeriod "github.com/gotracker/playback/format/xm/period"
 	xmSystem "github.com/gotracker/playback/format/xm/system"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
@@ -256,12 +255,12 @@ func convertXMInstrumentToInstrument(ih *xmfile.InstrumentHeader, linearFrequenc
 	return xmInstrumentToInstrument(ih, linearFrequencySlides, features)
 }
 
-func convertXmPattern[TPeriod period.Period](pkt xmfile.Pattern) (*pattern.Pattern[TPeriod], int) {
-	pat := make(song.Pattern[channel.Data[TPeriod], xmVolume.XmVolume], len(pkt.Data))
+func convertXmPattern[TPeriod period.Period](pkt xmfile.Pattern) (song.Pattern, int) {
+	pat := make(song.Pattern, len(pkt.Data))
 
 	maxCh := uint8(0)
 	for rowNum, drow := range pkt.Data {
-		row := make(song.Row[channel.Data[TPeriod], xmVolume.XmVolume], len(drow))
+		row := make(layout.Row[TPeriod], len(drow))
 		pat[rowNum] = row
 
 		for channelNum, chn := range drow {
@@ -280,7 +279,7 @@ func convertXmPattern[TPeriod period.Period](pkt xmfile.Pattern) (*pattern.Patte
 		}
 	}
 
-	return &pattern.Pattern[TPeriod]{Pattern: pat}, int(maxCh)
+	return pat, int(maxCh)
 }
 
 func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (song.Data, error) {
@@ -304,7 +303,7 @@ func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []
 		Head:              *h,
 		Instruments:       make(map[uint8]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]),
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]),
-		Patterns:          make([]pattern.Pattern[TPeriod], len(f.Patterns)),
+		Patterns:          make([]song.Pattern, len(f.Patterns)),
 		OrderList:         make([]index.Pattern, int(f.Head.SongLength)),
 	}
 
@@ -346,14 +345,14 @@ func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []
 
 	lastEnabledChannel := 0
 	for patNum, pkt := range f.Patterns {
-		pattern, maxCh := convertXmPattern[TPeriod](pkt)
-		if pattern == nil {
+		pat, maxCh := convertXmPattern[TPeriod](pkt)
+		if pat == nil {
 			continue
 		}
 		if lastEnabledChannel < maxCh {
 			lastEnabledChannel = maxCh
 		}
-		s.Patterns[patNum] = *pattern
+		s.Patterns[patNum] = pat
 	}
 
 	sharedMem := channel.SharedMemory{

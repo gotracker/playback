@@ -12,26 +12,22 @@ var (
 )
 
 type PatternIntf interface {
-	GetRowIntf(row index.Row) RowIntf
+	GetRow(row index.Row) Row
 	NumRows() int
 }
 
 // Pattern is structure containing the pattern data
-type Pattern[TChannelData ChannelData[TVolume], TVolume Volume] []Row[TChannelData, TVolume]
+type Pattern []Row
 
 // GetRow returns a single row of channel data
-func (p Pattern[TChannelData, TVolume]) GetRow(row index.Row) Row[TChannelData, TVolume] {
-	return p[row]
-}
-
-func (p Pattern[TChannelData, TVolume]) GetRowIntf(row index.Row) RowIntf {
+func (p Pattern) GetRow(row index.Row) Row {
 	return p[row]
 }
 
 // NumRows returns the number of rows contained within the pattern
-func (p Pattern[TChannelData, TVolume]) NumRows() int {
+func (p Pattern) NumRows() int {
 	return len(p)
 }
 
 // Patterns is an array of pattern interfaces
-type Patterns[TChannelData ChannelData[TVolume], TVolume Volume] []Pattern[TChannelData, TVolume]
+type Patterns[TChannelData ChannelData[TVolume], TVolume Volume] []Pattern

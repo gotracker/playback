@@ -32,11 +32,11 @@ type Data interface {
 	IsValidInstrumentID(instrument.ID) bool
 	GetInstrument(instrument.ID) (instrument.InstrumentIntf, note.Semitone)
 	GetName() string
-	GetPatternIntfByOrder(index.Order) (PatternIntf, error)
-	GetPatternIntf(index.Pattern) (PatternIntf, error)
+	GetPatternByOrder(index.Order) (Pattern, error)
+	GetPattern(index.Pattern) (Pattern, error)
 	GetPeriodCalculator() PeriodCalculatorIntf
 	GetInitialOrder() index.Order
-	GetRowRenderStringer(RowIntf, int, bool) RowStringer
+	GetRowRenderStringer(Row, int, bool) RowStringer
 	GetSystem() system.System
 }
 

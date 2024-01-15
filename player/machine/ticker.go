@@ -186,7 +186,7 @@ orderScan:
 		orderUpdated = true
 	}
 
-	pat, err := m.songData.GetPatternIntfByOrder(index.Order(order))
+	pat, err := m.songData.GetPatternByOrder(index.Order(order))
 	if err != nil {
 		if errors.Is(err, index.ErrNextPattern) {
 			order++

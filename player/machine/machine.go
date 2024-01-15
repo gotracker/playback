@@ -206,8 +206,8 @@ type dataInstructionGenerator[TPeriod Period, TGlobalVolume, TMixingVolume, TVol
 	ToInstructions(m Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, songData song.Data) ([]instruction.Instruction, error)
 }
 
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) getRowData() (song.RowIntf, error) {
-	pat, err := m.songData.GetPatternIntfByOrder(m.ticker.current.order)
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) getRowData() (song.Row, error) {
+	pat, err := m.songData.GetPatternByOrder(m.ticker.current.order)
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) getR
 		return nil, song.ErrStopSong
 	}
 
-	row := pat.GetRowIntf(m.ticker.current.row)
+	row := pat.GetRow(m.ticker.current.row)
 	if row == nil {
 		return nil, song.ErrStopSong
 	}
@@ -223,37 +223,35 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) getR
 	return row, nil
 }
 
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) updateInstructions(rowData song.RowIntf) error {
-	rowChannels := min(m.songData.GetNumChannels(), rowData.GetNumChannels())
-	for i := range m.channels {
-		ch := index.Channel(i)
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) updateInstructions(rowData song.Row) error {
+	numRowChannels := song.GetRowNumChannels[TVolume](rowData)
+	rowChannels := min(m.songData.GetNumChannels(), numRowChannels)
+	return song.ForEachRowChannel(rowData, func(ch index.Channel, d song.ChannelData[TVolume]) (bool, error) {
+		if int(ch) >= rowChannels {
+			return false, nil
+		}
 
 		c := &m.channels[ch]
 		c.instructions = nil
 
-		if !c.enabled || i >= rowChannels {
-			continue
+		if !c.enabled || d == nil {
+			return true, nil
 		}
 
-		d := rowData.GetChannelIntf(ch)
-
-		if d != nil {
-			if err := c.decodeNote(m, d); err != nil {
-				return fmt.Errorf("channel[%d] decode error: %w", ch, err)
-			}
-
-			if gen, ok := d.(dataInstructionGenerator[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]); ok {
-				insts, err := gen.ToInstructions(m, ch, m.songData)
-				if err != nil {
-					return fmt.Errorf("channel[%d] instruction error: %w", ch, err)
-				}
-
-				c.instructions = insts
-			}
+		if err := c.decodeNote(m, d); err != nil {
+			return false, fmt.Errorf("channel[%d] decode error: %w", ch, err)
 		}
-	}
 
-	return nil
+		if gen, ok := d.(dataInstructionGenerator[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]); ok {
+			insts, err := gen.ToInstructions(m, ch, m.songData)
+			if err != nil {
+				return false, fmt.Errorf("channel[%d] instruction error: %w", ch, err)
+			}
+
+			c.instructions = insts
+		}
+		return true, nil
+	})
 }
 
 func GetPeriodCalculator[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) song.PeriodCalculator[TPeriod] {

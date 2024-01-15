@@ -7,7 +7,6 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/format/xm/channel"
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
-	"github.com/gotracker/playback/format/xm/pattern"
 	xmPeriod "github.com/gotracker/playback/format/xm/period"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
 	"github.com/gotracker/playback/index"
@@ -25,7 +24,7 @@ type Song[TPeriod period.Period] struct {
 	Head              Header
 	Instruments       map[uint8]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
 	InstrumentNoteMap map[uint8]map[note.Semitone]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
-	Patterns          []pattern.Pattern[TPeriod]
+	Patterns          []song.Pattern
 	ChannelSettings   []ChannelSetting
 	OrderList         []index.Pattern
 }
@@ -107,20 +106,15 @@ func (s Song[TPeriod]) GetTickDuration(bpm int) time.Duration {
 }
 
 // GetPattern returns a specific pattern indexed by `patNum`
-func (s Song[TPeriod]) GetPattern(patNum index.Pattern) (song.Pattern[channel.Data[TPeriod], xmVolume.XmVolume], error) {
+func (s Song[TPeriod]) GetPattern(patNum index.Pattern) (song.Pattern, error) {
 	if int(patNum) >= len(s.Patterns) {
 		return nil, song.ErrStopSong
 	}
-	return s.Patterns[patNum].Pattern, nil
+	return s.Patterns[patNum], nil
 }
 
-// GetPatternIntf returns an interface to a specific pattern indexed by `patNum`
-func (s Song[TPeriod]) GetPatternIntf(patNum index.Pattern) (song.PatternIntf, error) {
-	return s.GetPattern(patNum)
-}
-
-// GetPatternIntfByOrder returns the pattern specified by the order index provided
-func (s Song[TPeriod]) GetPatternIntfByOrder(o index.Order) (song.PatternIntf, error) {
+// GetPatternByOrder returns the pattern specified by the order index provided
+func (s Song[TPeriod]) GetPatternByOrder(o index.Order) (song.Pattern, error) {
 	if int(o) >= len(s.OrderList) {
 		return nil, song.ErrStopSong
 	}
@@ -133,7 +127,7 @@ func (s Song[TPeriod]) GetPatternIntfByOrder(o index.Order) (song.PatternIntf, e
 		return nil, index.ErrNextPattern
 	}
 
-	return s.GetPatternIntf(pat)
+	return s.GetPattern(pat)
 }
 
 // GetNumChannels returns the number of channels the song has
@@ -196,10 +190,10 @@ func (s Song[TPeriod]) GetInitialOrder() index.Order {
 	return s.Head.InitialOrder
 }
 
-func (s Song[TPeriod]) GetRowRenderStringer(row song.RowIntf, channels int, longFormat bool) render.RowStringer {
+func (s Song[TPeriod]) GetRowRenderStringer(row song.Row, channels int, longFormat bool) render.RowStringer {
 	rt := render.NewRowText[channel.Data[TPeriod]](channels, longFormat)
-	rowData := make(song.Row[channel.Data[TPeriod], xmVolume.XmVolume], channels)
-	copy(rowData, row.(song.Row[channel.Data[TPeriod], xmVolume.XmVolume]))
+	rowData := make([]channel.Data[TPeriod], channels)
+	copy(rowData, row.(Row[TPeriod]))
 	rt.Channels = rowData
 	return rt
 }

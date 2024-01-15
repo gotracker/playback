@@ -2,24 +2,28 @@ package song
 
 import "github.com/gotracker/playback/index"
 
-type RowIntf interface {
-	GetNumChannels() int
-	GetChannelIntf(index.Channel) ChannelDataIntf
+type rowIntf[TVolume Volume] interface {
+	Len() int
+	ForEach(fn func(ch index.Channel, d ChannelData[TVolume]) (bool, error)) error
 }
 
 // Row is a structure containing a single row
-type Row[TChannelData ChannelData[TVolume], TVolume Volume] []TChannelData
+type Row any
 
-func (r Row[TChannelData, TVolume]) GetNumChannels() int {
-	return len(r)
+func GetRowNumChannels[TVolume Volume](r Row) int {
+	if row, ok := r.(rowIntf[TVolume]); ok {
+		return row.Len()
+	}
+	return 0
 }
 
-func (r Row[TChannelData, TVolume]) GetChannel(ch index.Channel) TChannelData {
-	return r[ch]
-}
+func ForEachRowChannel[TVolume Volume](r Row, fn func(ch index.Channel, d ChannelData[TVolume]) (bool, error)) error {
+	row, ok := r.(rowIntf[TVolume])
+	if !ok {
+		return nil
+	}
 
-func (r Row[TChannelData, TVolume]) GetChannelIntf(ch index.Channel) ChannelDataIntf {
-	return r[ch]
+	return row.ForEach(fn)
 }
 
 type RowStringer interface {
