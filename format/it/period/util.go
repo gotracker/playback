@@ -4,6 +4,7 @@ import (
 	"math"
 
 	"github.com/gotracker/playback/format/it/system"
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 )
@@ -12,7 +13,7 @@ var DefaultC5SampleRate = system.DefaultC5SampleRate
 var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
 
 // CalcSemitonePeriod calculates the semitone period for it notes
-func CalcSemitonePeriod[TPeriod period.Period](semi note.Semitone, ft note.Finetune, c5SampleRate period.Frequency) TPeriod {
+func CalcSemitonePeriod[TPeriod period.Period](semi note.Semitone, ft note.Finetune, c5SampleRate frequency.Frequency) TPeriod {
 	if semi == note.UnchangedSemitone {
 		panic("how?")
 	}
@@ -30,7 +31,7 @@ func CalcSemitonePeriod[TPeriod period.Period](semi note.Semitone, ft note.Finet
 		}
 
 		if c5SampleRate == 0 {
-			c5SampleRate = period.Frequency(system.DefaultC5SampleRate)
+			c5SampleRate = frequency.Frequency(system.DefaultC5SampleRate)
 		}
 
 		if ft != 0 {
@@ -45,7 +46,7 @@ func CalcSemitonePeriod[TPeriod period.Period](semi note.Semitone, ft note.Finet
 }
 
 // CalcFinetuneC5SampleRate calculates a new frequency after a finetune adjustment
-func CalcFinetuneC5SampleRate[TPeriod period.Period](converter period.PeriodConverter[TPeriod], c5SampleRate period.Frequency, finetune note.Finetune) period.Frequency {
+func CalcFinetuneC5SampleRate[TPeriod period.Period](converter period.PeriodConverter[TPeriod], c5SampleRate frequency.Frequency, finetune note.Finetune) frequency.Frequency {
 	if finetune == 0 {
 		return c5SampleRate
 	}
@@ -56,13 +57,13 @@ func CalcFinetuneC5SampleRate[TPeriod period.Period](converter period.PeriodConv
 }
 
 // FrequencyFromSemitone returns the frequency from the semitone (and c5 sample rate)
-func FrequencyFromSemitone[TPeriod period.Period](converter period.PeriodConverter[TPeriod], semitone note.Semitone, c5SampleRate period.Frequency) float32 {
+func FrequencyFromSemitone[TPeriod period.Period](converter period.PeriodConverter[TPeriod], semitone note.Semitone, c5SampleRate frequency.Frequency) float32 {
 	p := CalcSemitonePeriod[TPeriod](semitone, 0, c5SampleRate)
 	return float32(converter.GetFrequency(p))
 }
 
 // ToAmigaPeriod calculates an amiga period for a linear finetune period
-func ToAmigaPeriod(finetunes note.Finetune, c5SampleRate period.Frequency) period.Amiga {
+func ToAmigaPeriod(finetunes note.Finetune, c5SampleRate frequency.Frequency) period.Amiga {
 	if finetunes < 0 {
 		finetunes = 0
 	}

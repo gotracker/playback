@@ -3,6 +3,7 @@ package period
 import (
 	"fmt"
 
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/util"
 	"github.com/heucuva/comparison"
 )
@@ -78,7 +79,7 @@ func (p Amiga) Lerp(t float64, rhs Amiga) Amiga {
 }
 
 // GetFrequency returns the frequency defined by the period
-func (p Amiga) GetFrequency() Frequency {
+func (p Amiga) GetFrequency() frequency.Frequency {
 	panic("unimplemented") // must be implemented by format
 }
 

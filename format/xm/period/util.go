@@ -4,13 +4,13 @@ import (
 	"math"
 
 	xmSystem "github.com/gotracker/playback/format/xm/system"
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/system"
 )
 
 // CalcSemitonePeriod calculates the semitone period for it notes
-func CalcSemitonePeriod[TPeriod period.Period](semi note.Semitone, ft note.Finetune, c4SampleRate period.Frequency) TPeriod {
+func CalcSemitonePeriod[TPeriod period.Period](semi note.Semitone, ft note.Finetune, c4SampleRate frequency.Frequency) TPeriod {
 	if semi == note.UnchangedSemitone {
 		panic("how?")
 	}
@@ -27,7 +27,7 @@ func CalcSemitonePeriod[TPeriod period.Period](semi note.Semitone, ft note.Finet
 		}
 
 		if c4SampleRate == 0 {
-			c4SampleRate = period.Frequency(xmSystem.DefaultC4SampleRate)
+			c4SampleRate = frequency.Frequency(xmSystem.DefaultC4SampleRate)
 		}
 
 		per := max(float64(xmSystem.C4Note)*xmSystem.SlideFinesPerNote-float64(ft)/2, 0)
@@ -53,7 +53,7 @@ func CalcSemitonePeriod[TPeriod period.Period](semi note.Semitone, ft note.Finet
 }
 
 // CalcFinetuneC4SampleRate calculates a new c4 sample rate after a finetune adjustment
-func CalcFinetuneC4SampleRate(c4SampleRate period.Frequency, st note.Semitone, finetune note.Finetune) period.Frequency {
+func CalcFinetuneC4SampleRate(c4SampleRate frequency.Frequency, st note.Semitone, finetune note.Finetune) frequency.Frequency {
 	if finetune == 0 && st == xmSystem.C4Note {
 		return c4SampleRate
 	}
@@ -64,11 +64,11 @@ func CalcFinetuneC4SampleRate(c4SampleRate period.Frequency, st note.Semitone, f
 
 	freq := math.Floor(float64(c4SampleRate) * pow)
 
-	return system.Frequency(freq)
+	return frequency.Frequency(freq)
 }
 
 // FrequencyFromSemitone returns the frequency from the semitone (and c4 sample rate)
-func FrequencyFromSemitone[TPeriod period.Period](converter period.PeriodConverter[TPeriod], semitone note.Semitone, c4SampleRate period.Frequency) float32 {
+func FrequencyFromSemitone[TPeriod period.Period](converter period.PeriodConverter[TPeriod], semitone note.Semitone, c4SampleRate frequency.Frequency) float32 {
 	p := CalcSemitonePeriod[TPeriod](semitone, 0, c4SampleRate)
 	return float32(converter.GetFrequency(p))
 }

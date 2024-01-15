@@ -9,7 +9,7 @@ import (
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/util"
 	"github.com/gotracker/playback/voice/autovibrato"
@@ -148,7 +148,7 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 		pluginFilterFactory  filter.Factory
 	)
 	if inst.InitialFilterResonance != 0 {
-		channelFilterFactory = func(instrument period.Frequency) filter.Filter {
+		channelFilterFactory = func(instrument frequency.Frequency) filter.Filter {
 			return itfilter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, convSettings.extendedFilterRange, convSettings.useHighPassFilter)
 		}
 	}
@@ -459,7 +459,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument[itVolume.FineV
 
 	ii.Static.Filename = si.Header.GetFilename()
 	ii.Static.Name = si.Header.GetName()
-	ii.SampleRate = period.Frequency(si.Header.C5Speed)
+	ii.SampleRate = frequency.Frequency(si.Header.C5Speed)
 	ii.Static.AutoVibrato = autovibrato.AutoVibratoSettings{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
 		Sweep:             255,

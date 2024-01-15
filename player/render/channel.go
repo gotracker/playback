@@ -7,12 +7,11 @@ import (
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice"
-	channelfilter "github.com/gotracker/playback/voice/filter"
 	"github.com/gotracker/playback/voice/mixer"
 )
 
 type ChannelIntf interface {
-	channelfilter.Applier
+	ApplyFilter(dry volume.Matrix) volume.Matrix
 	GetPremixVolume() volume.Volume
 }
 

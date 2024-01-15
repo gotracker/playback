@@ -6,16 +6,16 @@ import (
 	"github.com/heucuva/optional"
 
 	"github.com/gotracker/playback/filter"
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/note"
-	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice/autovibrato"
 	"github.com/gotracker/playback/voice/types"
 )
 
 type InstrumentIntf interface {
 	IsInvalid() bool
-	GetSampleRate() period.Frequency
-	SetSampleRate(sampleRate period.Frequency)
+	GetSampleRate() frequency.Frequency
+	SetSampleRate(sampleRate frequency.Frequency)
 	GetLength() sampling.Pos
 	SetFinetune(ft note.Finetune)
 	GetFinetune() note.Finetune
@@ -52,7 +52,7 @@ type StaticValues[TMixingVolume, TVolume types.Volume, TPanning types.Panning] s
 type Instrument[TMixingVolume, TVolume types.Volume, TPanning types.Panning] struct {
 	Static     StaticValues[TMixingVolume, TVolume, TPanning]
 	Inst       Data
-	SampleRate period.Frequency
+	SampleRate frequency.Frequency
 	Finetune   optional.Value[note.Finetune]
 }
 
@@ -63,12 +63,12 @@ func (inst Instrument[TMixingVolume, TVolume, TPanning]) IsInvalid() bool {
 
 // GetSampleRate returns the central-note sample rate value for the instrument
 // This may get mutated if a finetune effect is processed
-func (inst Instrument[TMixingVolume, TVolume, TPanning]) GetSampleRate() period.Frequency {
+func (inst Instrument[TMixingVolume, TVolume, TPanning]) GetSampleRate() frequency.Frequency {
 	return inst.SampleRate
 }
 
 // SetSampleRate sets the central-note sample rate value for the instrument
-func (inst *Instrument[TMixingVolume, TVolume, TPanning]) SetSampleRate(sampleRate period.Frequency) {
+func (inst *Instrument[TMixingVolume, TVolume, TPanning]) SetSampleRate(sampleRate frequency.Frequency) {
 	inst.SampleRate = sampleRate
 }
 

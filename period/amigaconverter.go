@@ -3,6 +3,7 @@ package period
 import (
 	"errors"
 
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/system"
 )
@@ -16,11 +17,11 @@ type AmigaConverter struct {
 var _ PeriodConverter[Amiga] = (*AmigaConverter)(nil)
 
 // GetFrequency returns the frequency defined by the period
-func (c AmigaConverter) GetFrequency(p Amiga) Frequency {
+func (c AmigaConverter) GetFrequency(p Amiga) frequency.Frequency {
 	if p.IsInvalid() {
 		return 0
 	}
-	return c.System.GetBaseClock() / Frequency(p)
+	return c.System.GetBaseClock() / frequency.Frequency(p)
 }
 
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period

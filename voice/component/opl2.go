@@ -4,6 +4,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/opl2"
 
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/render"
@@ -32,14 +33,14 @@ type OPL2[TPeriod types.Period, TMixingVolume, TVolume types.Volume] struct {
 	chip            render.OPL2Chip
 	channel         int
 	reg             OPL2Registers
-	baseFreq        period.Frequency
+	baseFreq        frequency.Frequency
 	periodConverter period.PeriodConverter[TPeriod]
 	defaultVolume   TVolume
 	keyOn           bool
 }
 
 // Setup sets up the OPL2 component
-func (o *OPL2[TPeriod, TMixingVolume, TVolume]) Setup(chip render.OPL2Chip, channel int, reg OPL2Registers, baseFreq period.Frequency, defaultVolume TVolume) {
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) Setup(chip render.OPL2Chip, channel int, reg OPL2Registers, baseFreq frequency.Frequency, defaultVolume TVolume) {
 	o.chip = chip
 	o.channel = channel
 	o.reg = reg
@@ -166,7 +167,7 @@ func (o *OPL2[TPeriod, TMixingVolume, TVolume]) calc40(reg40 uint8, vol volume.V
 	return result
 }
 
-func (o *OPL2[TPeriod, TMixingVolume, TVolume]) periodToFreqBlock(p TPeriod, baseFreq period.Frequency) (uint16, uint8) {
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) periodToFreqBlock(p TPeriod, baseFreq frequency.Frequency) (uint16, uint8) {
 	modFreq := o.periodConverter.GetFrequency(p)
 	freq := float64(baseFreq) * float64(modFreq) / 261625
 

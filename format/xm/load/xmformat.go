@@ -16,6 +16,7 @@ import (
 	xmPeriod "github.com/gotracker/playback/format/xm/period"
 	xmSystem "github.com/gotracker/playback/format/xm/system"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
@@ -85,7 +86,7 @@ func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlid
 					Factory:           oscillator.NewProtrackerOscillator,
 				},
 			},
-			SampleRate: period.Frequency(0), // uses si.Finetune, below
+			SampleRate: frequency.Frequency(0), // uses si.Finetune, below
 		}
 
 		if !linearFrequencySlides {

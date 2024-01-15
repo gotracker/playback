@@ -7,6 +7,7 @@ import (
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
 	xmPeriod "github.com/gotracker/playback/format/xm/period"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/machine/settings"
@@ -50,7 +51,7 @@ var (
 func filterFactory(name string) (settings.FilterFactoryFunc, error) {
 	switch name {
 	case "amigalpf":
-		return func(instrument period.Frequency) (filter.Filter, error) {
+		return func(instrument frequency.Frequency) (filter.Filter, error) {
 			lpf := filter.NewAmigaLPF(instrument)
 			return lpf, nil
 		}, nil

@@ -4,9 +4,9 @@ import (
 	"math"
 
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/playback/period"
 
 	"github.com/gotracker/playback/filter"
+	"github.com/gotracker/playback/frequency"
 	"github.com/heucuva/optional"
 )
 
@@ -31,7 +31,7 @@ type ResonantFilter struct {
 	f2           float64
 	fr           float64
 	efr          float64
-	playbackRate period.Frequency
+	playbackRate frequency.Frequency
 }
 
 // NewResonantFilter creates a new resonant filter with the provided cutoff and resonance values
@@ -53,7 +53,7 @@ func NewResonantFilter(cutoff uint8, resonance uint8, extendedFilterRange bool, 
 	return &rf
 }
 
-func (f *ResonantFilter) SetPlaybackRate(playback period.Frequency) {
+func (f *ResonantFilter) SetPlaybackRate(playback frequency.Frequency) {
 	if f.playbackRate == playback {
 		return
 	}

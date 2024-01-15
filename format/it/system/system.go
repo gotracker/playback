@@ -1,6 +1,7 @@
 package system
 
 import (
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/system"
 )
 
@@ -11,7 +12,7 @@ const (
 	C5Period = 428
 
 	// ITBaseClock is the base clock speed of IT files
-	ITBaseClock system.Frequency = DefaultC5SampleRate * C5Period
+	ITBaseClock frequency.Frequency = DefaultC5SampleRate * C5Period
 
 	NotesPerOctave        = 12
 	SlideFinesPerSemitone = 4

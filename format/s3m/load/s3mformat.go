@@ -15,9 +15,9 @@ import (
 	"github.com/gotracker/playback/format/s3m/pattern"
 	s3mSystem "github.com/gotracker/playback/format/s3m/system"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
-	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice/fadeout"
@@ -54,7 +54,7 @@ func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*
 			Name:     si.GetSampleName(),
 			Volume:   s3mVolume.Volume(si.Volume),
 		},
-		SampleRate: period.Frequency(si.C2Spd.Lo),
+		SampleRate: frequency.Frequency(si.C2Spd.Lo),
 	}
 	return &sample, nil
 }
@@ -66,10 +66,10 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 			Name:     si.GetSampleName(),
 			Volume:   s3mVolume.Volume(si.Volume),
 		},
-		SampleRate: period.Frequency(si.C2Spd.Lo),
+		SampleRate: frequency.Frequency(si.C2Spd.Lo),
 	}
 	if sample.SampleRate == 0 {
-		sample.SampleRate = period.Frequency(s3mfile.DefaultC2Spd)
+		sample.SampleRate = frequency.Frequency(s3mfile.DefaultC2Spd)
 	}
 
 	instLen := int(si.Length.Lo)
@@ -125,7 +125,7 @@ func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (
 			Name:     si.GetSampleName(),
 			Volume:   s3mVolume.Volume(si.Volume),
 		},
-		SampleRate: period.Frequency(si.C2Spd.Lo),
+		SampleRate: frequency.Frequency(si.C2Spd.Lo),
 	}
 
 	idata := instrument.OPL2{

@@ -4,6 +4,7 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
@@ -31,7 +32,7 @@ type Voice interface {
 
 	// General Parameters
 	IsDone() bool
-	GetSampleRate() period.Frequency
+	GetSampleRate() frequency.Frequency
 }
 
 type RenderVoice[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] interface {

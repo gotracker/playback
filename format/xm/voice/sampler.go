@@ -3,7 +3,7 @@ package voice
 import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/frequency"
 )
 
 type voicerPos interface {
@@ -46,6 +46,6 @@ func (v *xmVoice[TPeriod]) GetSample(pos sampling.Pos) volume.Matrix {
 	return wet
 }
 
-func (v xmVoice[TPeriod]) GetSampleRate() period.Frequency {
+func (v xmVoice[TPeriod]) GetSampleRate() frequency.Frequency {
 	return v.config.SampleRate
 }

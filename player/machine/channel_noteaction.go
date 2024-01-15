@@ -2,15 +2,15 @@ package machine
 
 import (
 	"github.com/gotracker/playback/filter"
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
-	"github.com/gotracker/playback/system"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/types"
 )
 
-func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNoteAction(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], outputRate system.Frequency) error {
+func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNoteAction(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], outputRate frequency.Frequency) error {
 	na, set := c.target.ActionTick.Get()
 	if !set {
 		// assume continue
@@ -103,7 +103,7 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNo
 	return nil
 }
 
-func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSetupInstrument(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], outputRate system.Frequency) error {
+func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSetupInstrument(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], outputRate frequency.Frequency) error {
 	inst := c.target.Inst
 	prevInst := c.prev.Inst
 	if inst != nil {
@@ -131,7 +131,7 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSe
 	return nil
 }
 
-func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSetupPCM(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], inst *instrument.Instrument[TMixingVolume, TVolume, TPanning], d *instrument.PCM[TMixingVolume, TVolume, TPanning], outputRate system.Frequency) error {
+func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSetupPCM(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], inst *instrument.Instrument[TMixingVolume, TVolume, TPanning], d *instrument.PCM[TMixingVolume, TVolume, TPanning], outputRate frequency.Frequency) error {
 	var voiceFilter filter.Filter
 	if factory := inst.GetFilterFactory(); factory != nil {
 		voiceFilter = factory(inst.SampleRate)

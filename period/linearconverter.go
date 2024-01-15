@@ -4,6 +4,7 @@ import (
 	"errors"
 	"math"
 
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/system"
 )
@@ -22,12 +23,12 @@ func (c LinearConverter) GetSamplerAdd(p Linear, samplerSpeed float64) float64 {
 }
 
 // GetFrequency returns the frequency defined by the period
-func (c LinearConverter) GetFrequency(p Linear) Frequency {
+func (c LinearConverter) GetFrequency(p Linear) frequency.Frequency {
 	if p.Finetune == 0 {
 		return 0
 	}
 	pft := float64(p.Finetune-c.System.GetBaseFinetunes()) / float64(c.System.GetFinetunesPerOctave())
-	f := Frequency(math.Pow(2.0, pft))
+	f := frequency.Frequency(math.Pow(2.0, pft))
 	return f
 }
 

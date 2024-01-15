@@ -3,16 +3,16 @@ package machine
 import (
 	"errors"
 
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/player/sampler"
 	"github.com/gotracker/playback/song"
-	"github.com/gotracker/playback/system"
 )
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick(s *sampler.Sampler) (*output.PremixData, error) {
 	for i := range m.channels {
-		if err := m.channels[i].DoNoteAction(index.Channel(i), m, system.Frequency(s.SampleRate)); err != nil {
+		if err := m.channels[i].DoNoteAction(index.Channel(i), m, frequency.Frequency(s.SampleRate)); err != nil {
 			return nil, err
 		}
 	}

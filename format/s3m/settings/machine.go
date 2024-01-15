@@ -7,6 +7,7 @@ import (
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/machine/settings"
@@ -32,7 +33,7 @@ var (
 func filterFactory(name string) (settings.FilterFactoryFunc, error) {
 	switch name {
 	case "amigalpf":
-		return func(instrument period.Frequency) (filter.Filter, error) {
+		return func(instrument frequency.Frequency) (filter.Filter, error) {
 			lpf := filter.NewAmigaLPF(instrument)
 			return lpf, nil
 		}, nil

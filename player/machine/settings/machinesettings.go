@@ -2,7 +2,7 @@ package settings
 
 import (
 	"github.com/gotracker/playback/filter"
-	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/oscillator"
@@ -14,7 +14,7 @@ type (
 	Panning = voice.Panning
 )
 
-type FilterFactoryFunc func(instrument period.Frequency) (filter.Filter, error)
+type FilterFactoryFunc func(instrument frequency.Frequency) (filter.Filter, error)
 
 type MachineSettings[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] struct {
 	PeriodConverter     song.PeriodCalculator[TPeriod]

@@ -2,8 +2,8 @@ package voice
 
 import (
 	"github.com/gotracker/playback/filter"
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/instrument"
-	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice/autovibrato"
 	"github.com/gotracker/playback/voice/envelope"
 	"github.com/gotracker/playback/voice/fadeout"
@@ -18,7 +18,7 @@ type (
 )
 
 type InstrumentConfig[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] struct {
-	SampleRate           period.Frequency
+	SampleRate           frequency.Frequency
 	AutoVibrato          autovibrato.AutoVibratoSettings
 	Data                 instrument.Data
 	VoiceFilter          filter.Filter

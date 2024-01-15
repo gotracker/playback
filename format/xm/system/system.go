@@ -1,6 +1,7 @@
 package system
 
 import (
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/system"
 )
 
@@ -16,7 +17,7 @@ const (
 	floatDefaultC4SampleRate = float32(DefaultC4SampleRate)
 
 	// XMBaseClock is the base clock speed of XM files
-	XMBaseClock system.Frequency = DefaultC4SampleRate * C4Period
+	XMBaseClock frequency.Frequency = DefaultC4SampleRate * C4Period
 
 	NotesPerOctave        = 12
 	SlideFinesPerSemitone = 4

@@ -4,7 +4,7 @@ import (
 	"math"
 
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/frequency"
 )
 
 type channelData struct {
@@ -19,11 +19,11 @@ type AmigaLPF struct {
 	b0       volume.Volume
 	b1       volume.Volume
 
-	playbackRate period.Frequency
+	playbackRate frequency.Frequency
 }
 
 // NewAmigaLPF creates a new AmigaLPF
-func NewAmigaLPF(instrument period.Frequency) *AmigaLPF {
+func NewAmigaLPF(instrument frequency.Frequency) *AmigaLPF {
 	var f AmigaLPF
 	f.SetPlaybackRate(instrument)
 	return &f
@@ -38,7 +38,7 @@ func (f *AmigaLPF) Clone() Filter {
 	return &c
 }
 
-func (f *AmigaLPF) SetPlaybackRate(playback period.Frequency) {
+func (f *AmigaLPF) SetPlaybackRate(playback frequency.Frequency) {
 	if f.playbackRate == playback {
 		return
 	}

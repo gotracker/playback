@@ -3,9 +3,8 @@ package filter
 import (
 	"math"
 
-	"github.com/gotracker/playback/period"
-
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/frequency"
 )
 
 type EchoFilterSettings struct {
@@ -22,7 +21,7 @@ type EchoFilterFactory struct {
 }
 
 func (e *EchoFilterFactory) Factory() Factory {
-	return func(instrument period.Frequency) Filter {
+	return func(instrument frequency.Frequency) Filter {
 		echo := EchoFilter{
 			EchoFilterSettings: e.EchoFilterSettings,
 		}
@@ -42,10 +41,10 @@ type EchoFilter struct {
 	initialFeedback volume.Volume
 	writePos        int
 	delay           [2]delayInfo // L,R
-	playbackRate    period.Frequency
+	playbackRate    frequency.Frequency
 }
 
-func (e *EchoFilter) SetPlaybackRate(playback period.Frequency) {
+func (e *EchoFilter) SetPlaybackRate(playback frequency.Frequency) {
 	if e.playbackRate == playback {
 		return
 	}

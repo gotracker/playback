@@ -1,6 +1,7 @@
 package period
 
 import (
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/note"
 )
 
@@ -15,5 +16,5 @@ type PeriodConverter[TPeriod Period] interface {
 	PortaDown(TPeriod, Delta) (TPeriod, error)
 	PortaUp(TPeriod, Delta) (TPeriod, error)
 	GetSamplerAdd(TPeriod, float64) float64
-	GetFrequency(TPeriod) Frequency
+	GetFrequency(TPeriod) frequency.Frequency
 }

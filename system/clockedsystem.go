@@ -1,27 +1,28 @@
 package system
 
 import (
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/note"
 )
 
 type ClockableSystem interface {
 	System
-	GetBaseClock() Frequency
+	GetBaseClock() frequency.Frequency
 	GetBaseFinetunes() note.Finetune
 	GetFinetunesPerOctave() note.Finetune
 	GetFinetunesPerSemitone() note.Finetune
 	GetSemitonePeriod(note.Key) (float32, bool)
-	GetSamplerSpeed(sampleRate Frequency) float32
+	GetSamplerSpeed(sampleRate frequency.Frequency) float32
 }
 
 type ClockedSystem struct {
 	MaxPastNotesPerChannel int
 
-	BaseClock          Frequency
+	BaseClock          frequency.Frequency
 	BaseFinetunes      note.Finetune
 	FinetunesPerOctave note.Finetune
 	FinetunesPerNote   note.Finetune
-	CommonRate         Frequency
+	CommonRate         frequency.Frequency
 	SemitonePeriods    [note.NumKeys]float32
 }
 
@@ -31,7 +32,7 @@ func (s ClockedSystem) GetMaxPastNotesPerChannel() int {
 	return s.MaxPastNotesPerChannel
 }
 
-func (s ClockedSystem) GetBaseClock() Frequency {
+func (s ClockedSystem) GetBaseClock() frequency.Frequency {
 	return s.BaseClock
 }
 
@@ -47,11 +48,11 @@ func (s ClockedSystem) GetFinetunesPerSemitone() note.Finetune {
 	return s.FinetunesPerNote
 }
 
-func (s ClockedSystem) GetCommonRate() Frequency {
+func (s ClockedSystem) GetCommonRate() frequency.Frequency {
 	return s.CommonRate
 }
 
-func (s ClockedSystem) GetSamplerSpeed(sampleRate Frequency) float32 {
+func (s ClockedSystem) GetSamplerSpeed(sampleRate frequency.Frequency) float32 {
 	if sampleRate == 0 {
 		panic("sampleRate is 0")
 	}

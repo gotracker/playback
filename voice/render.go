@@ -5,11 +5,10 @@ import (
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/voice/filter"
 	"github.com/gotracker/playback/voice/mixer"
 )
 
-func RenderAndAdvance[TPeriod Period](in Voice, pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details, out filter.Applier) (*mixing.Data, error) {
+func RenderAndAdvance[TPeriod Period](in Voice, pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details, out mixer.ApplyFilter) (*mixing.Data, error) {
 	if in.IsDone() {
 		return nil, nil
 	}

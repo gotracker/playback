@@ -1,7 +1,9 @@
 package system
 
+import "github.com/gotracker/playback/frequency"
+
 type System interface {
 	GetMaxPastNotesPerChannel() int
-	GetCommonRate() Frequency
-	GetSamplerSpeed(sampleRate Frequency) float32
+	GetCommonRate() frequency.Frequency
+	GetSamplerSpeed(sampleRate frequency.Frequency) float32
 }

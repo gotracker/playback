@@ -6,12 +6,11 @@ import (
 	"github.com/gotracker/gomixing/mixing"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/output"
-	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/player/sampler"
-	"github.com/gotracker/playback/system"
 	"github.com/gotracker/playback/voice/mixer"
 )
 
@@ -43,8 +42,8 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 	details := mixer.Details{
 		Mix:          s.Mixer(),
 		Panmixer:     s.GetPanMixer(),
-		SampleRate:   system.Frequency(s.SampleRate),
-		SamplerSpeed: sys.GetSamplerSpeed(period.Frequency(s.SampleRate)),
+		SampleRate:   frequency.Frequency(s.SampleRate),
+		SamplerSpeed: sys.GetSamplerSpeed(frequency.Frequency(s.SampleRate)),
 		Samples:      premix.SamplesLen,
 		Duration:     tickDuration,
 	}

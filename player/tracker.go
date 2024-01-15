@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/output"
-	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/player/machine"
 	"github.com/gotracker/playback/player/machine/settings"
@@ -64,8 +64,8 @@ func (t *Tracker) Generate(deltaTime time.Duration) (*output.PremixData, error) 
 }
 
 // GetSampleRate returns the sample rate of the sampler
-func (t *Tracker) GetSampleRate() period.Frequency {
-	return period.Frequency(t.s.SampleRate)
+func (t *Tracker) GetSampleRate() frequency.Frequency {
+	return frequency.Frequency(t.s.SampleRate)
 }
 
 // SetupSampler configures the internal sampler

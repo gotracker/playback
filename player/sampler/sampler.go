@@ -2,13 +2,13 @@ package sampler
 
 import (
 	"github.com/gotracker/gomixing/mixing"
-	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/frequency"
 )
 
 // Sampler is a container of sampler/mixer settings
 type Sampler struct {
 	SampleRate    int
-	BaseClockRate period.Frequency
+	BaseClockRate frequency.Frequency
 
 	mixer mixing.Mixer
 }
