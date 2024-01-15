@@ -8,10 +8,10 @@ import (
 	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/frequency"
-	"github.com/gotracker/playback/oscillator"
+	oscillatorImpl "github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/machine/settings"
-	voiceOscillator "github.com/gotracker/playback/voice/oscillator"
+	"github.com/gotracker/playback/voice/oscillator"
 )
 
 func GetMachineSettings() *settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning] {
@@ -43,14 +43,14 @@ func filterFactory(name string) (settings.FilterFactoryFunc, error) {
 	}
 }
 
-func vibratoFactory() (voiceOscillator.Oscillator, error) {
-	return oscillator.NewProtrackerOscillator(), nil
+func vibratoFactory() (oscillator.Oscillator, error) {
+	return oscillatorImpl.NewProtrackerOscillator(), nil
 }
 
-func tremoloFactory() (voiceOscillator.Oscillator, error) {
-	return oscillator.NewProtrackerOscillator(), nil
+func tremoloFactory() (oscillator.Oscillator, error) {
+	return oscillatorImpl.NewProtrackerOscillator(), nil
 }
 
-func panbrelloFactory() (voiceOscillator.Oscillator, error) {
-	return oscillator.NewProtrackerOscillator(), nil
+func panbrelloFactory() (oscillator.Oscillator, error) {
+	return oscillatorImpl.NewProtrackerOscillator(), nil
 }
