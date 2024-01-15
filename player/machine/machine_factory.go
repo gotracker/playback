@@ -51,25 +51,25 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 		m.us = us
 
 		order := songData.GetInitialOrder()
-		if o, set := us.StartOrderAndRow.Order.Get(); set {
+		if o, set := us.Start.Order.Get(); set {
 			order = index.Order(o)
 		}
 
 		var row index.Row
-		if r, set := us.StartOrderAndRow.Row.Get(); set {
+		if r, set := us.Start.Row.Get(); set {
 			row = index.Row(r)
 		}
 
 		sys := songData.GetSystem()
 
 		bpm := songData.GetInitialBPM()
-		if us.StartBPM != 0 {
-			bpm = us.StartBPM
+		if us.Start.BPM != 0 {
+			bpm = us.Start.BPM
 		}
 
 		tempo := songData.GetInitialTempo()
-		if us.StartTempo != 0 {
-			tempo = us.StartTempo
+		if us.Start.Tempo != 0 {
+			tempo = us.Start.Tempo
 		}
 
 		if err := m.SetBPM(bpm); err != nil {
@@ -189,7 +189,7 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 			InitialOrder:          order,
 			InitialRow:            row,
 			SongLoopStartingOrder: 0,
-			SongLoopCount:         us.SongLoop.Count,
+			SongLoopCount:         us.SongLoopCount,
 		}); err != nil {
 			return nil, err
 		}

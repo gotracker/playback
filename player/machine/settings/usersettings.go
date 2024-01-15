@@ -2,20 +2,26 @@ package settings
 
 import (
 	"github.com/gotracker/playback/index"
-	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/tracing"
+	"github.com/heucuva/optional"
 )
 
 type UserSettings struct {
-	Tracer               tracing.Tracer
-	SongLoop             feature.SongLoop
-	StartOrderAndRow     feature.StartOrderAndRow
-	PlayUntilOrderAndRow feature.PlayUntilOrderAndRow
+	tracing.Tracer
+	SongLoopCount int
+	Start         struct {
+		Order optional.Value[index.Order] // default: based on song
+		Row   optional.Value[index.Row]   // default: 0
+		Tempo int                         // 0 = based on song
+		BPM   int                         // 0 = based on song
+	}
+	PlayUntil struct {
+		Order optional.Value[index.Order] // default: based on song
+		Row   optional.Value[index.Row]   // default: based on song
+	}
 	LongChannelOutput    bool
 	IgnoreUnknownEffect  bool
 	EnableNewNoteActions bool
-	StartTempo           int
-	StartBPM             int
 }
 
 func (s UserSettings) SetTracingTick(order index.Order, row index.Row, tick int) {
@@ -71,7 +77,7 @@ func (s UserSettings) TraceChannelWithComment(ch index.Channel, op, comment stri
 		return
 	}
 
-	s.TraceChannelWithComment(ch, op, comment)
+	s.Tracer.TraceChannelWithComment(ch, op, comment)
 }
 
 func (s UserSettings) TraceChannelValueChange(ch index.Channel, op string, prev, new any) {
@@ -79,7 +85,7 @@ func (s UserSettings) TraceChannelValueChange(ch index.Channel, op string, prev,
 		return
 	}
 
-	s.TraceChannelValueChange(ch, op, prev, new)
+	s.Tracer.TraceChannelValueChange(ch, op, prev, new)
 }
 
 func (s UserSettings) TraceChannelValueChangeWithComment(ch index.Channel, op string, prev, new any, comment string) {

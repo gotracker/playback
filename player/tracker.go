@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gotracker/playback/frequency"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/player/machine"
@@ -117,15 +118,21 @@ func (t *Tracker) Configure(features []feature.Feature) (settings.UserSettings, 
 	for _, feat := range features {
 		switch f := feat.(type) {
 		case feature.SongLoop:
-			us.SongLoop = f
+			us.SongLoopCount = f.Count
 		case feature.StartOrderAndRow:
-			us.StartOrderAndRow = f
+			if o, set := f.Order.Get(); set {
+				us.Start.Order.Set(index.Order(o))
+			}
+			if r, set := f.Row.Get(); set {
+				us.Start.Row.Set(index.Row(r))
+			}
 		case feature.PlayUntilOrderAndRow:
-			us.PlayUntilOrderAndRow = f
+			us.PlayUntil.Order.Set(index.Order(f.Order))
+			us.PlayUntil.Row.Set(index.Row(f.Row))
 		case feature.SetDefaultTempo:
-			us.StartTempo = f.Tempo
+			us.Start.Tempo = f.Tempo
 		case feature.SetDefaultBPM:
-			us.StartBPM = f.BPM
+			us.Start.BPM = f.BPM
 		case feature.IgnoreUnknownEffect:
 			us.IgnoreUnknownEffect = f.Enabled
 		case feature.EnableTracing:

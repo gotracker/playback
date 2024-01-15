@@ -179,7 +179,7 @@ func (m machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetNu
 }
 
 func (m machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) CanOrderLoop() bool {
-	return m.us.SongLoop.Count != 0
+	return m.us.SongLoopCount != 0
 }
 
 func (m machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetName() string {
