@@ -5,19 +5,18 @@ import (
 
 	"github.com/gotracker/gomixing/volume"
 
-	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/frequency"
 	"github.com/heucuva/optional"
 )
 
-type channelData struct {
+type itResonantFilterChannelData struct {
 	ynz1 volume.Volume
 	ynz2 volume.Volume
 }
 
 // ResonantFilter is a modified 2-pole resonant filter
 type ResonantFilter struct {
-	channels []channelData
+	channels []itResonantFilterChannelData
 	a0       volume.Volume
 	b0       volume.Volume
 	b1       volume.Volume
@@ -34,8 +33,8 @@ type ResonantFilter struct {
 	playbackRate frequency.Frequency
 }
 
-// NewResonantFilter creates a new resonant filter with the provided cutoff and resonance values
-func NewResonantFilter(cutoff uint8, resonance uint8, extendedFilterRange bool, highpass bool) filter.Filter {
+// NewITResonantFilter creates a new resonant filter with the provided cutoff and resonance values
+func NewITResonantFilter(cutoff uint8, resonance uint8, extendedFilterRange bool, highpass bool) Filter {
 	rf := ResonantFilter{
 		highpass:            highpass,
 		extendedFilterRange: extendedFilterRange,
@@ -73,9 +72,9 @@ func (f *ResonantFilter) SetPlaybackRate(playback frequency.Frequency) {
 	f.recalculate(c)
 }
 
-func (f *ResonantFilter) Clone() filter.Filter {
+func (f *ResonantFilter) Clone() Filter {
 	c := *f
-	c.channels = make([]channelData, len(f.channels))
+	c.channels = make([]itResonantFilterChannelData, len(f.channels))
 	for i := range f.channels {
 		c.channels[i] = f.channels[i]
 	}
@@ -91,7 +90,7 @@ func (f *ResonantFilter) Filter(dry volume.Matrix) volume.Matrix {
 	for i := 0; i < dry.Channels; i++ {
 		s := dry.StaticMatrix[i]
 		for len(f.channels) <= i {
-			f.channels = append(f.channels, channelData{})
+			f.channels = append(f.channels, itResonantFilterChannelData{})
 		}
 		c := &f.channels[i]
 

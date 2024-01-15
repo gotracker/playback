@@ -1,3 +1,3 @@
-package filter
+package types
 
 type PitchFiltValue = int8

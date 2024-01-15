@@ -7,14 +7,14 @@ import (
 	"github.com/gotracker/playback/frequency"
 )
 
-type channelData struct {
+type amigaLPFChannelData struct {
 	ynz1 volume.Volume
 	ynz2 volume.Volume
 }
 
 // AmigaLPF is a 12dB/octave 2-pole Butterworth Low-Pass Filter with 3275 Hz cut-off
 type AmigaLPF struct {
-	channels []channelData
+	channels []amigaLPFChannelData
 	a0       volume.Volume
 	b0       volume.Volume
 	b1       volume.Volume
@@ -31,7 +31,7 @@ func NewAmigaLPF(instrument frequency.Frequency) *AmigaLPF {
 
 func (f *AmigaLPF) Clone() Filter {
 	c := *f
-	c.channels = make([]channelData, len(f.channels))
+	c.channels = make([]amigaLPFChannelData, len(f.channels))
 	for i := range f.channels {
 		c.channels[i] = f.channels[i]
 	}
@@ -76,7 +76,7 @@ func (f *AmigaLPF) Filter(dry volume.Matrix) volume.Matrix {
 	for i := 0; i < dry.Channels; i++ {
 		s := dry.StaticMatrix[i]
 		for len(f.channels) <= i {
-			f.channels = append(f.channels, channelData{})
+			f.channels = append(f.channels, amigaLPFChannelData{})
 		}
 		c := &f.channels[i]
 

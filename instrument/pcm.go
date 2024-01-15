@@ -2,7 +2,6 @@ package instrument
 
 import (
 	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/voice/envelope"
 	"github.com/gotracker/playback/voice/fadeout"
@@ -24,8 +23,8 @@ type PCM[TMixingVolume, TVolume types.Volume, TPanning types.Panning] struct {
 	VolEnv               envelope.Envelope[TVolume]
 	VolEnvFinishFadesOut bool
 	PanEnv               envelope.Envelope[TPanning]
-	PitchFiltMode        bool                                     // true = filter, false = pitch
-	PitchFiltEnv         envelope.Envelope[filter.PitchFiltValue] // this is either pitch or filter
+	PitchFiltMode        bool                                    // true = filter, false = pitch
+	PitchFiltEnv         envelope.Envelope[types.PitchFiltValue] // this is either pitch or filter
 }
 
 type PitchPan struct {

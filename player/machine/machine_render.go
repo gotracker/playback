@@ -63,27 +63,43 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 		}
 
 		if data != nil {
-			mixData = append(mixData, data...)
+			mixData = append(mixData, *data)
+		} else {
+			mixData = append(mixData, mixing.Data{
+				Data:       details.Mix.NewMixBuffer(details.Samples),
+				Pan:        panning.CenterAhead,
+				Volume:     volume.Volume(0),
+				Pos:        0,
+				SamplesLen: details.Samples,
+			})
 		}
 	}
 
 	for i := range m.virtualOutputs {
 		rc := &m.virtualOutputs[i]
 
-		if rc.Voice == nil {
-			continue
-		}
+		var data *mixing.Data
+		if rc.Voice != nil {
+			rc.GlobalVolume = m.gv.ToVolume()
 
-		rc.GlobalVolume = m.gv.ToVolume()
-
-		//rc.Voice.DumpState(index.Channel(i), m.us.Tracer)
-		data, err := rc.RenderAndAdvance(m.ms.PeriodConverter, centerAheadPan, details)
-		if err != nil {
-			return nil, err
+			//rc.Voice.DumpState(index.Channel(i), m.us.Tracer)
+			var err error
+			data, err = rc.RenderAndAdvance(m.ms.PeriodConverter, centerAheadPan, details)
+			if err != nil {
+				return nil, err
+			}
 		}
 
 		if data != nil {
-			mixData = append(mixData, data...)
+			mixData = append(mixData, *data)
+		} else {
+			mixData = append(mixData, mixing.Data{
+				Data:       details.Mix.NewMixBuffer(details.Samples),
+				Pan:        panning.CenterAhead,
+				Volume:     volume.Volume(0),
+				Pos:        0,
+				SamplesLen: details.Samples,
+			})
 		}
 	}
 

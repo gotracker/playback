@@ -27,8 +27,8 @@ type InstrumentConfig[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volu
 	VolEnv               envelope.Envelope[TVolume]
 	VolEnvFinishFadesOut bool
 	PanEnv               envelope.Envelope[TPanning]
-	PitchFiltMode        bool                                     // true = filter, false = pitch
-	PitchFiltEnv         envelope.Envelope[filter.PitchFiltValue] // this is either pitch or filter
+	PitchFiltMode        bool                                    // true = filter, false = pitch
+	PitchFiltEnv         envelope.Envelope[types.PitchFiltValue] // this is either pitch or filter
 }
 
 type VoiceConfig[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] struct {

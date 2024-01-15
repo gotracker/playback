@@ -40,12 +40,12 @@ func (v *s3mVoice) GetSample(pos sampling.Pos) volume.Matrix {
 
 	vol := v.GetFinalVolume()
 	wet := dry.Apply(vol)
-	if v.config.VoiceFilter != nil {
-		wet = v.config.VoiceFilter.Filter(wet)
+	if v.voiceFilter != nil {
+		wet = v.voiceFilter.Filter(wet)
 	}
 	return wet
 }
 
 func (v s3mVoice) GetSampleRate() frequency.Frequency {
-	return v.config.SampleRate
+	return v.inst.SampleRate
 }

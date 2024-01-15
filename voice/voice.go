@@ -6,16 +6,15 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/tracing"
-	"github.com/gotracker/playback/voice/loop"
-	"github.com/gotracker/playback/voice/pcm"
 	"github.com/gotracker/playback/voice/types"
 )
 
 type Voice interface {
-	Clone() Voice
+	Clone(background bool) Voice
 	DumpState(ch index.Channel, t tracing.Tracer)
 
 	// Configuration
@@ -39,8 +38,7 @@ type RenderVoice[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, T
 	Voice
 
 	// Configuration
-	Setup(config InstrumentConfig[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning])
-	SetPCM(sample pcm.Sample, wholeLoop loop.Loop, sustainLoop loop.Loop, mixVolume TMixingVolume, defaultVolume TVolume)
+	Setup(inst *instrument.Instrument[TMixingVolume, TVolume, TPanning], outputRate frequency.Frequency) error
 }
 
 type AmpModulator[TGlobalVolume, TMixingVolume, TVolume Volume] interface {

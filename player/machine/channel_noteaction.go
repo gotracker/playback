@@ -1,13 +1,11 @@
 package machine
 
 import (
-	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/voice"
-	"github.com/gotracker/playback/voice/types"
 )
 
 func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNoteAction(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], outputRate frequency.Frequency) error {
@@ -33,14 +31,14 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNo
 		case note.ActionCut:
 			c.cv.Stop()
 		case note.ActionRelease:
-			pn = c.cv.Clone()
+			pn = c.cv.Clone(true)
 			pn.Release()
 		case note.ActionFadeout:
-			pn = c.cv.Clone()
+			pn = c.cv.Clone(true)
 			pn.Release()
 			pn.Fadeout()
 		case note.ActionRetrigger:
-			pn = c.cv.Clone()
+			pn = c.cv.Clone(true)
 			pn.Release()
 			pn.Attack()
 
@@ -108,67 +106,21 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSe
 	prevInst := c.prev.Inst
 	if inst != nil {
 		if prevInst != inst {
-			switch inst.GetKind() {
-			case instrument.KindPCM:
-				d := inst.GetData().(*instrument.PCM[TMixingVolume, TVolume, TPanning])
-				if err := c.doSetupPCM(ch, m, inst, d, outputRate); err != nil {
-					return err
-				}
+			rc := &m.actualOutputs[ch]
+			if factory := inst.GetPluginFilterFactory(); factory != nil {
+				rc.PluginFilter = factory(inst.SampleRate)
+				rc.PluginFilter.SetPlaybackRate(outputRate)
+			} else {
+				rc.PluginFilter = nil
+			}
 
-			case instrument.KindOPL2:
-				d := inst.GetData().(*instrument.OPL2)
-				if err := c.doSetupOPL2(ch, m, inst, d); err != nil {
-					return err
-				}
-
-			default:
-				panic("unhandled instrument kind")
+			if err := c.cv.Setup(inst, outputRate); err != nil {
+				return err
 			}
 		}
 	} else {
 		c.cv.Stop()
 	}
-	return nil
-}
-
-func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSetupPCM(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], inst *instrument.Instrument[TMixingVolume, TVolume, TPanning], d *instrument.PCM[TMixingVolume, TVolume, TPanning], outputRate frequency.Frequency) error {
-	var voiceFilter filter.Filter
-	if factory := inst.GetFilterFactory(); factory != nil {
-		voiceFilter = factory(inst.SampleRate)
-		voiceFilter.SetPlaybackRate(outputRate)
-	}
-
-	rc := &m.actualOutputs[ch]
-	if factory := inst.GetPluginFilterFactory(); factory != nil {
-		rc.PluginFilter = factory(inst.SampleRate)
-		rc.PluginFilter.SetPlaybackRate(outputRate)
-	} else {
-		rc.PluginFilter = nil
-	}
-
-	c.cv.Setup(voice.InstrumentConfig[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]{
-		SampleRate:           inst.GetSampleRate(),
-		AutoVibrato:          inst.GetAutoVibrato(),
-		Data:                 d,
-		VoiceFilter:          voiceFilter,
-		FadeOut:              d.FadeOut,
-		PitchPan:             d.PitchPan,
-		VolEnv:               d.VolEnv,
-		VolEnvFinishFadesOut: d.VolEnvFinishFadesOut,
-		PanEnv:               d.PanEnv,
-		PitchFiltMode:        d.PitchFiltMode,
-		PitchFiltEnv:         d.PitchFiltEnv,
-	})
-
-	var mixVol TMixingVolume
-	if mv, set := d.MixingVolume.Get(); set {
-		mixVol = mv
-	} else {
-		mixVol = types.GetMaxVolume[TMixingVolume]()
-	}
-
-	c.cv.SetPCM(d.Sample, d.Loop, d.SustainLoop, mixVol, inst.GetDefaultVolume())
-
 	return nil
 }
 

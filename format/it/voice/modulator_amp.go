@@ -4,6 +4,7 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/voice/types"
+	"github.com/heucuva/optional"
 )
 
 // == AmpModulator ==
@@ -24,6 +25,14 @@ func (v *itVoice[TPeriod]) SetMixingVolume(vol itVolume.FineVolume) {
 
 func (v itVoice[TPeriod]) GetMixingVolume() itVolume.FineVolume {
 	return v.amp.GetMixingVolume()
+}
+
+func (v *itVoice[TPeriod]) SetMixingVolumeOverride(mvo optional.Value[itVolume.FineVolume]) {
+	v.amp.SetMixingVolumeOverride(mvo)
+}
+
+func (v itVoice[TPeriod]) GetMixingVolumeOverride() optional.Value[itVolume.FineVolume] {
+	return v.amp.GetMixingVolumeOverride()
 }
 
 func (v *itVoice[TPeriod]) SetVolume(vol itVolume.Volume) {

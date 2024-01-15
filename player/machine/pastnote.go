@@ -12,6 +12,6 @@ type pastNote[TPeriod Period] struct {
 	rc *render.Channel[TPeriod]
 }
 
-func (p pastNote[TPeriod]) RenderAndAdvance(pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details) ([]mixing.Data, error) {
+func (p pastNote[TPeriod]) RenderAndAdvance(pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details) (*mixing.Data, error) {
 	return p.rc.RenderAndAdvance(pc, centerAheadPan, details)
 }

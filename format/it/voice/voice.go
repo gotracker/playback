@@ -1,10 +1,16 @@
 package voice
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/filter"
 	itPanning "github.com/gotracker/playback/format/it/panning"
 	itVolume "github.com/gotracker/playback/format/it/volume"
+	"github.com/gotracker/playback/frequency"
+	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/component"
@@ -18,7 +24,8 @@ type Period interface {
 }
 
 type itVoice[TPeriod Period] struct {
-	config voice.InstrumentConfig[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]
+	inst       *instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]
+	background bool
 
 	pitchAndFilterEnvShared bool
 	filterEnvActive         bool // if pitchAndFilterEnvShared is true, this dictates which is active initially - true=filter, false=pitch
@@ -38,6 +45,7 @@ type itVoice[TPeriod Period] struct {
 	panEnv      component.PanEnvelope[itPanning.Panning]
 	filterEnv   component.FilterEnvelope
 	vol0Opt     component.Vol0Optimization
+	voiceFilter filter.Filter
 
 	// finals
 	finalVol    volume.Volume
@@ -117,7 +125,11 @@ func (v *itVoice[TPeriod]) doRelease() {
 	if v.voicer != nil {
 		v.voicer.Release()
 	}
-	v.updateFinal()
+	if v.background && !v.volEnv.CanLoop() {
+		v.KeyModulator.Fadeout() // triggers updateFinal
+	} else {
+		v.updateFinal()
+	}
 }
 
 func (v *itVoice[TPeriod]) doFadeout() {
@@ -143,52 +155,75 @@ func (v itVoice[TPeriod]) getFadeoutEnabled() bool {
 	return v.fadeoutMode.IsFadeoutActive(v.IsKeyFadeout(), v.volEnv.IsEnabled(), v.volEnv.IsDone())
 }
 
-func (v *itVoice[TPeriod]) Setup(config voice.InstrumentConfig[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]) {
-	v.config = config
-	v.filterEnvActive = v.config.PitchFiltMode
-	v.fadeoutMode = v.config.FadeOut.Mode
+func (v *itVoice[TPeriod]) Setup(inst *instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning], outputRate frequency.Frequency) error {
+	v.inst = inst
 
-	v.fadeout.Setup(component.FadeoutModulatorSettings{
-		Enabled:   v.config.FadeOut.Mode != fadeout.ModeDisabled,
-		GetActive: v.getFadeoutEnabled,
-		Amount:    config.FadeOut.Amount,
-	})
+	v.voicer = nil
+	switch d := inst.GetData().(type) {
+	case *instrument.PCM[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]:
+		v.filterEnvActive = d.PitchFiltMode
+		v.fadeoutMode = d.FadeOut.Mode
 
-	v.autoVibrato.Setup(config.AutoVibrato)
+		v.fadeout.Setup(component.FadeoutModulatorSettings{
+			Enabled:   d.FadeOut.Mode != fadeout.ModeDisabled,
+			GetActive: v.getFadeoutEnabled,
+			Amount:    d.FadeOut.Amount,
+		})
 
-	v.pitchPan.Setup(component.PitchPanModulatorSettings[itPanning.Panning]{
-		PitchPanEnable:     config.PitchPan.Enabled,
-		PitchPanCenter:     config.PitchPan.Center,
-		PitchPanSeparation: config.PitchPan.Separation,
-	})
+		v.pitchPan.Setup(component.PitchPanModulatorSettings[itPanning.Panning]{
+			PitchPanEnable:     d.PitchPan.Enabled,
+			PitchPanCenter:     d.PitchPan.Center,
+			PitchPanSeparation: d.PitchPan.Separation,
+		})
 
-	volEnvSettings := component.EnvelopeSettings[itVolume.Volume, itVolume.Volume]{
-		Envelope: config.VolEnv,
-	}
-	if config.VolEnvFinishFadesOut {
-		volEnvSettings.OnFinished = func(v voice.Voice) {
-			v.Fadeout()
+		volEnvSettings := component.EnvelopeSettings[itVolume.Volume, itVolume.Volume]{
+			Envelope: d.VolEnv,
 		}
+		if d.VolEnvFinishFadesOut {
+			volEnvSettings.OnFinished = func(v voice.Voice) {
+				v.Fadeout()
+			}
+		}
+		v.volEnv.Setup(volEnvSettings)
+
+		v.pitchEnv.Setup(component.EnvelopeSettings[int8, period.Delta]{
+			Envelope: d.PitchFiltEnv,
+		})
+
+		v.panEnv.Setup(component.EnvelopeSettings[itPanning.Panning, itPanning.Panning]{
+			Envelope: d.PanEnv,
+		})
+
+		v.filterEnv.Setup(component.EnvelopeSettings[int8, uint8]{
+			Envelope: d.PitchFiltEnv,
+		})
+
+		v.amp.SetMixingVolumeOverride(d.MixingVolume)
+
+		v.setupPCM(d.Sample, d.Loop, d.SustainLoop, itVolume.MaxItFineVolume, inst.GetDefaultVolume())
+
+	default:
+		return fmt.Errorf("unhandled instrument type: %T", inst)
 	}
-	v.volEnv.Setup(volEnvSettings)
+	if inst == nil {
+		return errors.New("instrument is nil")
+	}
 
-	v.pitchEnv.Setup(component.EnvelopeSettings[int8, period.Delta]{
-		Envelope: config.PitchFiltEnv,
-	})
+	v.autoVibrato.Setup(inst.GetAutoVibrato())
 
-	v.panEnv.Setup(component.EnvelopeSettings[itPanning.Panning, itPanning.Panning]{
-		Envelope: config.PanEnv,
-	})
+	if factory := inst.GetFilterFactory(); factory != nil {
+		v.voiceFilter = factory(inst.SampleRate)
+		v.voiceFilter.SetPlaybackRate(outputRate)
+	} else {
+		v.voiceFilter = nil
+	}
 
-	v.filterEnv.Setup(component.EnvelopeSettings[int8, uint8]{
-		Envelope: config.PitchFiltEnv,
-	})
-
-	v.KeyModulator.Release()
 	v.Reset()
+	return nil
 }
 
 func (v *itVoice[TPeriod]) Reset() {
+	v.KeyModulator.Release()
 	v.amp.Reset()
 	v.fadeout.Reset()
 	v.freq.Reset()
@@ -245,9 +280,9 @@ func (v *itVoice[TPeriod]) Advance() {
 		}
 	}
 
-	if v.config.VoiceFilter != nil && v.IsFilterEnvelopeEnabled() {
+	if v.voiceFilter != nil && v.IsFilterEnvelopeEnabled() {
 		fval := v.GetCurrentFilterEnvelope()
-		v.config.VoiceFilter.UpdateEnv(fval)
+		v.voiceFilter.UpdateEnv(fval)
 	}
 
 	// has to be after the mod/env updates
@@ -259,9 +294,10 @@ func (v *itVoice[TPeriod]) Advance() {
 	v.updateFinal()
 }
 
-func (v *itVoice[TPeriod]) Clone() voice.Voice {
+func (v *itVoice[TPeriod]) Clone(background bool) voice.Voice {
 	vv := itVoice[TPeriod]{
-		config:                  v.config,
+		inst:                    v.inst,
+		background:              background,
 		pitchAndFilterEnvShared: v.pitchAndFilterEnvShared,
 		filterEnvActive:         v.filterEnvActive,
 		fadeoutMode:             v.fadeoutMode,
@@ -293,14 +329,14 @@ func (v *itVoice[TPeriod]) Clone() voice.Voice {
 		vv.voicer = v.voicer.Clone()
 	}
 
-	if v.config.VoiceFilter != nil {
-		vv.config.VoiceFilter = v.config.VoiceFilter.Clone()
+	if v.voiceFilter != nil {
+		vv.voiceFilter = v.voiceFilter.Clone()
 	}
 
 	return &vv
 }
 
-func (v *itVoice[TPeriod]) SetPCM(samp pcm.Sample, wholeLoop, sustainLoop loop.Loop, mixVol itVolume.FineVolume, defVol itVolume.Volume) {
+func (v *itVoice[TPeriod]) setupPCM(samp pcm.Sample, wholeLoop, sustainLoop loop.Loop, mixVol itVolume.FineVolume, defVol itVolume.Volume) {
 	var s component.Sampler[TPeriod, itVolume.FineVolume, itVolume.Volume]
 	s.Setup(component.SamplerSettings[TPeriod, itVolume.FineVolume, itVolume.Volume]{
 		Sample:        samp,

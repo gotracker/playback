@@ -1,8 +1,14 @@
 package voice
 
 import (
+	"errors"
+	"fmt"
+
+	"github.com/gotracker/playback/filter"
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/frequency"
+	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/component"
@@ -16,7 +22,7 @@ type Period interface {
 }
 
 type xmVoice[TPeriod Period] struct {
-	config voice.InstrumentConfig[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
+	inst *instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
 
 	fadeoutMode fadeout.Mode
 
@@ -31,6 +37,7 @@ type xmVoice[TPeriod Period] struct {
 	volEnv      component.VolumeEnvelope[xmVolume.XmVolume]
 	panEnv      component.PanEnvelope[xmPanning.Panning]
 	vol0Opt     component.Vol0Optimization
+	voiceFilter filter.Filter
 }
 
 var (
@@ -117,41 +124,64 @@ func (v xmVoice[TPeriod]) getFadeoutEnabled() bool {
 	return v.fadeoutMode.IsFadeoutActive(v.IsKeyFadeout(), v.volEnv.IsEnabled(), v.volEnv.IsDone())
 }
 
-func (v *xmVoice[TPeriod]) Setup(config voice.InstrumentConfig[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) {
-	v.config = config
-	v.fadeout.Setup(component.FadeoutModulatorSettings{
-		Enabled:   v.config.FadeOut.Mode != fadeout.ModeDisabled,
-		GetActive: v.getFadeoutEnabled,
-		Amount:    config.FadeOut.Amount,
-	})
-	v.freq.Setup(component.FreqModulatorSettings[TPeriod]{})
-	v.autoVibrato.Setup(config.AutoVibrato)
-	volEnvSettings := component.EnvelopeSettings[xmVolume.XmVolume, xmVolume.XmVolume]{
-		Envelope: config.VolEnv,
-	}
-	if config.VolEnvFinishFadesOut {
-		volEnvSettings.OnFinished = func(v voice.Voice) {
-			v.Fadeout()
+func (v *xmVoice[TPeriod]) Setup(inst *instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], outputRate frequency.Frequency) error {
+	v.inst = inst
+
+	switch d := inst.GetData().(type) {
+	case *instrument.PCM[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]:
+		v.fadeoutMode = d.FadeOut.Mode
+
+		v.fadeout.Setup(component.FadeoutModulatorSettings{
+			Enabled:   d.FadeOut.Mode != fadeout.ModeDisabled,
+			GetActive: v.getFadeoutEnabled,
+			Amount:    d.FadeOut.Amount,
+		})
+
+		volEnvSettings := component.EnvelopeSettings[xmVolume.XmVolume, xmVolume.XmVolume]{
+			Envelope: d.VolEnv,
 		}
+		if d.VolEnvFinishFadesOut {
+			volEnvSettings.OnFinished = func(v voice.Voice) {
+				v.Fadeout()
+			}
+		}
+		v.volEnv.Setup(volEnvSettings)
+
+		v.panEnv.Setup(component.EnvelopeSettings[xmPanning.Panning, xmPanning.Panning]{
+			Envelope: d.PanEnv,
+		})
+
+		v.amp.SetMixingVolumeOverride(d.MixingVolume)
+
+		v.setupPCM(d.Sample, d.Loop, d.SustainLoop, xmVolume.DefaultXmMixingVolume, inst.GetDefaultVolume())
+
+	default:
+		return fmt.Errorf("unhandled instrument type: %T", inst)
 	}
-	v.volEnv.Setup(volEnvSettings)
-	v.panEnv.Setup(component.EnvelopeSettings[xmPanning.Panning, xmPanning.Panning]{
-		Envelope: config.PanEnv,
-	})
-	v.KeyModulator.Release()
+	if inst == nil {
+		return errors.New("instrument is nil")
+	}
+
+	v.autoVibrato.Setup(inst.GetAutoVibrato())
+
+	if factory := inst.GetFilterFactory(); factory != nil {
+		v.voiceFilter = factory(inst.SampleRate)
+		v.voiceFilter.SetPlaybackRate(outputRate)
+	} else {
+		v.voiceFilter = nil
+	}
+
 	v.Reset()
+	return nil
 }
 
 func (v *xmVoice[TPeriod]) Reset() {
-	v.fadeoutMode = v.config.FadeOut.Mode
-
+	v.KeyModulator.Release()
+	v.amp.Reset()
 	v.fadeout.Reset()
-
-	v.volEnv.Reset()
-	v.panEnv.Reset()
-
+	v.freq.Reset()
 	v.autoVibrato.Reset()
-
+	v.pan.Reset()
 	v.volEnv.Reset()
 	v.panEnv.Reset()
 	v.vol0Opt.Reset()
@@ -194,9 +224,9 @@ func (v *xmVoice[TPeriod]) Advance() {
 	v.KeyModulator.Advance()
 }
 
-func (v *xmVoice[TPeriod]) Clone() voice.Voice {
+func (v *xmVoice[TPeriod]) Clone(bool) voice.Voice {
 	vv := xmVoice[TPeriod]{
-		config:      v.config,
+		inst:        v.inst,
 		fadeoutMode: v.fadeoutMode,
 		amp:         v.amp.Clone(),
 		fadeout:     v.fadeout.Clone(),
@@ -223,14 +253,14 @@ func (v *xmVoice[TPeriod]) Clone() voice.Voice {
 		vv.voicer = v.voicer.Clone()
 	}
 
-	if v.config.VoiceFilter != nil {
-		vv.config.VoiceFilter = v.config.VoiceFilter.Clone()
+	if v.voiceFilter != nil {
+		vv.voiceFilter = v.voiceFilter.Clone()
 	}
 
 	return &vv
 }
 
-func (v *xmVoice[TPeriod]) SetPCM(samp pcm.Sample, wholeLoop, sustainLoop loop.Loop, mixVol, defVol xmVolume.XmVolume) {
+func (v *xmVoice[TPeriod]) setupPCM(samp pcm.Sample, wholeLoop, sustainLoop loop.Loop, mixVol, defVol xmVolume.XmVolume) {
 	var s component.Sampler[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume]
 	s.Setup(component.SamplerSettings[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume]{
 		Sample:        samp,

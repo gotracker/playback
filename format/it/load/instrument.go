@@ -18,10 +18,10 @@ import (
 	"github.com/gotracker/playback/voice/loop"
 	"github.com/gotracker/playback/voice/oscillator"
 	"github.com/gotracker/playback/voice/pcm"
+	"github.com/gotracker/playback/voice/types"
 	"github.com/heucuva/optional"
 
 	"github.com/gotracker/playback/filter"
-	itfilter "github.com/gotracker/playback/format/it/filter"
 	itNote "github.com/gotracker/playback/format/it/note"
 	itPanning "github.com/gotracker/playback/format/it/panning"
 	itVolume "github.com/gotracker/playback/format/it/volume"
@@ -149,7 +149,7 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 	)
 	if inst.InitialFilterResonance != 0 {
 		channelFilterFactory = func(instrument frequency.Frequency) filter.Filter {
-			return itfilter.NewResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, convSettings.extendedFilterRange, convSettings.useHighPassFilter)
+			return filter.NewITResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, convSettings.extendedFilterRange, convSettings.useHighPassFilter)
 		}
 	}
 
@@ -236,8 +236,8 @@ func convertPanEnvValue(v int8) itPanning.Panning {
 	return itPanning.Panning(int(v) + 128)
 }
 
-func convertPitchEnvValue(v int8) filter.PitchFiltValue {
-	return filter.PitchFiltValue(v)
+func convertPitchEnvValue(v int8) types.PitchFiltValue {
+	return types.PitchFiltValue(v)
 }
 
 func convertEnvelope[T any](outEnv *envelope.Envelope[T], inEnv *itfile.Envelope, convert func(int8) T) error {

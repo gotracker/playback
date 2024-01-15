@@ -7,6 +7,7 @@ import (
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/tracing"
 	"github.com/gotracker/playback/voice/types"
+	"github.com/heucuva/optional"
 )
 
 // AmpModulator is an amplitude (volume) modulator
@@ -19,7 +20,8 @@ type AmpModulator[TMixingVolume, TVolume types.Volume] struct {
 		mixing TMixingVolume
 	}
 	keyed struct {
-		delta types.VolumeDelta
+		delta          types.VolumeDelta
+		mixingOverride optional.Value[TMixingVolume]
 	}
 	final volume.Volume // = active? * mixing * vol
 }
@@ -45,6 +47,7 @@ func (a AmpModulator[TMixingVolume, TVolume]) Clone() AmpModulator[TMixingVolume
 
 func (a *AmpModulator[TMixingVolume, TVolume]) Reset() {
 	a.keyed.delta = 0
+	a.keyed.mixingOverride.Reset()
 	a.updateFinal()
 }
 
@@ -68,6 +71,14 @@ func (a *AmpModulator[TMixingVolume, TVolume]) SetMixingVolume(mixing TMixingVol
 // GetMixingVolume returns the current mixing volume of the modulator
 func (a AmpModulator[TMixingVolume, TVolume]) GetMixingVolume() TMixingVolume {
 	return a.unkeyed.mixing
+}
+
+func (a *AmpModulator[TMixingVolume, TVolume]) SetMixingVolumeOverride(mvo optional.Value[TMixingVolume]) {
+	a.keyed.mixingOverride = mvo
+}
+
+func (a AmpModulator[TMixingVolume, TVolume]) GetMixingVolumeOverride() optional.Value[TMixingVolume] {
+	return a.keyed.mixingOverride
 }
 
 // SetVolume sets the current volume (before fadeout calculation)
@@ -105,14 +116,21 @@ func (a *AmpModulator[TMixingVolume, TVolume]) updateFinal() {
 	}
 
 	v := types.AddVolumeDelta(a.unkeyed.vol, a.keyed.delta)
-	a.final = a.unkeyed.mixing.ToVolume() * v.ToVolume()
+
+	mv := a.unkeyed.mixing
+	if mvo, set := a.keyed.mixingOverride.Get(); set {
+		mv = mvo
+	}
+
+	a.final = mv.ToVolume() * v.ToVolume()
 }
 
 func (a AmpModulator[TMixingVolume, TVolume]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
-	t.TraceChannelWithComment(ch, fmt.Sprintf("active{%v} vol{%v} mixing{%v} delta{%v} final{%v}",
+	t.TraceChannelWithComment(ch, fmt.Sprintf("active{%v} vol{%v} mixing{%v} mixingOverride{%v} delta{%v} final{%v}",
 		a.unkeyed.active,
 		a.unkeyed.vol,
 		a.unkeyed.mixing,
+		a.keyed.mixingOverride,
 		a.keyed.delta,
 		a.final,
 	), comment)

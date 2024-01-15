@@ -40,12 +40,12 @@ func (v *itVoice[TPeriod]) GetSample(pos sampling.Pos) volume.Matrix {
 
 	vol := v.GetFinalVolume()
 	wet := samp.Apply(vol)
-	if v.config.VoiceFilter != nil {
-		wet = v.config.VoiceFilter.Filter(wet)
+	if v.voiceFilter != nil {
+		wet = v.voiceFilter.Filter(wet)
 	}
 	return wet
 }
 
 func (v itVoice[TPeriod]) GetSampleRate() frequency.Frequency {
-	return v.config.SampleRate
+	return v.inst.SampleRate
 }

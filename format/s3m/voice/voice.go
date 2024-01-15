@@ -1,8 +1,14 @@
 package voice
 
 import (
+	"errors"
+	"fmt"
+
+	"github.com/gotracker/playback/filter"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
+	"github.com/gotracker/playback/frequency"
+	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/component"
@@ -10,12 +16,8 @@ import (
 	"github.com/gotracker/playback/voice/pcm"
 )
 
-type Period interface {
-	period.Period
-}
-
 type s3mVoice struct {
-	config voice.InstrumentConfig[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
+	inst *instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
 
 	component.KeyModulator
 
@@ -23,7 +25,8 @@ type s3mVoice struct {
 	component.AmpModulator[s3mVolume.FineVolume, s3mVolume.Volume]
 	component.FreqModulator[period.Amiga]
 	component.PanModulator[s3mPanning.Panning]
-	vol0Opt component.Vol0Optimization
+	vol0Opt     component.Vol0Optimization
+	voiceFilter filter.Filter
 }
 
 var (
@@ -58,6 +61,7 @@ func New(config voice.VoiceConfig[period.Amiga, s3mVolume.Volume, s3mVolume.Fine
 	})
 
 	v.vol0Opt.Setup(config.Vol0Optimization)
+
 	return v
 }
 
@@ -90,11 +94,31 @@ func (v *s3mVoice) doDeferredRelease() {
 	}
 }
 
-func (v *s3mVoice) Setup(config voice.InstrumentConfig[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) {
-	v.config = config
+func (v *s3mVoice) Setup(inst *instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], outputRate frequency.Frequency) error {
+	v.inst = inst
 
-	v.KeyModulator.Release()
+	switch d := inst.GetData().(type) {
+	case *instrument.PCM[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]:
+		v.AmpModulator.SetMixingVolumeOverride(d.MixingVolume)
+
+		v.setupPCM(d.Sample, d.Loop, d.SustainLoop, s3mVolume.MaxFineVolume, inst.GetDefaultVolume())
+
+	default:
+		return fmt.Errorf("unhandled instrument type: %T", inst)
+	}
+	if inst == nil {
+		return errors.New("instrument is nil")
+	}
+
+	if factory := inst.GetFilterFactory(); factory != nil {
+		v.voiceFilter = factory(inst.SampleRate)
+		v.voiceFilter.SetPlaybackRate(outputRate)
+	} else {
+		v.voiceFilter = nil
+	}
+
 	v.Reset()
+	return nil
 }
 
 func (v *s3mVoice) Reset() {
@@ -124,9 +148,9 @@ func (v *s3mVoice) Advance() {
 	v.KeyModulator.Advance()
 }
 
-func (v *s3mVoice) Clone() voice.Voice {
+func (v *s3mVoice) Clone(bool) voice.Voice {
 	vv := s3mVoice{
-		config:        v.config,
+		inst:          v.inst,
 		AmpModulator:  v.AmpModulator.Clone(),
 		FreqModulator: v.FreqModulator.Clone(),
 		PanModulator:  v.PanModulator.Clone(),
@@ -145,14 +169,14 @@ func (v *s3mVoice) Clone() voice.Voice {
 		vv.voicer = v.voicer.Clone()
 	}
 
-	if v.config.VoiceFilter != nil {
-		vv.config.VoiceFilter = v.config.VoiceFilter.Clone()
+	if v.voiceFilter != nil {
+		vv.voiceFilter = v.voiceFilter.Clone()
 	}
 
 	return &vv
 }
 
-func (v *s3mVoice) SetPCM(samp pcm.Sample, wholeLoop, sustainLoop loop.Loop, mixVol s3mVolume.FineVolume, defVol s3mVolume.Volume) {
+func (v *s3mVoice) setupPCM(samp pcm.Sample, wholeLoop, sustainLoop loop.Loop, mixVol s3mVolume.FineVolume, defVol s3mVolume.Volume) {
 	var s component.Sampler[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]
 	s.Setup(component.SamplerSettings[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]{
 		Sample:        samp,

@@ -24,7 +24,7 @@ type Channel[TPeriod period.Period] struct {
 	Voice        voice.Voice
 }
 
-func (c *Channel[TPeriod]) RenderAndAdvance(pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details) ([]mixing.Data, error) {
+func (c *Channel[TPeriod]) RenderAndAdvance(pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details) (*mixing.Data, error) {
 	if filt := c.PluginFilter; filt != nil {
 		filt.SetPlaybackRate(details.SampleRate)
 	}
@@ -41,7 +41,7 @@ func (c *Channel[TPeriod]) RenderAndAdvance(pc period.PeriodConverter[TPeriod], 
 	if data == nil {
 		return nil, nil
 	}
-	return []mixing.Data{*data}, nil
+	return data, nil
 }
 
 func (c *Channel[TPeriod]) StopVoice() {

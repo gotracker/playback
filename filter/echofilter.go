@@ -29,7 +29,7 @@ func (e *EchoFilterFactory) Factory() Factory {
 	}
 }
 
-type delayInfo struct {
+type echoFilterDelayInfo struct {
 	buf   []volume.Volume
 	delay int
 }
@@ -40,7 +40,7 @@ type EchoFilter struct {
 	EchoFilterSettings
 	initialFeedback volume.Volume
 	writePos        int
-	delay           [2]delayInfo // L,R
+	delay           [2]echoFilterDelayInfo // L,R
 	playbackRate    frequency.Frequency
 }
 
