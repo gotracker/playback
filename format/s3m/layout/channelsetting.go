@@ -5,6 +5,7 @@ import (
 	"github.com/gotracker/playback/format/s3m/channel"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice/vol0optimization"
 )
@@ -66,5 +67,14 @@ func (c ChannelSetting) GetVol0OptimizationSettings() vol0optimization.Vol0Optim
 	return vol0optimization.Vol0OptimizationSettings{
 		Enabled:     c.Memory.Shared.ZeroVolOptimization,
 		MaxTicksAt0: 3,
+	}
+}
+
+func (c ChannelSetting) GetOPLChannel() index.OPLChannel {
+	switch c.Category {
+	case s3mfile.ChannelCategoryOPL2Melody, s3mfile.ChannelCategoryOPL2Drums:
+		return index.OPLChannel(c.OutputChannelNum)
+	default:
+		return index.InvalidOPLChannel
 	}
 }

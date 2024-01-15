@@ -4,6 +4,7 @@ import (
 	"github.com/gotracker/playback/format/xm/channel"
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice/vol0optimization"
 )
@@ -60,4 +61,8 @@ func (c ChannelSetting) GetVol0OptimizationSettings() vol0optimization.Vol0Optim
 		Enabled:     true,
 		MaxTicksAt0: 3,
 	}
+}
+
+func (ChannelSetting) GetOPLChannel() index.OPLChannel {
+	return index.InvalidOPLChannel
 }

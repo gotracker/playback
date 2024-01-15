@@ -366,6 +366,23 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	s.NumChannels = lastEnabledChannel + 1
 	s.ChannelSettings = channels[:maxPatternChannel+1]
 
+	var channelOrders [4][]index.Channel
+	for i, cs := range s.ChannelSettings {
+		switch cs.Category {
+		case s3mfile.ChannelCategoryPCMLeft:
+			channelOrders[0] = append(channelOrders[0], index.Channel(i))
+		case s3mfile.ChannelCategoryPCMRight:
+			channelOrders[1] = append(channelOrders[1], index.Channel(i))
+		case s3mfile.ChannelCategoryOPL2Melody:
+			channelOrders[2] = append(channelOrders[2], index.Channel(i))
+		case s3mfile.ChannelCategoryOPL2Drums:
+			channelOrders[3] = append(channelOrders[3], index.Channel(i))
+		}
+	}
+	for _, co := range channelOrders {
+		s.ChannelOrders = append(s.ChannelOrders, co...)
+	}
+
 	return &s, nil
 }
 

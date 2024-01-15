@@ -201,3 +201,23 @@ func (s Song[TPeriod]) GetRowRenderStringer(row song.Row, channels int, longForm
 func (s Song[TPeriod]) GetSystem() system.System {
 	return s.System
 }
+
+func (s Song[TPeriod]) ForEachChannel(enabledOnly bool, fn func(ch index.Channel) (bool, error)) error {
+	for i, cs := range s.ChannelSettings {
+		if enabledOnly && !cs.Enabled {
+			continue
+		}
+		cont, err := fn(index.Channel(i))
+		if err != nil {
+			return err
+		}
+		if !cont {
+			break
+		}
+	}
+	return nil
+}
+
+func (Song[TPeriod]) IsOPL2Enabled() bool {
+	return false
+}

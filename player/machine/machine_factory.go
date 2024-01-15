@@ -11,6 +11,7 @@ import (
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice"
+	"github.com/gotracker/playback/voice/opl2"
 )
 
 type typeLookup struct {
@@ -98,6 +99,8 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 		m.channels = make([]channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], channels)
 		m.actualOutputs = make([]render.Channel[TPeriod], channels)
 
+		m.opl2Enabled = songData.IsOPL2Enabled()
+
 		mpnpc := sys.GetMaxPastNotesPerChannel()
 		if mpnpc > 0 {
 			m.virtualOutputs = make([]render.Channel[TPeriod], channels*mpnpc)
@@ -124,7 +127,7 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 
 				rc.OutputFilter = filt
 			}
-			rc.GetOPL2Chip = func() render.OPL2Chip {
+			rc.GetOPL2Chip = func() opl2.Chip {
 				return m.opl2
 			}
 
@@ -148,6 +151,7 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 			c := &m.channels[ch]
 			c.enabled = cs.GetEnabled()
 			c.cv = m.ms.VoiceFactory.NewVoice(voice.VoiceConfig[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]{
+				OPLChannel:       cs.GetOPLChannel(),
 				InitialVolume:    initialVolume,
 				InitialMixing:    initialMixing,
 				PanEnabled:       cs.IsPanEnabled(),

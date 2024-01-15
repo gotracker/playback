@@ -6,30 +6,34 @@ import (
 	"github.com/gotracker/gomixing/mixing"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/player/sampler"
+	"github.com/gotracker/playback/voice/opl2"
 )
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) setupOPL2(s *sampler.Sampler) error {
-	if m.opl2 != nil || !m.ms.OPL2Enabled {
-		return nil
-	}
-
-	if s != nil {
+	if s == nil {
 		return errors.New("sampler is nil")
 	}
 
-	var oplLen int
-	//oplLen += len(m.chOrder[int(s3mfile.ChannelCategoryOPL2Melody)-1])
-	//oplLen += len(m.chOrder[int(s3mfile.ChannelCategoryOPL2Drums)-1])
+	o := opl2.NewOPL2Chip(uint32(s.SampleRate))
+	o.WriteReg(0x01, 0x20) // enable all waveforms
+	o.WriteReg(0x04, 0x00) // clear timer flags
+	o.WriteReg(0x08, 0x40) // clear CSW and set NOTE-SEL
+	o.WriteReg(0xBD, 0x00) // set default notes
+	m.opl2 = o
 
-	if oplLen > 0 {
-		o := render.NewOPL2Chip(uint32(s.SampleRate))
-		o.WriteReg(0x01, 0x20) // enable all waveforms
-		o.WriteReg(0x04, 0x00) // clear timer flags
-		o.WriteReg(0x08, 0x40) // clear CSW and set NOTE-SEL
-		o.WriteReg(0xBD, 0x00) // set default notes
-		m.opl2 = o
+	for i := range m.actualOutputs {
+		rc := &m.actualOutputs[i]
+		if rc.Voice != nil {
+			rc.Voice.SetOPL2Chip(m.opl2)
+		}
+	}
+
+	for i := range m.virtualOutputs {
+		rc := &m.virtualOutputs[i]
+		if rc.Voice != nil {
+			rc.Voice.SetOPL2Chip(m.opl2)
+		}
 	}
 
 	return nil

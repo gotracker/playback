@@ -313,6 +313,7 @@ func Read(r io.Reader) (*s3mfile.File, error) {
 			InstrumentCount: 31,
 			PatternCount:    uint16(len(mf.Patterns)),
 			Flags:           0x0004 | 0x0010 | 0x0020, // amigaSlides | amigaLimits | sbFilterEnable
+			SCRM:            [4]byte{'S', 'C', 'R', 'M'},
 			GlobalVolume:    s3mfile.DefaultVolume,
 			InitialSpeed:    6,
 			InitialTempo:    125,
@@ -330,12 +331,12 @@ func Read(r io.Reader) (*s3mfile.File, error) {
 			continue
 		}
 
-		isLeft := (i & 1) == 0
-		if isLeft {
-			f.ChannelSettings[i] = s3mfile.MakeChannelSetting(true, s3mfile.ChannelCategoryPCMLeft, i>>1)
+		// MODs process in 0 -> max channel order, so shove them all in the left category in order
+		f.ChannelSettings[i] = s3mfile.MakeChannelSetting(true, s3mfile.ChannelCategoryPCMLeft, i)
+
+		if isLeft := (i & 1) == 0; isLeft {
 			f.Panning[i] = s3mfile.DefaultPanningLeft
 		} else {
-			f.ChannelSettings[i] = s3mfile.MakeChannelSetting(true, s3mfile.ChannelCategoryPCMRight, i>>1)
 			f.Panning[i] = s3mfile.DefaultPanningRight
 		}
 	}

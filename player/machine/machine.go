@@ -18,6 +18,7 @@ import (
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/player/sampler"
 	"github.com/gotracker/playback/song"
+	"github.com/gotracker/playback/voice/opl2"
 	"github.com/gotracker/playback/voice/oscillator"
 	"github.com/gotracker/playback/voice/types"
 )
@@ -131,10 +132,11 @@ type machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	ticker ticker
 	age    int
 
-	songData song.Data
-	ms       *settings.MachineSettings[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
-	us       settings.UserSettings
-	opl2     render.OPL2Chip
+	songData    song.Data
+	ms          *settings.MachineSettings[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
+	us          settings.UserSettings
+	opl2        opl2.Chip
+	opl2Enabled bool
 
 	rowStringer render.RowStringer
 	// 1:1 with channels

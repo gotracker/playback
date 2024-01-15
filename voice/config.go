@@ -3,10 +3,12 @@ package voice
 import (
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/frequency"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/voice/autovibrato"
 	"github.com/gotracker/playback/voice/envelope"
 	"github.com/gotracker/playback/voice/fadeout"
+	"github.com/gotracker/playback/voice/opl2"
 	"github.com/gotracker/playback/voice/types"
 	"github.com/gotracker/playback/voice/vol0optimization"
 )
@@ -32,6 +34,8 @@ type InstrumentConfig[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volu
 }
 
 type VoiceConfig[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] struct {
+	OPLChip          opl2.Chip
+	OPLChannel       index.OPLChannel
 	InitialVolume    TVolume
 	InitialMixing    TMixingVolume
 	PanEnabled       bool

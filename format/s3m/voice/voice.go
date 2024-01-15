@@ -6,18 +6,22 @@ import (
 
 	"github.com/gotracker/playback/filter"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
+	s3mSystem "github.com/gotracker/playback/format/s3m/system"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/frequency"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/component"
-	"github.com/gotracker/playback/voice/loop"
-	"github.com/gotracker/playback/voice/pcm"
+	"github.com/gotracker/playback/voice/opl2"
 )
 
 type s3mVoice struct {
-	inst *instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
+	inst        *instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
+	opl2Chip    opl2.Chip
+	opl2Channel index.OPLChannel
 
 	component.KeyModulator
 
@@ -25,6 +29,7 @@ type s3mVoice struct {
 	component.AmpModulator[s3mVolume.FineVolume, s3mVolume.Volume]
 	component.FreqModulator[period.Amiga]
 	component.PanModulator[s3mPanning.Panning]
+	opl2        component.OPL2Registers
 	vol0Opt     component.Vol0Optimization
 	voiceFilter filter.Filter
 }
@@ -37,7 +42,10 @@ var (
 )
 
 func New(config voice.VoiceConfig[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) voice.RenderVoice[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning] {
-	v := &s3mVoice{}
+	v := &s3mVoice{
+		opl2Chip:    config.OPLChip,
+		opl2Channel: config.OPLChannel,
+	}
 
 	v.KeyModulator.Setup(component.KeyModulatorSettings{
 		Attack:          v.doAttack,
@@ -63,6 +71,10 @@ func New(config voice.VoiceConfig[period.Amiga, s3mVolume.Volume, s3mVolume.Fine
 	v.vol0Opt.Setup(config.Vol0Optimization)
 
 	return v
+}
+
+func (v *s3mVoice) SetOPL2Chip(chip opl2.Chip) {
+	v.opl2Chip = chip
 }
 
 func (v *s3mVoice) doAttack() {
@@ -101,10 +113,23 @@ func (v *s3mVoice) Setup(inst *instrument.Instrument[s3mVolume.FineVolume, s3mVo
 	case *instrument.PCM[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]:
 		v.AmpModulator.SetMixingVolumeOverride(d.MixingVolume)
 
-		v.setupPCM(d.Sample, d.Loop, d.SustainLoop, s3mVolume.MaxFineVolume, inst.GetDefaultVolume())
+		var s component.Sampler[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]
+		s.Setup(component.SamplerSettings[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]{
+			Sample:        d.Sample,
+			DefaultVolume: inst.GetDefaultVolume(),
+			MixVolume:     s3mVolume.MaxFineVolume,
+			WholeLoop:     d.Loop,
+			SustainLoop:   d.SustainLoop,
+		})
+		v.voicer = &s
+
+	case *instrument.OPL2:
+		var o component.OPL2[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]
+		o.Setup(v.opl2Chip, int(v.opl2Channel), v.opl2, s3mPeriod.AmigaConverter, s3mSystem.S3MBaseClock, inst.GetDefaultVolume())
+		v.voicer = &o
 
 	default:
-		return fmt.Errorf("unhandled instrument type: %T", inst)
+		return fmt.Errorf("unhandled instrument type: %T", d)
 	}
 	if inst == nil {
 		return errors.New("instrument is nil")
@@ -144,6 +169,10 @@ func (v *s3mVoice) Advance() {
 	// has to be after the mod/env updates
 	v.KeyModulator.DeferredUpdate()
 
+	if o, ok := v.voicer.(*component.OPL2[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]); ok {
+		o.Advance(v.GetFinalVolume(), v.GetFinalPeriod())
+	}
+
 	v.vol0Opt.ObserveVolume(v.GetFinalVolume())
 	v.KeyModulator.Advance()
 }
@@ -151,9 +180,12 @@ func (v *s3mVoice) Advance() {
 func (v *s3mVoice) Clone(bool) voice.Voice {
 	vv := s3mVoice{
 		inst:          v.inst,
+		opl2Chip:      v.opl2Chip,
+		opl2Channel:   v.opl2Channel,
 		AmpModulator:  v.AmpModulator.Clone(),
 		FreqModulator: v.FreqModulator.Clone(),
 		PanModulator:  v.PanModulator.Clone(),
+		opl2:          v.opl2.Clone(),
 		vol0Opt:       v.vol0Opt.Clone(),
 	}
 
@@ -174,16 +206,4 @@ func (v *s3mVoice) Clone(bool) voice.Voice {
 	}
 
 	return &vv
-}
-
-func (v *s3mVoice) setupPCM(samp pcm.Sample, wholeLoop, sustainLoop loop.Loop, mixVol s3mVolume.FineVolume, defVol s3mVolume.Volume) {
-	var s component.Sampler[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]
-	s.Setup(component.SamplerSettings[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]{
-		Sample:        samp,
-		DefaultVolume: defVol,
-		MixVolume:     mixVol,
-		WholeLoop:     wholeLoop,
-		SustainLoop:   sustainLoop,
-	})
-	v.voicer = &s
 }

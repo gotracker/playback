@@ -8,6 +8,7 @@ import (
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/mixer"
+	"github.com/gotracker/playback/voice/opl2"
 )
 
 type ChannelIntf interface {
@@ -19,7 +20,7 @@ type ChannelIntf interface {
 type Channel[TPeriod period.Period] struct {
 	PluginFilter filter.Filter
 	OutputFilter filter.Filter
-	GetOPL2Chip  func() OPL2Chip
+	GetOPL2Chip  func() opl2.Chip
 	GlobalVolume volume.Volume // this is the channel's version of the GlobalVolume
 	Voice        voice.Voice
 }

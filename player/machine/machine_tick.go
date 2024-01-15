@@ -11,10 +11,20 @@ import (
 )
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick(s *sampler.Sampler) (*output.PremixData, error) {
-	for i := range m.channels {
-		if err := m.channels[i].DoNoteAction(index.Channel(i), m, frequency.Frequency(s.SampleRate)); err != nil {
+	if m.opl2Enabled && m.opl2 == nil && m.ms.OPL2Enabled {
+		if err := m.setupOPL2(s); err != nil {
 			return nil, err
 		}
+	}
+
+	if err := m.songData.ForEachChannel(true, func(ch index.Channel) (bool, error) {
+		c := &m.channels[ch]
+		if err := c.DoNoteAction(ch, m, frequency.Frequency(s.SampleRate)); err != nil {
+			return false, err
+		}
+		return true, nil
+	}); err != nil {
+		return nil, err
 	}
 
 	premix, err := m.render(s)
@@ -34,26 +44,25 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onTick() error {
-	for i := range m.channels {
-		c := &m.channels[i]
-		if err := c.Tick(index.Channel(i), m); err != nil {
-			return err
+	return m.songData.ForEachChannel(true, func(ch index.Channel) (bool, error) {
+		c := &m.channels[ch]
+		if err := c.Tick(ch, m); err != nil {
+			return false, err
 		}
 
 		c.updatePastNotes()
-	}
-
-	return nil
+		return true, nil
+	})
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onOrderStart() error {
-	for ch := range m.channels {
-		if err := m.channels[ch].OrderStart(index.Channel(ch), m); err != nil {
-			return err
+	return m.songData.ForEachChannel(true, func(ch index.Channel) (bool, error) {
+		c := &m.channels[ch]
+		if err := c.OrderStart(ch, m); err != nil {
+			return false, err
 		}
-	}
-
-	return nil
+		return true, nil
+	})
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onRowStart() error {
@@ -74,31 +83,31 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onRo
 		return err
 	}
 
-	for ch := range m.channels {
-		if err := m.channels[ch].RowStart(index.Channel(ch), m); err != nil {
-			return err
+	return m.songData.ForEachChannel(true, func(ch index.Channel) (bool, error) {
+		c := &m.channels[ch]
+		if err := c.RowStart(ch, m); err != nil {
+			return false, err
 		}
-	}
-
-	return nil
+		return true, nil
+	})
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onRowEnd() error {
-	for ch := range m.channels {
-		if err := m.channels[ch].RowEnd(index.Channel(ch), m); err != nil {
-			return err
+	return m.songData.ForEachChannel(true, func(ch index.Channel) (bool, error) {
+		c := &m.channels[ch]
+		if err := c.RowEnd(ch, m); err != nil {
+			return false, err
 		}
-	}
-
-	return nil
+		return true, nil
+	})
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onOrderEnd() error {
-	for ch := range m.channels {
-		if err := m.channels[ch].OrderEnd(index.Channel(ch), m); err != nil {
-			return err
+	return m.songData.ForEachChannel(true, func(ch index.Channel) (bool, error) {
+		c := &m.channels[ch]
+		if err := c.OrderEnd(ch, m); err != nil {
+			return false, err
 		}
-	}
-
-	return nil
+		return true, nil
+	})
 }

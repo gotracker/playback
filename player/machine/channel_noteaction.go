@@ -3,7 +3,6 @@ package machine
 import (
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
-	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/voice"
 )
@@ -122,11 +121,4 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSe
 		c.cv.Stop()
 	}
 	return nil
-}
-
-func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSetupOPL2(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], inst *instrument.Instrument[TMixingVolume, TVolume, TPanning], d *instrument.OPL2) error {
-	panic("unimplemented")
-	//var o component.OPL2[TPeriod, TVolume]
-	//o.Setup(chip, channel, reg, baseFreq, keyModulator, defaultVolume)
-	//c.cv.voicer = &o
 }

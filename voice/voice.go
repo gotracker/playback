@@ -10,6 +10,7 @@ import (
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/tracing"
+	"github.com/gotracker/playback/voice/opl2"
 	"github.com/gotracker/playback/voice/types"
 )
 
@@ -19,6 +20,7 @@ type Voice interface {
 
 	// Configuration
 	Reset()
+	SetOPL2Chip(chip opl2.Chip)
 
 	// Actions
 	Attack()

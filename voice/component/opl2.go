@@ -2,13 +2,13 @@ package component
 
 import (
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/opl2"
+	opl2Impl "github.com/gotracker/opl2"
 
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/tracing"
+	"github.com/gotracker/playback/voice/opl2"
 	"github.com/gotracker/playback/voice/types"
 )
 
@@ -28,9 +28,14 @@ type OPL2Registers struct {
 	RegC0 uint8
 }
 
+func (o OPL2Registers) Clone() OPL2Registers {
+	m := o
+	return m
+}
+
 // OPL2 is an OPL2 component
 type OPL2[TPeriod types.Period, TMixingVolume, TVolume types.Volume] struct {
-	chip            render.OPL2Chip
+	chip            opl2.Chip
 	channel         int
 	reg             OPL2Registers
 	baseFreq        frequency.Frequency
@@ -40,11 +45,12 @@ type OPL2[TPeriod types.Period, TMixingVolume, TVolume types.Volume] struct {
 }
 
 // Setup sets up the OPL2 component
-func (o *OPL2[TPeriod, TMixingVolume, TVolume]) Setup(chip render.OPL2Chip, channel int, reg OPL2Registers, baseFreq frequency.Frequency, defaultVolume TVolume) {
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) Setup(chip opl2.Chip, channel int, reg OPL2Registers, pc period.PeriodConverter[TPeriod], baseFreq frequency.Frequency, defaultVolume TVolume) {
 	o.chip = chip
 	o.channel = channel
 	o.reg = reg
 	o.baseFreq = baseFreq
+	o.periodConverter = pc
 	o.defaultVolume = defaultVolume
 	o.keyOn = false
 }
@@ -130,10 +136,8 @@ func (o *OPL2[TPeriod, TMixingVolume, TVolume]) Advance(carVol volume.Volume, pe
 }
 
 func (o OPL2[TPeriod, TMixingVolume, TVolume]) Clone() Voicer[TPeriod, TMixingVolume, TVolume] {
-	var out OPL2[TPeriod, TMixingVolume, TVolume]
-	out.Setup(o.chip, o.channel, o.reg, o.baseFreq, o.defaultVolume)
-	out.periodConverter = o.periodConverter
-	return &out
+	m := o
+	return &m
 }
 
 func (o OPL2[TPeriod, TMixingVolume, TVolume]) GetDefaultVolume() TVolume {
@@ -204,7 +208,7 @@ func (o *OPL2[TPeriod, TMixingVolume, TVolume]) freqToFnumBlock(freq float64) (u
 	} else {
 		block = 0
 	}
-	fnum := uint16(freq * float64(int(1)<<(20-block)) / opl2.OPLRATE)
+	fnum := uint16(freq * float64(int(1)<<(20-block)) / opl2Impl.OPLRATE)
 
 	return fnum, block
 }

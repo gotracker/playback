@@ -25,6 +25,7 @@ type Song struct {
 	Instruments     []*instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
 	Patterns        []song.Pattern
 	ChannelSettings []ChannelSetting
+	ChannelOrders   []index.Channel
 	NumChannels     int
 	OrderList       []index.Pattern
 }
@@ -198,4 +199,34 @@ func (s Song) GetRowRenderStringer(row song.Row, channels int, longFormat bool) 
 
 func (s Song) GetSystem() system.System {
 	return s.System
+}
+
+func (s Song) ForEachChannel(enabledOnly bool, fn func(ch index.Channel) (bool, error)) error {
+	for _, ch := range s.ChannelOrders {
+		cs := &s.ChannelSettings[ch]
+		if enabledOnly && !cs.Enabled {
+			continue
+		}
+		cont, err := fn(ch)
+		if err != nil {
+			return err
+		}
+		if !cont {
+			break
+		}
+	}
+	return nil
+}
+
+func (s Song) IsOPL2Enabled() bool {
+	for _, cs := range s.ChannelSettings {
+		if !cs.Enabled {
+			continue
+		}
+
+		if cs.GetOPLChannel().IsValid() {
+			return true
+		}
+	}
+	return false
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/gotracker/playback/voice/component"
 	"github.com/gotracker/playback/voice/fadeout"
 	"github.com/gotracker/playback/voice/loop"
+	"github.com/gotracker/playback/voice/opl2"
 	"github.com/gotracker/playback/voice/pcm"
 )
 
@@ -95,6 +96,9 @@ func New[TPeriod Period](config voice.VoiceConfig[TPeriod, itVolume.FineVolume, 
 	v.vol0Opt.Setup(config.Vol0Optimization)
 
 	return v
+}
+
+func (v *itVoice[TPeriod]) SetOPL2Chip(chip opl2.Chip) {
 }
 
 func (v *itVoice[TPeriod]) doAttack() {
@@ -203,7 +207,7 @@ func (v *itVoice[TPeriod]) Setup(inst *instrument.Instrument[itVolume.FineVolume
 		v.setupPCM(d.Sample, d.Loop, d.SustainLoop, itVolume.MaxItFineVolume, inst.GetDefaultVolume())
 
 	default:
-		return fmt.Errorf("unhandled instrument type: %T", inst)
+		return fmt.Errorf("unhandled instrument type: %T", d)
 	}
 	if inst == nil {
 		return errors.New("instrument is nil")
