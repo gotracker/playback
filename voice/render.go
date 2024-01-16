@@ -8,12 +8,12 @@ import (
 	"github.com/gotracker/playback/voice/mixer"
 )
 
-func RenderAndAdvance[TPeriod Period](in Voice, pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details, out mixer.ApplyFilter) (*mixing.Data, error) {
+func RenderAndTick[TPeriod Period](in Voice, pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details, out mixer.ApplyFilter) (*mixing.Data, error) {
 	if in.IsDone() {
 		return nil, nil
 	}
 
-	defer in.Advance()
+	defer in.Tick()
 
 	rs, ok := in.(RenderSampler[TPeriod])
 	if !ok {

@@ -68,7 +68,7 @@ func traceChannelWithComment[TPeriod Period, TGlobalVolume, TMixingVolume, TVolu
 	m.us.TraceChannelWithComment(ch, name, comment)
 }
 
-func traceChannelOptionalValueClear[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, name string, before optional.Value[T]) {
+func traceChannelOptionalValueReset[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, name string, before optional.Value[T]) {
 	if v, set := before.Get(); set {
 		m.us.TraceChannelValueChange(ch, name, v, nil)
 	}

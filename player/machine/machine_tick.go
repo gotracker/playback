@@ -93,13 +93,31 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onRo
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onRowEnd() error {
-	return m.songData.ForEachChannel(true, func(ch index.Channel) (bool, error) {
+	if err := m.songData.ForEachChannel(true, func(ch index.Channel) (bool, error) {
 		c := &m.channels[ch]
 		if err := c.RowEnd(ch, m); err != nil {
 			return false, err
 		}
 		return true, nil
-	})
+	}); err != nil {
+		return err
+	}
+
+	for i := range m.actualOutputs {
+		rc := &m.actualOutputs[i]
+		if v := rc.GetVoice(); v != nil {
+			v.RowEnd()
+		}
+	}
+
+	for i := range m.virtualOutputs {
+		rc := &m.virtualOutputs[i]
+		if v := rc.GetVoice(); v != nil {
+			v.RowEnd()
+		}
+	}
+
+	return nil
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onOrderEnd() error {

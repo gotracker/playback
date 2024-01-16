@@ -27,7 +27,7 @@ type Channel[TPeriod period.Period] struct {
 	vrem func() // function to call when voice is stopped/removed
 }
 
-func (c *Channel[TPeriod]) RenderAndAdvance(pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details) (*mixing.Data, error) {
+func (c *Channel[TPeriod]) RenderAndTick(pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details) (*mixing.Data, error) {
 	if filt := c.PluginFilter; filt != nil {
 		filt.SetPlaybackRate(details.SampleRate)
 	}
@@ -36,7 +36,7 @@ func (c *Channel[TPeriod]) RenderAndAdvance(pc period.PeriodConverter[TPeriod], 
 		filt.SetPlaybackRate(details.SampleRate)
 	}
 
-	data, err := voice.RenderAndAdvance(c.v, pc, centerAheadPan, details, c)
+	data, err := voice.RenderAndTick(c.v, pc, centerAheadPan, details, c)
 	if err != nil {
 		return nil, err
 	}

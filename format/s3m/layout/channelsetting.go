@@ -65,8 +65,8 @@ func (c ChannelSetting) IsDefaultFilterEnabled() bool {
 
 func (c ChannelSetting) GetVol0OptimizationSettings() vol0optimization.Vol0OptimizationSettings {
 	return vol0optimization.Vol0OptimizationSettings{
-		Enabled:     c.Memory.Shared.ZeroVolOptimization,
-		MaxTicksAt0: 3,
+		Enabled:    c.Memory.Shared.ZeroVolOptimization,
+		MaxRowsAt0: 3,
 	}
 }
 

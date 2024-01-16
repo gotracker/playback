@@ -92,8 +92,11 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNo
 
 	if pos, set := c.target.Pos.Get(); set {
 		if samp, ok := c.cv.(voice.Sampler); ok {
+			prevPos, _ := samp.GetPos()
+			traceChannelValueChangeWithComment(m, ch, "pos", prevPos, pos, "DoNoteAction")
 			samp.SetPos(pos)
 		}
+		traceChannelOptionalValueResetWithComment(m, ch, "target.Pos", c.target.Pos, "DoNoteAction")
 		c.target.Pos.Reset()
 	}
 

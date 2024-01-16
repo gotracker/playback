@@ -58,8 +58,8 @@ func (c ChannelSetting) IsDefaultFilterEnabled() bool {
 
 func (c ChannelSetting) GetVol0OptimizationSettings() vol0optimization.Vol0OptimizationSettings {
 	return vol0optimization.Vol0OptimizationSettings{
-		Enabled:     true,
-		MaxTicksAt0: 3,
+		Enabled:    true,
+		MaxRowsAt0: 3,
 	}
 }
 

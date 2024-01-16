@@ -165,7 +165,7 @@ func (v *s3mVoice) IsDone() bool {
 	return v.vol0Opt.IsDone()
 }
 
-func (v *s3mVoice) Advance() {
+func (v *s3mVoice) Tick() {
 	// has to be after the mod/env updates
 	v.KeyModulator.DeferredUpdate()
 
@@ -173,8 +173,11 @@ func (v *s3mVoice) Advance() {
 		o.Advance(v.GetFinalVolume(), v.GetFinalPeriod())
 	}
 
-	v.vol0Opt.ObserveVolume(v.GetFinalVolume())
 	v.KeyModulator.Advance()
+}
+
+func (v *s3mVoice) RowEnd() {
+	v.vol0Opt.ObserveVolume(v.GetFinalVolume())
 }
 
 func (v *s3mVoice) Clone(bool) voice.Voice {

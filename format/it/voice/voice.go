@@ -259,7 +259,7 @@ func (v *itVoice[TPeriod]) IsDone() bool {
 	return v.vol0Opt.IsDone()
 }
 
-func (v *itVoice[TPeriod]) Advance() {
+func (v *itVoice[TPeriod]) Tick() {
 	v.fadeout.Advance()
 	v.autoVibrato.Advance()
 	v.pitchPan.Advance()
@@ -292,10 +292,13 @@ func (v *itVoice[TPeriod]) Advance() {
 	// has to be after the mod/env updates
 	v.KeyModulator.DeferredUpdate()
 
-	v.vol0Opt.ObserveVolume(v.GetFinalVolume())
 	v.KeyModulator.Advance()
 
 	v.updateFinal()
+}
+
+func (v *itVoice[TPeriod]) RowEnd() {
+	v.vol0Opt.ObserveVolume(v.GetFinalVolume())
 }
 
 func (v *itVoice[TPeriod]) Clone(background bool) voice.Voice {

@@ -207,7 +207,7 @@ func (v *xmVoice[TPeriod]) IsDone() bool {
 	return v.vol0Opt.IsDone()
 }
 
-func (v *xmVoice[TPeriod]) Advance() {
+func (v *xmVoice[TPeriod]) Tick() {
 	v.fadeout.Advance()
 	v.autoVibrato.Advance()
 	if v.IsVolumeEnvelopeEnabled() {
@@ -224,8 +224,11 @@ func (v *xmVoice[TPeriod]) Advance() {
 	// has to be after the mod/env updates
 	v.KeyModulator.DeferredUpdate()
 
-	v.vol0Opt.ObserveVolume(v.GetFinalVolume())
 	v.KeyModulator.Advance()
+}
+
+func (v *xmVoice[TPeriod]) RowEnd() {
+	v.vol0Opt.ObserveVolume(v.GetFinalVolume())
 }
 
 func (v *xmVoice[TPeriod]) Clone(bool) voice.Voice {

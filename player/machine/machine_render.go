@@ -57,7 +57,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 		rc.GlobalVolume = m.gv.ToVolume()
 
 		rc.GetVoice().DumpState(index.Channel(i), m.us.Tracer)
-		data, err := rc.RenderAndAdvance(m.ms.PeriodConverter, centerAheadPan, details)
+		data, err := rc.RenderAndTick(m.ms.PeriodConverter, centerAheadPan, details)
 		if err != nil {
 			return nil, err
 		}
@@ -84,7 +84,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 
 			//rc.GetVoice().DumpState(index.Channel(i), m.us.Tracer)
 			var err error
-			data, err = rc.RenderAndAdvance(m.ms.PeriodConverter, centerAheadPan, details)
+			data, err = rc.RenderAndTick(m.ms.PeriodConverter, centerAheadPan, details)
 			if err != nil {
 				return nil, err
 			}

@@ -226,16 +226,18 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) getR
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) updateInstructions(rowData song.Row) error {
+	for i := range m.channels {
+		m.channels[i].instructions = nil
+	}
+
 	numRowChannels := song.GetRowNumChannels[TVolume](rowData)
 	rowChannels := min(m.songData.GetNumChannels(), numRowChannels)
 	return song.ForEachRowChannel(rowData, func(ch index.Channel, d song.ChannelData[TVolume]) (bool, error) {
 		if int(ch) >= rowChannels {
-			return false, nil
+			return true, nil
 		}
 
 		c := &m.channels[ch]
-		c.instructions = nil
-
 		if !c.enabled || d == nil {
 			return true, nil
 		}

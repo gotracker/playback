@@ -17,34 +17,6 @@ func withOscillatorDo(ch index.Channel, m machine.Machine[period.Amiga, s3mVolum
 	return fn(value)
 }
 
-func doPortaUp(ch index.Channel, m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], amount float32, multiplier float32) error {
-	cur, err := m.GetChannelPeriod(ch)
-	if err != nil {
-		return err
-	}
-	if cur.IsInvalid() {
-		return nil
-	}
-
-	delta := int(amount * multiplier)
-	cur = cur.PortaUp(delta)
-	return m.SetChannelPeriod(ch, cur)
-}
-
-func doPortaDown(ch index.Channel, m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], amount float32, multiplier float32) error {
-	cur, err := m.GetChannelPeriod(ch)
-	if err != nil {
-		return err
-	}
-	if cur.IsInvalid() {
-		return nil
-	}
-
-	delta := int(amount * multiplier)
-	cur = cur.PortaDown(delta)
-	return m.SetChannelPeriod(ch, cur)
-}
-
 func doArpeggio(ch index.Channel, m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], tick int, arpSemitoneADelta, arpSemitoneBDelta int8) error {
 	switch tick % 3 {
 	case 0:

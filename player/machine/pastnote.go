@@ -13,5 +13,5 @@ type pastNote[TPeriod Period] struct {
 }
 
 func (p pastNote[TPeriod]) RenderAndAdvance(pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details) (*mixing.Data, error) {
-	return p.rc.RenderAndAdvance(pc, centerAheadPan, details)
+	return p.rc.RenderAndTick(pc, centerAheadPan, details)
 }

@@ -29,7 +29,8 @@ type Voice interface {
 	Stop()
 
 	// State Machine Update
-	Advance()
+	Tick()
+	RowEnd()
 
 	// General Parameters
 	IsDone() bool

@@ -16,7 +16,7 @@ type Vol0Optimization struct {
 		enabled bool
 	}
 	keyed struct {
-		ticksAt0 int
+		rowsAt0 int
 	}
 }
 
@@ -36,26 +36,26 @@ func (c *Vol0Optimization) SetEnabled(enabled bool) {
 }
 
 func (c *Vol0Optimization) Reset() {
-	c.keyed.ticksAt0 = 0
+	c.keyed.rowsAt0 = 0
 }
 
 func (c *Vol0Optimization) ObserveVolume(v volume.Volume) {
 	if c.unkeyed.enabled {
 		if v == 0 {
-			c.keyed.ticksAt0++
+			c.keyed.rowsAt0++
 		} else {
-			c.keyed.ticksAt0 = 0
+			c.keyed.rowsAt0 = 0
 		}
 	}
 }
 
 func (c Vol0Optimization) IsDone() bool {
-	return c.unkeyed.enabled && c.keyed.ticksAt0 >= c.settings.MaxTicksAt0
+	return c.unkeyed.enabled && c.keyed.rowsAt0 >= c.settings.MaxRowsAt0
 }
 
 func (c Vol0Optimization) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
-	t.TraceChannelWithComment(ch, fmt.Sprintf("enabled{%v} ticksAt0{%v}",
+	t.TraceChannelWithComment(ch, fmt.Sprintf("enabled{%v} rowsAt0{%v}",
 		c.unkeyed.enabled,
-		c.keyed.ticksAt0,
+		c.keyed.rowsAt0,
 	), comment)
 }
