@@ -13,9 +13,7 @@ import (
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/component"
 	"github.com/gotracker/playback/voice/fadeout"
-	"github.com/gotracker/playback/voice/loop"
 	"github.com/gotracker/playback/voice/opl2"
-	"github.com/gotracker/playback/voice/pcm"
 )
 
 type Period interface {
@@ -159,9 +157,19 @@ func (v *xmVoice[TPeriod]) Setup(inst *instrument.Instrument[TPeriod, xmVolume.X
 			Envelope: d.PanEnv,
 		})
 
-		v.amp.SetMixingVolumeOverride(d.MixingVolume)
+		if err := v.amp.SetMixingVolumeOverride(d.MixingVolume); err != nil {
+			return err
+		}
 
-		v.setupPCM(d.Sample, d.Loop, d.SustainLoop, xmVolume.DefaultXmMixingVolume, inst.GetDefaultVolume())
+		var s component.Sampler[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume]
+		s.Setup(component.SamplerSettings[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume]{
+			Sample:        d.Sample,
+			DefaultVolume: inst.GetDefaultVolume(),
+			MixVolume:     xmVolume.DefaultXmMixingVolume,
+			WholeLoop:     d.Loop,
+			SustainLoop:   d.SustainLoop,
+		})
+		v.voicer = &s
 
 	default:
 		return fmt.Errorf("unhandled instrument type: %T", d)
@@ -273,16 +281,4 @@ func (v *xmVoice[TPeriod]) Clone(bool) voice.Voice {
 	}
 
 	return &vv
-}
-
-func (v *xmVoice[TPeriod]) setupPCM(samp pcm.Sample, wholeLoop, sustainLoop loop.Loop, mixVol, defVol xmVolume.XmVolume) {
-	var s component.Sampler[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume]
-	s.Setup(component.SamplerSettings[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume]{
-		Sample:        samp,
-		DefaultVolume: defVol,
-		MixVolume:     mixVol,
-		WholeLoop:     wholeLoop,
-		SustainLoop:   sustainLoop,
-	})
-	v.voicer = &s
 }

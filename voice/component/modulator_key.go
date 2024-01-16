@@ -10,7 +10,9 @@ import (
 type KeyModulator struct {
 	settings KeyModulatorSettings
 	slimKeyModulator
-	fadeout bool
+	attackTriggersRelease bool
+	fadeout               bool
+	deferredUpdates       []bool
 }
 
 type KeyModulatorSettings struct {
@@ -25,25 +27,42 @@ func (k *KeyModulator) Setup(settings KeyModulatorSettings) {
 	k.settings = settings
 }
 
-func (k *KeyModulator) DeferredUpdate() {
-	if k.keyOn == k.prevKeyOn {
-		return
-	}
+func (k KeyModulator) GetAttackTriggersRelease() bool {
+	return k.attackTriggersRelease
+}
 
-	if k.keyOn {
-		if k.settings.DeferredAttack != nil {
-			k.settings.DeferredAttack()
-		}
-	} else {
-		if k.settings.DeferredRelease != nil {
-			k.settings.DeferredRelease()
+func (k *KeyModulator) SetAttackTriggersRelease(enabled bool) error {
+	k.attackTriggersRelease = enabled
+	return nil
+}
+
+func (k *KeyModulator) DeferredUpdate() {
+	var deferredUpdates []bool
+	deferredUpdates, k.deferredUpdates = k.deferredUpdates, nil
+	for _, keyOn := range deferredUpdates {
+		if keyOn {
+			if k.settings.DeferredAttack != nil {
+				k.settings.DeferredAttack()
+			}
+		} else {
+			if k.settings.DeferredRelease != nil {
+				k.settings.DeferredRelease()
+			}
 		}
 	}
 }
 
 func (k *KeyModulator) Attack() {
+	if k.attackTriggersRelease && k.prevKeyOn && k.keyOn {
+		k.Release()
+	}
+
 	k.slimKeyModulator.Attack()
 	k.fadeout = false
+
+	if k.settings.DeferredAttack != nil {
+		k.deferredUpdates = append(k.deferredUpdates, true)
+	}
 
 	if k.settings.Attack != nil {
 		k.settings.Attack()
@@ -52,6 +71,10 @@ func (k *KeyModulator) Attack() {
 
 func (k *KeyModulator) Release() {
 	k.slimKeyModulator.Release()
+
+	if k.settings.DeferredRelease != nil {
+		k.deferredUpdates = append(k.deferredUpdates, false)
+	}
 
 	if k.settings.Release != nil {
 		k.settings.Release()

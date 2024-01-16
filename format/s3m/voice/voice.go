@@ -113,7 +113,9 @@ func (v *s3mVoice) Setup(inst *instrument.Instrument[period.Amiga, s3mVolume.Fin
 
 	switch d := inst.GetData().(type) {
 	case *instrument.PCM[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]:
-		v.AmpModulator.SetMixingVolumeOverride(d.MixingVolume)
+		if err := v.AmpModulator.SetMixingVolumeOverride(d.MixingVolume); err != nil {
+			return err
+		}
 
 		var s component.Sampler[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]
 		s.Setup(component.SamplerSettings[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]{
@@ -126,8 +128,12 @@ func (v *s3mVoice) Setup(inst *instrument.Instrument[period.Amiga, s3mVolume.Fin
 		v.voicer = &s
 
 	case *instrument.OPL2:
+		if err := v.KeyModulator.SetAttackTriggersRelease(true); err != nil {
+			return err
+		}
+
 		var o component.OPL2[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]
-		o.Setup(v.opl2Chip, int(v.opl2Channel), v.opl2, s3mPeriod.S3MAmigaConverter, s3mSystem.S3MBaseClock, inst.GetDefaultVolume())
+		o.Setup(v.opl2Chip, int(v.opl2Channel), v.opl2, s3mPeriod.S3MAmigaConverter, s3mSystem.DefaultC4SampleRate, inst.GetDefaultVolume())
 		v.voicer = &o
 
 	default:
