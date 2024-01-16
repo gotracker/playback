@@ -40,12 +40,12 @@ func (s UserSettings) Trace(op string) {
 	s.Tracer.Trace(op)
 }
 
-func (s UserSettings) TraceWithComment(op, comment string) {
+func (s UserSettings) TraceWithComment(op, commentFmt string, commentParams ...any) {
 	if s.Tracer == nil {
 		return
 	}
 
-	s.Tracer.TraceWithComment(op, comment)
+	s.Tracer.TraceWithComment(op, commentFmt, commentParams...)
 }
 
 func (s UserSettings) TraceValueChange(op string, prev, new any) {
@@ -56,12 +56,12 @@ func (s UserSettings) TraceValueChange(op string, prev, new any) {
 	s.Tracer.TraceValueChange(op, prev, new)
 }
 
-func (s UserSettings) TraceValueChangeWithComment(op string, prev, new any, comment string) {
+func (s UserSettings) TraceValueChangeWithComment(op string, prev, new any, commentFmt string, commentParams ...any) {
 	if s.Tracer == nil {
 		return
 	}
 
-	s.Tracer.TraceValueChangeWithComment(op, prev, new, comment)
+	s.Tracer.TraceValueChangeWithComment(op, prev, new, commentFmt, commentParams...)
 }
 
 func (s UserSettings) TraceChannel(ch index.Channel, op string) {
@@ -72,12 +72,12 @@ func (s UserSettings) TraceChannel(ch index.Channel, op string) {
 	s.Tracer.TraceChannel(ch, op)
 }
 
-func (s UserSettings) TraceChannelWithComment(ch index.Channel, op, comment string) {
+func (s UserSettings) TraceChannelWithComment(ch index.Channel, op, commentFmt string, commentParams ...any) {
 	if s.Tracer == nil {
 		return
 	}
 
-	s.Tracer.TraceChannelWithComment(ch, op, comment)
+	s.Tracer.TraceChannelWithComment(ch, op, commentFmt, commentParams...)
 }
 
 func (s UserSettings) TraceChannelValueChange(ch index.Channel, op string, prev, new any) {
@@ -88,10 +88,10 @@ func (s UserSettings) TraceChannelValueChange(ch index.Channel, op string, prev,
 	s.Tracer.TraceChannelValueChange(ch, op, prev, new)
 }
 
-func (s UserSettings) TraceChannelValueChangeWithComment(ch index.Channel, op string, prev, new any, comment string) {
+func (s UserSettings) TraceChannelValueChangeWithComment(ch index.Channel, op string, prev, new any, commentFmt string, commentParams ...any) {
 	if s.Tracer == nil {
 		return
 	}
 
-	s.Tracer.TraceChannelValueChangeWithComment(ch, op, prev, new, comment)
+	s.Tracer.TraceChannelValueChangeWithComment(ch, op, prev, new, commentFmt, commentParams...)
 }

@@ -98,7 +98,7 @@ type Machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	SetPatternLoopStart(ch index.Channel) error
 	SetPatternLoops(ch index.Channel, count int) error
 	StartChannelPortaToNote(ch index.Channel) error
-	DoChannelPortaToNote(ch index.Channel, delta period.Delta) error
+	DoChannelPortaToNote(ch index.Channel, delta period.Delta, useFinalPeriod bool) error
 	DoChannelPortaDown(ch index.Channel, delta period.Delta) error
 	DoChannelPortaUp(ch index.Channel, delta period.Delta) error
 	DoChannelArpeggio(ch index.Channel, delta int8) error

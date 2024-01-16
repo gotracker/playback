@@ -100,16 +100,16 @@ func (t *Tracing) Trace(op string) {
 	t.TraceWithComment(op, "")
 }
 
-func (t *Tracing) TraceWithComment(op, comment string) {
-	traceWithPayload(t, t.GetTracingTick(), op, comment, empty)
+func (t *Tracing) TraceWithComment(op, commentFmt string, commentParams ...any) {
+	traceWithPayload(t, t.GetTracingTick(), op, fmt.Sprintf(commentFmt, commentParams...), empty)
 }
 
 func (t *Tracing) TraceValueChange(op string, prev, new any) {
 	t.TraceValueChangeWithComment(op, prev, new, "")
 }
 
-func (t *Tracing) TraceValueChangeWithComment(op string, prev, new any, comment string) {
-	traceWithPayload(t, t.GetTracingTick(), op, comment, valueUpdate{
+func (t *Tracing) TraceValueChangeWithComment(op string, prev, new any, commentFmt string, commentParams ...any) {
+	traceWithPayload(t, t.GetTracingTick(), op, fmt.Sprintf(commentFmt, commentParams...), valueUpdate{
 		old: prev,
 		new: new,
 	})
@@ -119,24 +119,24 @@ func (t *Tracing) TraceChannel(ch index.Channel, op string) {
 	t.TraceChannelWithComment(ch, op, "")
 }
 
-func (t *Tracing) TraceChannelWithComment(ch index.Channel, op, comment string) {
+func (t *Tracing) TraceChannelWithComment(ch index.Channel, op, commentFmt string, commentParams ...any) {
 	tc := tickChannel{
 		tick: t.GetTracingTick(),
 		ch:   ch,
 	}
-	traceWithPayload(t, tc, op, comment, empty)
+	traceWithPayload(t, tc, op, fmt.Sprintf(commentFmt, commentParams...), empty)
 }
 
 func (t *Tracing) TraceChannelValueChange(ch index.Channel, op string, prev, new any) {
 	t.TraceChannelValueChangeWithComment(ch, op, prev, new, "")
 }
 
-func (t *Tracing) TraceChannelValueChangeWithComment(ch index.Channel, op string, prev, new any, comment string) {
+func (t *Tracing) TraceChannelValueChangeWithComment(ch index.Channel, op string, prev, new any, commentFmt string, commentParams ...any) {
 	tc := tickChannel{
 		tick: t.GetTracingTick(),
 		ch:   ch,
 	}
-	traceWithPayload(t, tc, op, comment, valueUpdate{
+	traceWithPayload(t, tc, op, fmt.Sprintf(commentFmt, commentParams...), valueUpdate{
 		old: prev,
 		new: new,
 	})

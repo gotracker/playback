@@ -15,6 +15,7 @@ type AmigaConverter struct {
 	System    system.ClockableSystem
 	MinPeriod Amiga
 	MaxPeriod Amiga
+	DeltaMult Delta
 }
 
 var _ PeriodConverter[Amiga] = (*AmigaConverter)(nil)
@@ -92,7 +93,7 @@ func (c AmigaConverter) PortaToNoteGeneric(p Period, delta Delta, target Period)
 }
 
 func (c AmigaConverter) PortaDown(p Amiga, delta Delta) (Amiga, error) {
-	return min(max(p.PortaDown(int(delta)), c.MinPeriod), c.MaxPeriod), nil
+	return min(max(p.PortaDown(int(delta*c.DeltaMult)), c.MinPeriod), c.MaxPeriod), nil
 }
 
 func (c AmigaConverter) PortaDownGeneric(p Period, delta Delta) (Period, error) {
@@ -105,7 +106,7 @@ func (c AmigaConverter) PortaDownGeneric(p Period, delta Delta) (Period, error) 
 }
 
 func (c AmigaConverter) PortaUp(p Amiga, delta Delta) (Amiga, error) {
-	return min(max(p.PortaUp(int(delta)), c.MinPeriod), c.MaxPeriod), nil
+	return min(max(p.PortaUp(int(delta*c.DeltaMult)), c.MinPeriod), c.MaxPeriod), nil
 }
 
 func (c AmigaConverter) PortaUpGeneric(p Period, delta Delta) (Period, error) {
@@ -118,7 +119,7 @@ func (c AmigaConverter) PortaUpGeneric(p Period, delta Delta) (Period, error) {
 }
 
 func (c AmigaConverter) AddDelta(p Amiga, delta Delta) (Amiga, error) {
-	return min(max(p.Add(delta), c.MinPeriod), c.MaxPeriod), nil
+	return min(max(p.Add(delta*c.DeltaMult), c.MinPeriod), c.MaxPeriod), nil
 }
 
 func (c AmigaConverter) AddDeltaGeneric(p Period, delta Delta) (Period, error) {

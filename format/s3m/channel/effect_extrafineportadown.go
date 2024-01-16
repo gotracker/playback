@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
-	s3mSystem "github.com/gotracker/playback/format/s3m/system"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
@@ -24,7 +23,7 @@ func (e ExtraFinePortaDown) Tick(ch index.Channel, m machine.Machine[period.Amig
 	}
 
 	y := DataEffect(e) & 0x0F
-	return m.DoChannelPortaDown(ch, period.Delta(y)*4*s3mSystem.SlideFinesPerSemitone)
+	return m.DoChannelPortaDown(ch, period.Delta(y)*4)
 }
 
 func (e ExtraFinePortaDown) TraceData() string {

@@ -321,8 +321,8 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Star
 		if p, set := c.newNote.Period.Get(); set {
 			traceChannelOptionalValueResetWithComment(m, ch, "newNote.Period", c.newNote.Period, "StartChannelPortaToNote")
 			c.newNote.Period.Reset()
-			traceChannelValueChangeWithComment(m, ch, "portaPeriod", c.portaPeriod, p, "StartChannelPortaToNote")
-			c.portaPeriod = p
+			traceChannelValueChangeWithComment(m, ch, "target.PortaPeriod", c.target.PortaPeriod, p, "StartChannelPortaToNote")
+			c.target.PortaPeriod = p
 		}
 
 		traceChannelOptionalValueResetWithComment(m, ch, "newNote.Pos", c.newNote.Pos, "StartChannelPortaToNote")
@@ -333,16 +333,25 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Star
 	})
 }
 
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoChannelPortaToNote(ch index.Channel, delta period.Delta) error {
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoChannelPortaToNote(ch index.Channel, delta period.Delta, useFinalPeriod bool) error {
 	return withChannel(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 		if freqMod, ok := c.cv.(voice.FreqModulator[TPeriod]); ok {
-			p := freqMod.GetPeriod()
-			tp, err := m.ms.PeriodConverter.PortaToNote(p, delta, c.portaPeriod)
+			var p TPeriod
+			if useFinalPeriod {
+				var err error
+				p, err = freqMod.GetFinalPeriod()
+				if err != nil {
+					return err
+				}
+			} else {
+				p = freqMod.GetPeriod()
+			}
+			tp, err := m.ms.PeriodConverter.PortaToNote(p, delta, c.target.PortaPeriod)
 			if err != nil {
 				return err
 			}
 
-			traceChannelValueChangeWithComment(m, ch, "target.Period", p, tp, "DoChannelPortaToNote")
+			traceChannelValueChangeWithComment(m, ch, "target.Period", p, tp, "DoChannelPortaToNote (%d)", delta)
 			freqMod.SetPeriod(tp)
 		}
 		return nil
@@ -358,7 +367,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoCh
 				return err
 			}
 
-			traceChannelValueChangeWithComment(m, ch, "target.Period", p, tp, "DoChannelPortaDown")
+			traceChannelValueChangeWithComment(m, ch, "target.Period", p, tp, "DoChannelPortaDown (%d)", delta)
 			freqMod.SetPeriod(tp)
 		}
 		return nil
@@ -374,7 +383,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoCh
 				return err
 			}
 
-			traceChannelValueChangeWithComment(m, ch, "target.Period", p, tp, "DoChannelPortaUp")
+			traceChannelValueChangeWithComment(m, ch, "target.Period", p, tp, "DoChannelPortaUp (%d)", delta)
 			freqMod.SetPeriod(tp)
 		}
 		return nil

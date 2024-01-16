@@ -11,7 +11,7 @@ func trace[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPannin
 	m.us.Trace(name)
 }
 
-func traceOptionalValueClear[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], name string, before optional.Value[T], comment string) {
+func traceOptionalValueClear[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], name string, before optional.Value[T]) {
 	if v, set := before.Get(); set {
 		m.us.TraceValueChange(name, v, nil)
 	}
@@ -26,8 +26,8 @@ func traceOptionalValueChange[T any, TPeriod Period, TGlobalVolume, TMixingVolum
 	m.us.TraceValueChange(name, nil, after)
 }
 
-func traceWithComment[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], name, comment string) {
-	m.us.TraceWithComment(name, comment)
+func traceWithComment[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], name, commentFmt string, commentParams ...any) {
+	m.us.TraceWithComment(name, commentFmt, commentParams...)
 }
 
 func traceValueChange[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], name string, before T, after T) {
@@ -37,35 +37,35 @@ func traceValueChange[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolu
 	m.us.TraceValueChange(name, before, after)
 }
 
-func traceOptionalValueResetWithComment[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], name string, before optional.Value[T], comment string) {
+func traceOptionalValueResetWithComment[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], name string, before optional.Value[T], commentFmt string, commentParams ...any) {
 	if v, set := before.Get(); set {
-		m.us.TraceValueChangeWithComment(name, v, nil, comment)
+		m.us.TraceValueChangeWithComment(name, v, nil, commentFmt, commentParams...)
 	}
 }
 
-func traceOptionalValueChangeWithComment[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], name string, before optional.Value[T], after T, comment string) {
+func traceOptionalValueChangeWithComment[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], name string, before optional.Value[T], after T, commentFmt string, commentParams ...any) {
 	if v, set := before.Get(); set {
-		traceValueChangeWithComment(m, name, v, after, comment)
+		traceValueChangeWithComment(m, name, v, after, commentFmt, commentParams...)
 		return
 	}
 
-	m.us.TraceValueChangeWithComment(name, nil, after, comment)
+	m.us.TraceValueChangeWithComment(name, nil, after, commentFmt, commentParams...)
 }
 
-func traceValueChangeWithComment[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], name string, before, after T, comment string) {
+func traceValueChangeWithComment[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], name string, before, after T, commentFmt string, commentParams ...any) {
 	if reflect.DeepEqual(before, after) {
 		return
 	}
 
-	m.us.TraceValueChangeWithComment(name, before, after, comment)
+	m.us.TraceValueChangeWithComment(name, before, after, commentFmt, commentParams...)
 }
 
 func traceChannel[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, name string) {
 	m.us.TraceChannel(ch, name)
 }
 
-func traceChannelWithComment[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, name, comment string) {
-	m.us.TraceChannelWithComment(ch, name, comment)
+func traceChannelWithComment[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, name, commentFmt string, commentParams ...any) {
+	m.us.TraceChannelWithComment(ch, name, commentFmt, commentParams...)
 }
 
 func traceChannelOptionalValueReset[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, name string, before optional.Value[T]) {
@@ -91,25 +91,25 @@ func traceChannelValueChange[T any, TPeriod Period, TGlobalVolume, TMixingVolume
 	m.us.TraceChannelValueChange(ch, name, before, after)
 }
 
-func traceChannelOptionalValueResetWithComment[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, name string, before optional.Value[T], comment string) {
+func traceChannelOptionalValueResetWithComment[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, name string, before optional.Value[T], commentFmt string, commentParams ...any) {
 	if v, set := before.Get(); set {
-		m.us.TraceChannelValueChangeWithComment(ch, name, v, nil, comment)
+		m.us.TraceChannelValueChangeWithComment(ch, name, v, nil, commentFmt, commentParams...)
 	}
 }
 
-func traceChannelOptionalValueChangeWithComment[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, name string, before optional.Value[T], after T, comment string) {
+func traceChannelOptionalValueChangeWithComment[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, name string, before optional.Value[T], after T, commentFmt string, commentParams ...any) {
 	if v, set := before.Get(); set {
-		traceChannelValueChangeWithComment(m, ch, name, v, after, comment)
+		traceChannelValueChangeWithComment(m, ch, name, v, after, commentFmt, commentParams...)
 		return
 	}
 
-	m.us.TraceChannelValueChangeWithComment(ch, name, nil, after, comment)
+	m.us.TraceChannelValueChangeWithComment(ch, name, nil, after, commentFmt, commentParams...)
 }
 
-func traceChannelValueChangeWithComment[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, name string, before, after T, comment string) {
+func traceChannelValueChangeWithComment[T any, TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], ch index.Channel, name string, before, after T, commentFmt string, commentParams ...any) {
 	if reflect.DeepEqual(before, after) {
 		return
 	}
 
-	m.us.TraceChannelValueChangeWithComment(ch, name, before, after, comment)
+	m.us.TraceChannelValueChangeWithComment(ch, name, before, after, commentFmt, commentParams...)
 }

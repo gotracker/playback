@@ -31,13 +31,13 @@ type channel[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 		Semitone memory.Value[note.Semitone]
 	}
 	target struct {
-		Inst       *instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning]
-		Pos        optional.Value[sampling.Pos]
-		ActionTick optional.Value[ActionTick]
-		TriggerNNA bool
+		PortaPeriod TPeriod
+		Inst        *instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning]
+		Pos         optional.Value[sampling.Pos]
+		ActionTick  optional.Value[ActionTick]
+		TriggerNNA  bool
 	}
-	portaPeriod TPeriod
-	newNote     NewNoteInfo[TPeriod, TMixingVolume, TVolume, TPanning]
+	newNote NewNoteInfo[TPeriod, TMixingVolume, TVolume, TPanning]
 
 	mute          bool
 	surround      bool

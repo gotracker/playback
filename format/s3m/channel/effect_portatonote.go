@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
-	s3mSystem "github.com/gotracker/playback/format/s3m/system"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
@@ -34,7 +33,7 @@ func (e PortaToNote) Tick(ch index.Channel, m machine.Machine[period.Amiga, s3mV
 		return nil
 	}
 
-	return m.DoChannelPortaToNote(ch, period.Delta(xx)*4*s3mSystem.SlideFinesPerSemitone)
+	return m.DoChannelPortaToNote(ch, period.Delta(xx)*4, true)
 }
 
 func (e PortaToNote) TraceData() string {

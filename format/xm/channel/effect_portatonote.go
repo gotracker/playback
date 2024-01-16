@@ -32,7 +32,7 @@ func (e PortaToNote[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, 
 	}
 
 	xx := mem.PortaToNote(DataEffect(e))
-	return m.DoChannelPortaToNote(ch, period.Delta(xx)*4)
+	return m.DoChannelPortaToNote(ch, period.Delta(xx)*4, false)
 }
 
 func (e PortaToNote[TPeriod]) TraceData() string {
