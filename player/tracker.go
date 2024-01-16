@@ -41,12 +41,36 @@ func (t *Tracker) Close() {
 
 // Update runs processing on the tracker, producing premixed sound data
 func (t *Tracker) Update(deltaTime time.Duration, out chan<- *output.PremixData) error {
-	premix, err := t.Generate(deltaTime)
-	if premix != nil && len(premix.Data) > 0 {
-		out <- premix
+	remaining := deltaTime
+
+	var first time.Duration
+	firstSet := false
+
+	for !firstSet || remaining < first {
+		premix, err := t.Generate(deltaTime)
+		if premix != nil && len(premix.Data) > 0 {
+			out <- premix
+		}
+
+		if err != nil {
+			return err
+		}
+
+		if premix == nil {
+			continue
+		}
+
+		dur := time.Duration(premix.SamplesLen) * time.Second / time.Duration(t.s.SampleRate)
+
+		if !firstSet {
+			firstSet = true
+			first = dur
+		}
+
+		remaining -= dur
 	}
 
-	return err
+	return nil
 }
 
 func (t *Tracker) Generate(deltaTime time.Duration) (*output.PremixData, error) {
@@ -56,12 +80,7 @@ func (t *Tracker) Generate(deltaTime time.Duration) (*output.PremixData, error) 
 
 	defer t.OutputTraces()
 
-	premix, err := t.M.Tick(t.s)
-	if err != nil && !errors.Is(err, song.ErrStopSong) {
-		return nil, err
-	}
-
-	return premix, err
+	return t.M.Tick(t.s)
 }
 
 // GetSampleRate returns the sample rate of the sampler
