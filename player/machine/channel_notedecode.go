@@ -22,6 +22,7 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) deco
 		na                     note.Action = note.ActionContinue
 		needNoteInstIdent      bool
 		wantInstrumentDefaults bool
+		wantTriggerNNA         bool
 	)
 	if n != nil {
 		switch n.Type() {
@@ -51,10 +52,12 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) deco
 		inst, _ = ii.(*instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning])
 		wantInstrumentDefaults = inst != nil
 		changeNote.Inst.Set(inst)
+		wantTriggerNNA = true
 	} else if st != 0 {
 		// retrigger same instrument
 		inst = c.target.Inst
 		wantInstrumentDefaults = true
+		wantTriggerNNA = true
 	}
 
 	if inst != nil && n != nil {
@@ -97,6 +100,7 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) deco
 	}
 
 	c.newNote = changeNote
+	c.target.TriggerNNA = wantTriggerNNA
 	return nil
 }
 

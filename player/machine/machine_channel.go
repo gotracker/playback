@@ -327,6 +327,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Star
 
 		traceChannelOptionalValueResetWithComment(m, ch, "newNote.Pos", c.newNote.Pos, "StartChannelPortaToNote")
 		c.newNote.Pos.Reset()
+		c.target.TriggerNNA = false
 
 		return nil
 	})

@@ -24,7 +24,8 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNo
 	c.target.ActionTick.Reset()
 
 	// perform new note action
-	if na.Action != note.ActionContinue && m.canPastNote() {
+	if c.target.TriggerNNA && m.canPastNote() {
+		c.target.TriggerNNA = false
 		var pn voice.Voice
 		switch c.nna {
 		case note.ActionCut:

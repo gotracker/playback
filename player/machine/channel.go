@@ -34,6 +34,7 @@ type channel[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 		Inst       *instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning]
 		Pos        optional.Value[sampling.Pos]
 		ActionTick optional.Value[ActionTick]
+		TriggerNNA bool
 	}
 	portaPeriod TPeriod
 	newNote     NewNoteInfo[TPeriod, TMixingVolume, TVolume, TPanning]
