@@ -8,7 +8,6 @@ import (
 	"github.com/gotracker/playback/memory"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/machine/instruction"
-	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/oscillator"
@@ -46,7 +45,7 @@ type channel[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	nna           note.Action
 
 	cv        voice.RenderVoice[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
-	pastNotes []*render.Channel[TPeriod]
+	pastNotes []index.Channel
 
 	instructions []instruction.Instruction
 }

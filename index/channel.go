@@ -1,10 +1,15 @@
 package index
 
-type Channel uint8
-
 const (
+	InvalidChannel    = Channel(0xFFFF)
 	InvalidOPLChannel = OPLChannel(0xFF)
 )
+
+type Channel uint16
+
+func (c Channel) IsValid() bool {
+	return c != InvalidChannel
+}
 
 type OPLChannel uint8
 

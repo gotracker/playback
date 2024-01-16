@@ -514,7 +514,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetC
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoChannelPastNoteEffect(ch index.Channel, na note.Action) error {
 	return withChannel(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
-		c.doPastNoteAction(na)
+		c.doPastNoteAction(m, na)
 		return nil
 	})
 }

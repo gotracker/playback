@@ -22,7 +22,9 @@ type Channel[TPeriod period.Period] struct {
 	OutputFilter filter.Filter
 	GetOPL2Chip  func() opl2.Chip
 	GlobalVolume volume.Volume // this is the channel's version of the GlobalVolume
-	Voice        voice.Voice
+
+	v    voice.Voice
+	vrem func() // function to call when voice is stopped/removed
 }
 
 func (c *Channel[TPeriod]) RenderAndAdvance(pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details) (*mixing.Data, error) {
@@ -34,7 +36,7 @@ func (c *Channel[TPeriod]) RenderAndAdvance(pc period.PeriodConverter[TPeriod], 
 		filt.SetPlaybackRate(details.SampleRate)
 	}
 
-	data, err := voice.RenderAndAdvance(c.Voice, pc, centerAheadPan, details, c)
+	data, err := voice.RenderAndAdvance(c.v, pc, centerAheadPan, details, c)
 	if err != nil {
 		return nil, err
 	}
@@ -45,13 +47,28 @@ func (c *Channel[TPeriod]) RenderAndAdvance(pc period.PeriodConverter[TPeriod], 
 	return data, nil
 }
 
+func (c Channel[TPeriod]) GetVoice() voice.Voice {
+	return c.v
+}
+
+func (c *Channel[TPeriod]) StartVoice(v voice.Voice, vrem func()) {
+	c.StopVoice()
+	c.v = v
+	c.vrem = vrem
+}
+
 func (c *Channel[TPeriod]) StopVoice() {
-	if c.Voice == nil {
+	if c.v == nil {
 		return
 	}
 
-	c.Voice.Stop()
-	c.Voice = nil
+	var fn func()
+	fn, c.vrem = c.vrem, nil
+	c.v.Stop()
+
+	if fn != nil {
+		fn()
+	}
 }
 
 // ApplyFilter will apply the channel filter, if there is one.

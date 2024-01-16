@@ -159,7 +159,7 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 				Vol0Optimization: cs.GetVol0OptimizationSettings(),
 			})
 			c.memory = cs.GetMemory()
-			rc.Voice = c.cv
+			rc.StartVoice(c.cv, func() {}) // can't remove this channel, as it's hard-wired into actual
 			c.target.ActionTick.Reset()
 
 			c.nna = note.ActionCut

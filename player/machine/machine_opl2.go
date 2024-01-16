@@ -24,15 +24,15 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) setu
 
 	for i := range m.actualOutputs {
 		rc := &m.actualOutputs[i]
-		if rc.Voice != nil {
-			rc.Voice.SetOPL2Chip(m.opl2)
+		if v := rc.GetVoice(); v != nil {
+			v.SetOPL2Chip(m.opl2)
 		}
 	}
 
 	for i := range m.virtualOutputs {
 		rc := &m.virtualOutputs[i]
-		if rc.Voice != nil {
-			rc.Voice.SetOPL2Chip(m.opl2)
+		if v := rc.GetVoice(); v != nil {
+			v.SetOPL2Chip(m.opl2)
 		}
 	}
 

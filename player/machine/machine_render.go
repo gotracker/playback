@@ -56,7 +56,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 
 		rc.GlobalVolume = m.gv.ToVolume()
 
-		rc.Voice.DumpState(index.Channel(i), m.us.Tracer)
+		rc.GetVoice().DumpState(index.Channel(i), m.us.Tracer)
 		data, err := rc.RenderAndAdvance(m.ms.PeriodConverter, centerAheadPan, details)
 		if err != nil {
 			return nil, err
@@ -79,10 +79,10 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 		rc := &m.virtualOutputs[i]
 
 		var data *mixing.Data
-		if rc.Voice != nil {
+		if rc.GetVoice() != nil {
 			rc.GlobalVolume = m.gv.ToVolume()
 
-			//rc.Voice.DumpState(index.Channel(i), m.us.Tracer)
+			//rc.GetVoice().DumpState(index.Channel(i), m.us.Tracer)
 			var err error
 			data, err = rc.RenderAndAdvance(m.ms.PeriodConverter, centerAheadPan, details)
 			if err != nil {
