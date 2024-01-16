@@ -14,7 +14,7 @@ type ActionTick struct {
 
 type NewNoteInfo[TPeriod Period, TMixingVolume, TVolume Volume, TPanning Panning] struct {
 	Period        optional.Value[TPeriod]
-	Inst          optional.Value[*instrument.Instrument[TMixingVolume, TVolume, TPanning]]
+	Inst          optional.Value[*instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning]]
 	Pos           optional.Value[sampling.Pos]
 	MixVol        optional.Value[TMixingVolume]
 	Vol           optional.Value[TVolume]

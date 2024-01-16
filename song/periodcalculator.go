@@ -11,6 +11,7 @@ type PeriodCalculatorIntf interface {
 	PortaToNoteGeneric(period.Period, period.Delta, period.Period) (period.Period, error)
 	PortaDownGeneric(period.Period, period.Delta) (period.Period, error)
 	PortaUpGeneric(period.Period, period.Delta) (period.Period, error)
+	AddDeltaGeneric(period.Period, period.Delta) (period.Period, error)
 }
 
 type PeriodCalculator[TPeriod period.Period] interface {
@@ -20,6 +21,8 @@ type PeriodCalculator[TPeriod period.Period] interface {
 	PortaToNote(TPeriod, period.Delta, TPeriod) (TPeriod, error)
 	PortaDown(TPeriod, period.Delta) (TPeriod, error)
 	PortaUp(TPeriod, period.Delta) (TPeriod, error)
+	AddDelta(TPeriod, period.Delta) (TPeriod, error)
+
 	GetSamplerAdd(TPeriod, float64) float64
 	GetFrequency(TPeriod) frequency.Frequency
 }

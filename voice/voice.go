@@ -19,7 +19,7 @@ type Voice interface {
 	DumpState(ch index.Channel, t tracing.Tracer)
 
 	// Configuration
-	Reset()
+	Reset() error
 	SetOPL2Chip(chip opl2.Chip)
 
 	// Actions
@@ -29,8 +29,8 @@ type Voice interface {
 	Stop()
 
 	// State Machine Update
-	Tick()
-	RowEnd()
+	Tick() error
+	RowEnd() error
 
 	// General Parameters
 	IsDone() bool
@@ -41,19 +41,19 @@ type RenderVoice[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, T
 	Voice
 
 	// Configuration
-	Setup(inst *instrument.Instrument[TMixingVolume, TVolume, TPanning], outputRate frequency.Frequency) error
+	Setup(inst *instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning], outputRate frequency.Frequency) error
 }
 
 type AmpModulator[TGlobalVolume, TMixingVolume, TVolume Volume] interface {
 	// Amp/Volume Parameters
 	IsActive() bool
-	SetActive(active bool)
+	SetActive(active bool) error
 	GetMixingVolume() TMixingVolume
-	SetMixingVolume(v TMixingVolume)
+	SetMixingVolume(v TMixingVolume) error
 	GetVolume() TVolume
-	SetVolume(v TVolume)
+	SetVolume(v TVolume) error
 	GetVolumeDelta() types.VolumeDelta
-	SetVolumeDelta(d types.VolumeDelta)
+	SetVolumeDelta(d types.VolumeDelta) error
 	GetFinalVolume() volume.Volume
 }
 
@@ -65,10 +65,10 @@ type FadeoutModulator interface {
 type FreqModulator[TPeriod Period] interface {
 	// Frequency/Pitch Parameters
 	GetPeriod() TPeriod
-	SetPeriod(p TPeriod)
+	SetPeriod(p TPeriod) error
 	GetPeriodDelta() period.Delta
-	SetPeriodDelta(delta period.Delta)
-	GetFinalPeriod() TPeriod
+	SetPeriodDelta(delta period.Delta) error
+	GetFinalPeriod() (TPeriod, error)
 }
 
 type Sampler interface {
@@ -86,7 +86,7 @@ type RenderSampler[TPeriod Period] interface {
 	SetPos(pos sampling.Pos) error
 	GetPos() (sampling.Pos, error)
 
-	GetFinalPeriod() TPeriod
+	GetFinalPeriod() (TPeriod, error)
 	GetFinalVolume() volume.Volume
 	GetFinalPan() panning.Position
 }
@@ -94,51 +94,51 @@ type RenderSampler[TPeriod Period] interface {
 type PanModulator[TPanning Panning] interface {
 	// Pan Parameters
 	GetPan() TPanning
-	SetPan(pan TPanning)
+	SetPan(pan TPanning) error
 	GetPanDelta() types.PanDelta
-	SetPanDelta(d types.PanDelta)
+	SetPanDelta(d types.PanDelta) error
 	GetFinalPan() panning.Position
 }
 
 type PitchPanModulator[TPanning Panning] interface {
-	SetPitchPanNote(st note.Semitone)
+	SetPitchPanNote(st note.Semitone) error
 	IsPitchPanEnabled() bool
-	EnablePitchPan(enabled bool)
+	EnablePitchPan(enabled bool) error
 	GetPanSeparation() float32
 }
 
 type VolumeEnvelope[TGlobalVolume, TMixingVolume, TVolume Volume] interface {
 	// Amp/Volume Envelope Parameters
 	IsVolumeEnvelopeEnabled() bool
-	EnableVolumeEnvelope(enabled bool)
+	EnableVolumeEnvelope(enabled bool) error
 	GetVolumeEnvelopePosition() int
-	SetVolumeEnvelopePosition(pos int)
+	SetVolumeEnvelopePosition(pos int) error
 	GetCurrentVolumeEnvelope() TVolume
 }
 
 type PitchEnvelope[TPeriod Period] interface {
 	// Frequency/Pitch Envelope Parameters
 	IsPitchEnvelopeEnabled() bool
-	EnablePitchEnvelope(enabled bool)
+	EnablePitchEnvelope(enabled bool) error
 	GetPitchEnvelopePosition() int
-	SetPitchEnvelopePosition(pos int)
+	SetPitchEnvelopePosition(pos int) error
 	GetCurrentPitchEnvelope() period.Delta
 }
 
 type PanEnvelope[TPanning Panning] interface {
 	// Pan Envelope Parameters
 	IsPanEnvelopeEnabled() bool
-	EnablePanEnvelope(enabled bool)
+	EnablePanEnvelope(enabled bool) error
 	GetPanEnvelopePosition() int
-	SetPanEnvelopePosition(pos int)
+	SetPanEnvelopePosition(pos int) error
 	GetCurrentPanEnvelope() TPanning
 }
 
 type FilterEnvelope interface {
 	// Filter Envelope Parameters
 	IsFilterEnvelopeEnabled() bool
-	EnableFilterEnvelope(enabled bool)
+	EnableFilterEnvelope(enabled bool) error
 	GetFilterEnvelopePosition() int
-	SetFilterEnvelopePosition(pos int)
+	SetFilterEnvelopePosition(pos int) error
 	GetCurrentFilterEnvelope() uint8
 }

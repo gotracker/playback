@@ -19,7 +19,7 @@ import (
 )
 
 type s3mVoice struct {
-	inst        *instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
+	inst        *instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
 	opl2Chip    opl2.Chip
 	opl2Channel index.OPLChannel
 
@@ -61,7 +61,9 @@ func New(config voice.VoiceConfig[period.Amiga, s3mVolume.Volume, s3mVolume.Fine
 		DefaultVolume:       config.InitialVolume,
 	})
 
-	v.FreqModulator.Setup(component.FreqModulatorSettings[period.Amiga]{})
+	v.FreqModulator.Setup(component.FreqModulatorSettings[period.Amiga]{
+		PC: config.PC,
+	})
 
 	v.PanModulator.Setup(component.PanModulatorSettings[s3mPanning.Panning]{
 		Enabled:    config.PanEnabled,
@@ -106,7 +108,7 @@ func (v *s3mVoice) doDeferredRelease() {
 	}
 }
 
-func (v *s3mVoice) Setup(inst *instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], outputRate frequency.Frequency) error {
+func (v *s3mVoice) Setup(inst *instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], outputRate frequency.Frequency) error {
 	v.inst = inst
 
 	switch d := inst.GetData().(type) {
@@ -125,7 +127,7 @@ func (v *s3mVoice) Setup(inst *instrument.Instrument[s3mVolume.FineVolume, s3mVo
 
 	case *instrument.OPL2:
 		var o component.OPL2[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]
-		o.Setup(v.opl2Chip, int(v.opl2Channel), v.opl2, s3mPeriod.AmigaConverter, s3mSystem.S3MBaseClock, inst.GetDefaultVolume())
+		o.Setup(v.opl2Chip, int(v.opl2Channel), v.opl2, s3mPeriod.S3MAmigaConverter, s3mSystem.S3MBaseClock, inst.GetDefaultVolume())
 		v.voicer = &o
 
 	default:
@@ -146,11 +148,13 @@ func (v *s3mVoice) Setup(inst *instrument.Instrument[s3mVolume.FineVolume, s3mVo
 	return nil
 }
 
-func (v *s3mVoice) Reset() {
-	v.AmpModulator.Reset()
-	v.FreqModulator.Reset()
-	v.PanModulator.Reset()
-	v.vol0Opt.Reset()
+func (v *s3mVoice) Reset() error {
+	return errors.Join(
+		v.AmpModulator.Reset(),
+		v.FreqModulator.Reset(),
+		v.PanModulator.Reset(),
+		v.vol0Opt.Reset(),
+	)
 }
 
 func (v *s3mVoice) Stop() {
@@ -165,19 +169,25 @@ func (v *s3mVoice) IsDone() bool {
 	return v.vol0Opt.IsDone()
 }
 
-func (v *s3mVoice) Tick() {
+func (v *s3mVoice) Tick() error {
 	// has to be after the mod/env updates
 	v.KeyModulator.DeferredUpdate()
 
 	if o, ok := v.voicer.(*component.OPL2[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]); ok {
-		o.Advance(v.GetFinalVolume(), v.GetFinalPeriod())
+		fp, err := v.GetFinalPeriod()
+		if err != nil {
+			return err
+		}
+		o.Advance(v.GetFinalVolume(), fp)
 	}
 
 	v.KeyModulator.Advance()
+	return nil
 }
 
-func (v *s3mVoice) RowEnd() {
+func (v *s3mVoice) RowEnd() error {
 	v.vol0Opt.ObserveVolume(v.GetFinalVolume())
+	return nil
 }
 
 func (v *s3mVoice) Clone(bool) voice.Voice {

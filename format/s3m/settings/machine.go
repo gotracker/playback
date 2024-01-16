@@ -14,13 +14,26 @@ import (
 	"github.com/gotracker/playback/voice/oscillator"
 )
 
-func GetMachineSettings() *settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning] {
-	return &amigaSettings
+func GetMachineSettings(modLimits bool) *settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning] {
+	if modLimits {
+		return &amigaMOD31Settings
+	}
+	return &amigaS3MSettings
 }
 
 var (
-	amigaSettings = settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
-		PeriodConverter:     s3mPeriod.AmigaConverter,
+	amigaMOD31Settings = settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
+		PeriodConverter:     s3mPeriod.S3MAmigaConverter,
+		GetFilterFactory:    filterFactory,
+		GetVibratoFactory:   vibratoFactory,
+		GetTremoloFactory:   tremoloFactory,
+		GetPanbrelloFactory: panbrelloFactory,
+		VoiceFactory:        amigaVoiceFactory,
+		OPL2Enabled:         true,
+	}
+
+	amigaS3MSettings = settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
+		PeriodConverter:     s3mPeriod.S3MAmigaConverter,
 		GetFilterFactory:    filterFactory,
 		GetVibratoFactory:   vibratoFactory,
 		GetTremoloFactory:   tremoloFactory,

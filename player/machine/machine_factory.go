@@ -1,6 +1,7 @@
 package machine
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -47,7 +48,13 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 	}
 	factoryRegistry[tl] = func(songData song.Data, us settings.UserSettings) (MachineTicker, error) {
 		var m machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
-		m.ms = ms
+		// we have to use the songData's machine settings
+		var ok bool
+		m.ms, ok = songData.GetMachineSettings().(*settings.MachineSettings[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning])
+		if !ok {
+			return nil, errors.New("invalid machine settings from songdata")
+		}
+
 		m.songData = songData
 		m.us = us
 
@@ -151,6 +158,7 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 			c := &m.channels[ch]
 			c.enabled = cs.GetEnabled()
 			c.cv = m.ms.VoiceFactory.NewVoice(voice.VoiceConfig[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]{
+				PC:               ms.PeriodConverter,
 				OPLChannel:       cs.GetOPLChannel(),
 				InitialVolume:    initialVolume,
 				InitialMixing:    initialMixing,

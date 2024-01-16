@@ -23,7 +23,7 @@ type Period interface {
 }
 
 type xmVoice[TPeriod Period] struct {
-	inst *instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
+	inst *instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
 
 	fadeoutMode fadeout.Mode
 
@@ -66,6 +66,10 @@ func New[TPeriod Period](config voice.VoiceConfig[TPeriod, xmVolume.XmVolume, xm
 		Active:              true,
 		DefaultMixingVolume: config.InitialMixing,
 		DefaultVolume:       config.InitialVolume,
+	})
+
+	v.freq.Setup(component.FreqModulatorSettings[TPeriod]{
+		PC: config.PC,
 	})
 
 	v.pan.Setup(component.PanModulatorSettings[xmPanning.Panning]{
@@ -128,7 +132,7 @@ func (v xmVoice[TPeriod]) getFadeoutEnabled() bool {
 	return v.fadeoutMode.IsFadeoutActive(v.IsKeyFadeout(), v.volEnv.IsEnabled(), v.volEnv.IsDone())
 }
 
-func (v *xmVoice[TPeriod]) Setup(inst *instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], outputRate frequency.Frequency) error {
+func (v *xmVoice[TPeriod]) Setup(inst *instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], outputRate frequency.Frequency) error {
 	v.inst = inst
 
 	switch d := inst.GetData().(type) {
@@ -166,7 +170,7 @@ func (v *xmVoice[TPeriod]) Setup(inst *instrument.Instrument[xmVolume.XmVolume, 
 		return errors.New("instrument is nil")
 	}
 
-	v.autoVibrato.Setup(inst.GetAutoVibrato())
+	v.autoVibrato.Setup(inst.Static.AutoVibrato)
 
 	if factory := inst.GetFilterFactory(); factory != nil {
 		v.voiceFilter = factory(inst.SampleRate)
@@ -179,16 +183,18 @@ func (v *xmVoice[TPeriod]) Setup(inst *instrument.Instrument[xmVolume.XmVolume, 
 	return nil
 }
 
-func (v *xmVoice[TPeriod]) Reset() {
+func (v *xmVoice[TPeriod]) Reset() error {
 	v.KeyModulator.Release()
-	v.amp.Reset()
-	v.fadeout.Reset()
-	v.freq.Reset()
-	v.autoVibrato.Reset()
-	v.pan.Reset()
-	v.volEnv.Reset()
-	v.panEnv.Reset()
-	v.vol0Opt.Reset()
+	return errors.Join(
+		v.amp.Reset(),
+		v.fadeout.Reset(),
+		v.freq.Reset(),
+		v.autoVibrato.Reset(),
+		v.pan.Reset(),
+		v.volEnv.Reset(),
+		v.panEnv.Reset(),
+		v.vol0Opt.Reset(),
+	)
 }
 
 func (v *xmVoice[TPeriod]) Stop() {
@@ -207,7 +213,7 @@ func (v *xmVoice[TPeriod]) IsDone() bool {
 	return v.vol0Opt.IsDone()
 }
 
-func (v *xmVoice[TPeriod]) Tick() {
+func (v *xmVoice[TPeriod]) Tick() error {
 	v.fadeout.Advance()
 	v.autoVibrato.Advance()
 	if v.IsVolumeEnvelopeEnabled() {
@@ -225,10 +231,12 @@ func (v *xmVoice[TPeriod]) Tick() {
 	v.KeyModulator.DeferredUpdate()
 
 	v.KeyModulator.Advance()
+	return nil
 }
 
-func (v *xmVoice[TPeriod]) RowEnd() {
+func (v *xmVoice[TPeriod]) RowEnd() error {
 	v.vol0Opt.ObserveVolume(v.GetFinalVolume())
+	return nil
 }
 
 func (v *xmVoice[TPeriod]) Clone(bool) voice.Voice {

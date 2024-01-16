@@ -8,16 +8,16 @@ import (
 
 // == PanModulator ==
 
-func (v *xmVoice[TPeriod]) SetPan(pan xmPanning.Panning) {
-	v.pan.SetPan(pan)
+func (v *xmVoice[TPeriod]) SetPan(pan xmPanning.Panning) error {
+	return v.pan.SetPan(pan)
 }
 
 func (v xmVoice[TPeriod]) GetPan() xmPanning.Panning {
 	return v.pan.GetPan()
 }
 
-func (v *xmVoice[TPeriod]) SetPanDelta(d types.PanDelta) {
-	v.pan.SetPanDelta(d)
+func (v *xmVoice[TPeriod]) SetPanDelta(d types.PanDelta) error {
+	return v.pan.SetPanDelta(d)
 }
 
 func (v xmVoice[TPeriod]) GetPanDelta() types.PanDelta {

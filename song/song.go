@@ -38,6 +38,7 @@ type Data interface {
 	GetInitialOrder() index.Order
 	GetRowRenderStringer(Row, int, bool) RowStringer
 	GetSystem() system.System
+	GetMachineSettings() any
 	ForEachChannel(enabledOnly bool, fn func(ch index.Channel) (bool, error)) error
 	IsOPL2Enabled() bool
 }

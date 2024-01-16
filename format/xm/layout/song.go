@@ -21,9 +21,10 @@ import (
 // Song is the full definition of the song data of an XM file
 type Song[TPeriod period.Period] struct {
 	System            system.System
+	MS                any
 	Head              Header
-	Instruments       map[uint8]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
-	InstrumentNoteMap map[uint8]map[note.Semitone]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
+	Instruments       map[uint8]*instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
+	InstrumentNoteMap map[uint8]map[note.Semitone]*instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
 	Patterns          []song.Pattern
 	ChannelSettings   []ChannelSetting
 	OrderList         []index.Pattern
@@ -220,4 +221,8 @@ func (s Song[TPeriod]) ForEachChannel(enabledOnly bool, fn func(ch index.Channel
 
 func (Song[TPeriod]) IsOPL2Enabled() bool {
 	return false
+}
+
+func (s Song[TPeriod]) GetMachineSettings() any {
+	return s.MS
 }

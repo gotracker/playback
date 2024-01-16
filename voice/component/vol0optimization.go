@@ -35,8 +35,9 @@ func (c *Vol0Optimization) SetEnabled(enabled bool) {
 	c.unkeyed.enabled = enabled
 }
 
-func (c *Vol0Optimization) Reset() {
+func (c *Vol0Optimization) Reset() error {
 	c.keyed.rowsAt0 = 0
+	return nil
 }
 
 func (c *Vol0Optimization) ObserveVolume(v volume.Volume) {

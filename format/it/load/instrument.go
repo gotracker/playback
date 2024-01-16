@@ -10,6 +10,7 @@ import (
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/frequency"
+	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/util"
 	"github.com/gotracker/playback/voice/autovibrato"
@@ -30,8 +31,8 @@ import (
 	oscillatorImpl "github.com/gotracker/playback/oscillator"
 )
 
-type convInst struct {
-	Inst *instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]
+type convInst[TPeriod period.Period] struct {
+	Inst *instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]
 	NR   []noteRemap
 }
 
@@ -41,8 +42,8 @@ type convertITInstrumentSettings struct {
 	useHighPassFilter     bool
 }
 
-func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, features []feature.Feature) (map[int]*convInst, error) {
-	outInsts := make(map[int]*convInst)
+func convertITInstrumentOldToInstrument[TPeriod period.Period](inst *itfile.IMPIInstrumentOld, pc period.PeriodConverter[TPeriod], sampData []itfile.FullSample, convSettings convertITInstrumentSettings, features []feature.Feature) (map[int]*convInst[TPeriod], error) {
+	outInsts := make(map[int]*convInst[TPeriod])
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
 		return nil, err
@@ -71,8 +72,11 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 			},
 		}
 
-		ii := instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
+		ii := instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
 			Inst: &id,
+			Static: instrument.StaticValues[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
+				PC: pc,
+			},
 		}
 
 		switch inst.NewNoteAction {
@@ -136,8 +140,8 @@ func convertITInstrumentOldToInstrument(inst *itfile.IMPIInstrumentOld, sampData
 	return outInsts, nil
 }
 
-func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itfile.FullSample, convSettings convertITInstrumentSettings, pluginFilters map[int]filter.Factory, features []feature.Feature) (map[int]*convInst, error) {
-	outInsts := make(map[int]*convInst)
+func convertITInstrumentToInstrument[TPeriod period.Period](inst *itfile.IMPIInstrument, pc period.PeriodConverter[TPeriod], sampData []itfile.FullSample, convSettings convertITInstrumentSettings, pluginFilters map[int]filter.Factory, features []feature.Feature) (map[int]*convInst[TPeriod], error) {
+	outInsts := make(map[int]*convInst[TPeriod])
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
 		return nil, err
@@ -172,8 +176,9 @@ func convertITInstrumentToInstrument(inst *itfile.IMPIInstrument, sampData []itf
 			},
 		}
 
-		ii := instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
-			Static: instrument.StaticValues[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
+		ii := instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
+			Static: instrument.StaticValues[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
+				PC:            pc,
 				FilterFactory: channelFilterFactory,
 				PluginFilter:  pluginFilterFactory,
 			},
@@ -293,7 +298,7 @@ func convertEnvelope[T any](outEnv *envelope.Envelope[T], inEnv *itfile.Envelope
 	return nil
 }
 
-func buildNoteSampleKeyboard(noteKeyboard map[int]*convInst, nsk []itfile.NoteSample) error {
+func buildNoteSampleKeyboard[TPeriod period.Period](noteKeyboard map[int]*convInst[TPeriod], nsk []itfile.NoteSample) error {
 	for o, ns := range nsk {
 		s := int(ns.Sample)
 		if s == 0 {
@@ -308,7 +313,7 @@ func buildNoteSampleKeyboard(noteKeyboard map[int]*convInst, nsk []itfile.NoteSa
 			st := note.Semitone(nn)
 			ci, ok := noteKeyboard[si]
 			if !ok {
-				ci = &convInst{}
+				ci = &convInst[TPeriod]{}
 				noteKeyboard[si] = ci
 			}
 			ci.NR = append(ci.NR, noteRemap{
@@ -355,7 +360,7 @@ func itAutoVibratoWSToProtrackerWS(vibtype uint8) uint8 {
 	}
 }
 
-func addSampleInfoToConvertedInstrument(ii *instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning], id *instrument.PCM[itVolume.FineVolume, itVolume.Volume, itPanning.Panning], si *itfile.FullSample, instVol volume.Volume, convSettings convertITInstrumentSettings, features []feature.Feature) error {
+func addSampleInfoToConvertedInstrument[TPeriod period.Period](ii *instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], id *instrument.PCM[itVolume.FineVolume, itVolume.Volume, itPanning.Panning], si *itfile.FullSample, instVol volume.Volume, convSettings convertITInstrumentSettings, features []feature.Feature) error {
 	instLen := int(si.Header.Length)
 	numChannels := 1
 
@@ -460,7 +465,7 @@ func addSampleInfoToConvertedInstrument(ii *instrument.Instrument[itVolume.FineV
 	ii.Static.Filename = si.Header.GetFilename()
 	ii.Static.Name = si.Header.GetName()
 	ii.SampleRate = frequency.Frequency(si.Header.C5Speed)
-	ii.Static.AutoVibrato = autovibrato.AutoVibratoSettings{
+	ii.Static.AutoVibrato = autovibrato.AutoVibratoSettings[TPeriod]{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
 		Sweep:             255,
 		WaveformSelection: itAutoVibratoWSToProtrackerWS(si.Header.VibratoType),

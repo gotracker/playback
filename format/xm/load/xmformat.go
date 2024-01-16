@@ -13,6 +13,7 @@ import (
 	"github.com/gotracker/playback/format/xm/layout"
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
 	xmPeriod "github.com/gotracker/playback/format/xm/period"
+	"github.com/gotracker/playback/format/xm/settings"
 	xmSystem "github.com/gotracker/playback/format/xm/system"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
 	"github.com/gotracker/playback/frequency"
@@ -63,20 +64,21 @@ func xmAutoVibratoWSToProtrackerWS(vibtype uint8) uint8 {
 	}
 }
 
-func xmInstrumentToInstrument(inst *xmfile.InstrumentHeader, linearFrequencySlides bool, features []feature.Feature) ([]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], map[int][]note.Semitone, error) {
+func xmInstrumentToInstrument[TPeriod period.Period](inst *xmfile.InstrumentHeader, pc period.PeriodConverter[TPeriod], linearFrequencySlides bool, features []feature.Feature) ([]*instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], map[int][]note.Semitone, error) {
 	noteMap := make(map[int][]note.Semitone)
 
-	var instruments []*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
+	var instruments []*instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
 
 	for _, si := range inst.Samples {
 		v := min(xmVolume.XmVolume(si.Volume), 0x40)
-		sample := instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]{
-			Static: instrument.StaticValues[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]{
+		sample := instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]{
+			Static: instrument.StaticValues[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]{
+				PC:                 pc,
 				Filename:           si.GetName(),
 				Name:               inst.GetName(),
 				Volume:             v,
 				RelativeNoteNumber: si.RelativeNoteNumber,
-				AutoVibrato: autovibrato.AutoVibratoSettings{
+				AutoVibrato: autovibrato.AutoVibratoSettings[TPeriod]{
 					Enabled:           (inst.VibratoDepth != 0 && inst.VibratoRate != 0),
 					Sweep:             int(inst.VibratoSweep),
 					WaveformSelection: xmAutoVibratoWSToProtrackerWS(inst.VibratoType),
@@ -247,12 +249,12 @@ func xmLoopModeToLoopMode(mode xmfile.SampleLoopMode) loop.Mode {
 	}
 }
 
-func convertXMInstrumentToInstrument(ih *xmfile.InstrumentHeader, linearFrequencySlides bool, features []feature.Feature) ([]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], map[int][]note.Semitone, error) {
+func convertXMInstrumentToInstrument[TPeriod period.Period](ih *xmfile.InstrumentHeader, pc period.PeriodConverter[TPeriod], linearFrequencySlides bool, features []feature.Feature) ([]*instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], map[int][]note.Semitone, error) {
 	if ih == nil {
 		return nil, nil, errors.New("instrument is nil")
 	}
 
-	return xmInstrumentToInstrument(ih, linearFrequencySlides, features)
+	return xmInstrumentToInstrument(ih, pc, linearFrequencySlides, features)
 }
 
 func convertXmPattern[TPeriod period.Period](pkt xmfile.Pattern) (song.Pattern, int) {
@@ -298,11 +300,14 @@ func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []
 
 	linearFrequencySlides := f.Head.Flags.IsLinearSlides()
 
+	ms := settings.GetMachineSettings[TPeriod]()
+
 	s := layout.Song[TPeriod]{
 		System:            xmSystem.XMSystem,
+		MS:                ms,
 		Head:              *h,
-		Instruments:       make(map[uint8]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]),
-		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]),
+		Instruments:       make(map[uint8]*instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]),
+		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]),
 		Patterns:          make([]song.Pattern, len(f.Patterns)),
 		OrderList:         make([]index.Pattern, int(f.Head.SongLength)),
 	}
@@ -312,7 +317,7 @@ func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []
 	}
 
 	for instNum, ih := range f.Instruments {
-		samples, noteMap, err := convertXMInstrumentToInstrument(&ih, linearFrequencySlides, features)
+		samples, noteMap, err := convertXMInstrumentToInstrument(&ih, ms.PeriodConverter, linearFrequencySlides, features)
 		if err != nil {
 			return nil, err
 		}
@@ -334,7 +339,7 @@ func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []
 			}
 			inm, ok := s.InstrumentNoteMap[id.InstID]
 			if !ok {
-				inm = make(map[note.Semitone]*instrument.Instrument[xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning])
+				inm = make(map[note.Semitone]*instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning])
 				s.InstrumentNoteMap[id.InstID] = inm
 			}
 			for _, st := range sts {

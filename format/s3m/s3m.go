@@ -35,5 +35,5 @@ func (f format) LoadFromReader(r io.Reader, features []feature.Feature) (playbac
 }
 
 func init() {
-	machine.RegisterMachine(settings.GetMachineSettings())
+	machine.RegisterMachine(settings.GetMachineSettings(true))
 }

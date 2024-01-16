@@ -42,13 +42,13 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) deco
 		}
 	}
 
-	var inst *instrument.Instrument[TMixingVolume, TVolume, TPanning]
+	var inst *instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning]
 	if d.HasInstrument() {
 		// retrigger (new?) instrument with period specified by `st` (0 = previous semitone)
 		i := d.GetInstrument(c.prev.Semitone.Coalesce(st))
 
 		ii, _ := m.songData.GetInstrument(i)
-		inst, _ = ii.(*instrument.Instrument[TMixingVolume, TVolume, TPanning])
+		inst, _ = ii.(*instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning])
 		wantInstrumentDefaults = inst != nil
 		changeNote.Inst.Set(inst)
 	} else if st != 0 {
@@ -100,7 +100,7 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) deco
 	return nil
 }
 
-func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) decodeInstrument(m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], changeNote *NewNoteInfo[TPeriod, TMixingVolume, TVolume, TPanning], inst *instrument.Instrument[TMixingVolume, TVolume, TPanning]) error {
+func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) decodeInstrument(m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], changeNote *NewNoteInfo[TPeriod, TMixingVolume, TVolume, TPanning], inst *instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning]) error {
 	if inst == nil {
 		return nil
 	}

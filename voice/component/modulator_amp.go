@@ -45,15 +45,15 @@ func (a AmpModulator[TMixingVolume, TVolume]) Clone() AmpModulator[TMixingVolume
 	return m
 }
 
-func (a *AmpModulator[TMixingVolume, TVolume]) Reset() {
+func (a *AmpModulator[TMixingVolume, TVolume]) Reset() error {
 	a.keyed.delta = 0
 	a.keyed.mixingOverride.Reset()
-	a.updateFinal()
+	return a.updateFinal()
 }
 
-func (a *AmpModulator[TMixingVolume, TVolume]) SetActive(active bool) {
+func (a *AmpModulator[TMixingVolume, TVolume]) SetActive(active bool) error {
 	a.unkeyed.active = active
-	a.updateFinal()
+	return a.updateFinal()
 }
 
 func (a AmpModulator[TMixingVolume, TVolume]) IsActive() bool {
@@ -61,11 +61,13 @@ func (a AmpModulator[TMixingVolume, TVolume]) IsActive() bool {
 }
 
 // SetMixingVolume configures the mixing volume of the modulator
-func (a *AmpModulator[TMixingVolume, TVolume]) SetMixingVolume(mixing TMixingVolume) {
-	if !mixing.IsUseInstrumentVol() {
-		a.unkeyed.mixing = mixing
-		a.updateFinal()
+func (a *AmpModulator[TMixingVolume, TVolume]) SetMixingVolume(mixing TMixingVolume) error {
+	if mixing.IsUseInstrumentVol() {
+		return nil
 	}
+
+	a.unkeyed.mixing = mixing
+	return a.updateFinal()
 }
 
 // GetMixingVolume returns the current mixing volume of the modulator
@@ -73,8 +75,9 @@ func (a AmpModulator[TMixingVolume, TVolume]) GetMixingVolume() TMixingVolume {
 	return a.unkeyed.mixing
 }
 
-func (a *AmpModulator[TMixingVolume, TVolume]) SetMixingVolumeOverride(mvo optional.Value[TMixingVolume]) {
+func (a *AmpModulator[TMixingVolume, TVolume]) SetMixingVolumeOverride(mvo optional.Value[TMixingVolume]) error {
 	a.keyed.mixingOverride = mvo
+	return nil
 }
 
 func (a AmpModulator[TMixingVolume, TVolume]) GetMixingVolumeOverride() optional.Value[TMixingVolume] {
@@ -82,12 +85,12 @@ func (a AmpModulator[TMixingVolume, TVolume]) GetMixingVolumeOverride() optional
 }
 
 // SetVolume sets the current volume (before fadeout calculation)
-func (a *AmpModulator[TMixingVolume, TVolume]) SetVolume(vol TVolume) {
+func (a *AmpModulator[TMixingVolume, TVolume]) SetVolume(vol TVolume) error {
 	if vol.IsUseInstrumentVol() {
 		vol = a.settings.DefaultVolume
 	}
 	a.unkeyed.vol = vol
-	a.updateFinal()
+	return a.updateFinal()
 }
 
 // GetVolume returns the current volume (before fadeout calculation)
@@ -95,9 +98,9 @@ func (a AmpModulator[TMixingVolume, TVolume]) GetVolume() TVolume {
 	return a.unkeyed.vol
 }
 
-func (a *AmpModulator[TMixingVolume, TVolume]) SetVolumeDelta(d types.VolumeDelta) {
+func (a *AmpModulator[TMixingVolume, TVolume]) SetVolumeDelta(d types.VolumeDelta) error {
 	a.keyed.delta = d
-	a.updateFinal()
+	return a.updateFinal()
 }
 
 func (a AmpModulator[TMixingVolume, TVolume]) GetVolumeDelta() types.VolumeDelta {
@@ -109,10 +112,10 @@ func (a AmpModulator[TMixingVolume, TVolume]) GetFinalVolume() volume.Volume {
 	return a.final
 }
 
-func (a *AmpModulator[TMixingVolume, TVolume]) updateFinal() {
+func (a *AmpModulator[TMixingVolume, TVolume]) updateFinal() error {
 	if !a.unkeyed.active {
 		a.final = 0
-		return
+		return nil
 	}
 
 	v := types.AddVolumeDelta(a.unkeyed.vol, a.keyed.delta)
@@ -123,6 +126,7 @@ func (a *AmpModulator[TMixingVolume, TVolume]) updateFinal() {
 	}
 
 	a.final = mv.ToVolume() * v.ToVolume()
+	return nil
 }
 
 func (a AmpModulator[TMixingVolume, TVolume]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {

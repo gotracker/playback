@@ -2,18 +2,17 @@ package voice
 
 // == FilterEnveloper ==
 
-func (v *itVoice[TPeriod]) EnableFilterEnvelope(enabled bool) {
+func (v *itVoice[TPeriod]) EnableFilterEnvelope(enabled bool) error {
 	if !v.pitchAndFilterEnvShared {
-		v.filterEnv.SetEnabled(enabled)
-		return
+		return v.filterEnv.SetEnabled(enabled)
 	}
 
 	// shared filter/pitch envelope
 	if !v.filterEnvActive {
-		return
+		return nil
 	}
 
-	v.filterEnv.SetEnabled(enabled)
+	return v.filterEnv.SetEnabled(enabled)
 }
 
 func (v itVoice[TPeriod]) IsFilterEnvelopeEnabled() bool {
@@ -27,12 +26,17 @@ func (v itVoice[TPeriod]) GetCurrentFilterEnvelope() uint8 {
 	return v.filterEnv.GetCurrentValue()
 }
 
-func (v *itVoice[TPeriod]) SetFilterEnvelopePosition(pos int) {
+func (v *itVoice[TPeriod]) SetFilterEnvelopePosition(pos int) error {
 	if !v.pitchAndFilterEnvShared || v.filterEnvActive {
-		if doneCB := v.filterEnv.SetEnvelopePosition(pos); doneCB != nil {
+		doneCB, err := v.filterEnv.SetEnvelopePosition(pos)
+		if err != nil {
+			return err
+		}
+		if doneCB != nil {
 			doneCB(v)
 		}
 	}
+	return nil
 }
 
 func (v itVoice[TPeriod]) GetFilterEnvelopePosition() int {

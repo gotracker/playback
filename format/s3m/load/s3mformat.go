@@ -12,11 +12,13 @@ import (
 	"github.com/gotracker/playback/format/s3m/channel"
 	"github.com/gotracker/playback/format/s3m/layout"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	"github.com/gotracker/playback/format/s3m/settings"
 	s3mSystem "github.com/gotracker/playback/format/s3m/system"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice/fadeout"
@@ -46,9 +48,9 @@ func moduleHeaderToHeader(fh *s3mfile.ModuleHeader) (*layout.Header, error) {
 	return &head, nil
 }
 
-func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], error) {
-	sample := instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
-		Static: instrument.StaticValues[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
+func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], error) {
+	sample := instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
+		Static: instrument.StaticValues[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
 			Filename: scrs.Head.GetFilename(),
 			Name:     si.GetSampleName(),
 			Volume:   s3mVolume.Volume(si.Volume),
@@ -58,9 +60,9 @@ func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*
 	return &sample, nil
 }
 
-func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHeader, signedSamples bool, features []feature.Feature) (*instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], error) {
-	sample := instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
-		Static: instrument.StaticValues[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
+func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHeader, signedSamples bool, features []feature.Feature) (*instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], error) {
+	sample := instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
+		Static: instrument.StaticValues[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
 			Filename: scrs.Head.GetFilename(),
 			Name:     si.GetSampleName(),
 			Volume:   s3mVolume.Volume(si.Volume),
@@ -117,9 +119,9 @@ func scrsDp30ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSDigiplayerHead
 	return &sample, nil
 }
 
-func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (*instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], error) {
-	inst := instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
-		Static: instrument.StaticValues[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
+func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (*instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], error) {
+	inst := instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
+		Static: instrument.StaticValues[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
 			Filename: scrs.Head.GetFilename(),
 			Name:     si.GetSampleName(),
 			Volume:   s3mVolume.Volume(si.Volume),
@@ -164,7 +166,7 @@ func scrsOpl2ToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSAdlibHeader) (
 	return &inst, nil
 }
 
-func convertSCRSFullToInstrument(scrs *s3mfile.SCRSFull, signedSamples bool, features []feature.Feature) (*instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], error) {
+func convertSCRSFullToInstrument(scrs *s3mfile.SCRSFull, signedSamples bool, features []feature.Feature) (*instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], error) {
 	if scrs == nil {
 		return nil, errors.New("scrs is nil")
 	}
@@ -255,10 +257,13 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		return nil, err
 	}
 
+	amigaLimits := (f.Head.Flags & 0x0010) != 0
+
 	s := layout.Song{
 		System:      s3mSystem.S3MSystem,
+		MS:          settings.GetMachineSettings(amigaLimits),
 		Head:        *h,
-		Instruments: make([]*instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], len(f.InstrumentPointers)),
+		Instruments: make([]*instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], len(f.InstrumentPointers)),
 		OrderList:   make([]index.Pattern, len(f.OrderList)),
 	}
 
@@ -272,7 +277,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	st2Tempo := (f.Head.Flags & 0x0002) != 0
 	amigaSlides := (f.Head.Flags & 0x0004) != 0
 	zeroVolOpt := (f.Head.Flags & 0x0008) != 0
-	amigaLimits := (f.Head.Flags & 0x0010) != 0
+	//amigaLimits := (f.Head.Flags & 0x0010) != 0
 	sbFilterEnable := (f.Head.Flags & 0x0020) != 0
 	st300volSlides := (f.Head.Flags & 0x0040) != 0
 	if f.Head.TrackerVersion == 0x1300 {
@@ -284,7 +289,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		s.OrderList[i] = index.Pattern(o)
 	}
 
-	s.Instruments = make([]*instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], len(f.Instruments))
+	s.Instruments = make([]*instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], len(f.Instruments))
 	for instNum, scrs := range f.Instruments {
 		sample, err := convertSCRSFullToInstrument(&scrs, signedSamples, features)
 		if err != nil {

@@ -32,9 +32,9 @@ func (p *PanModulator[TPanning]) Setup(settings PanModulatorSettings[TPanning]) 
 	p.Reset()
 }
 
-func (p *PanModulator[TPanning]) Reset() {
+func (p *PanModulator[TPanning]) Reset() error {
 	p.keyed.delta = 0
-	p.updateFinal()
+	return p.updateFinal()
 }
 
 func (p PanModulator[TPanning]) Clone() PanModulator[TPanning] {
@@ -43,11 +43,13 @@ func (p PanModulator[TPanning]) Clone() PanModulator[TPanning] {
 }
 
 // SetPan sets the current panning
-func (p *PanModulator[TPanning]) SetPan(pan TPanning) {
-	if p.settings.Enabled {
-		p.unkeyed.pan = pan
-		p.updateFinal()
+func (p *PanModulator[TPanning]) SetPan(pan TPanning) error {
+	if !p.settings.Enabled {
+		return nil
 	}
+
+	p.unkeyed.pan = pan
+	return p.updateFinal()
 }
 
 // GetPan returns the current panning
@@ -56,11 +58,13 @@ func (p PanModulator[TPanning]) GetPan() TPanning {
 }
 
 // SetPanDelta sets the current panning delta
-func (p *PanModulator[TPanning]) SetPanDelta(d types.PanDelta) {
-	if p.settings.Enabled {
-		p.keyed.delta = d
-		p.updateFinal()
+func (p *PanModulator[TPanning]) SetPanDelta(d types.PanDelta) error {
+	if !p.settings.Enabled {
+		return nil
 	}
+
+	p.keyed.delta = d
+	return p.updateFinal()
 }
 
 // GetPanDelta returns the current panning delta
@@ -80,6 +84,7 @@ func (p PanModulator[TPanning]) DumpState(ch index.Channel, t tracing.Tracer, co
 	), comment)
 }
 
-func (p *PanModulator[TPanning]) updateFinal() {
+func (p *PanModulator[TPanning]) updateFinal() error {
 	p.final = types.AddPanningDelta(p.unkeyed.pan, p.keyed.delta).ToPosition()
+	return nil
 }

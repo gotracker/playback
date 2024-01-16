@@ -21,18 +21,19 @@ type FreqModulator[TPeriod period.Period] struct {
 }
 
 type FreqModulatorSettings[TPeriod period.Period] struct {
+	PC period.PeriodConverter[TPeriod]
 }
 
-func (f *FreqModulator[TPeriod]) Setup(settings FreqModulatorSettings[TPeriod]) {
+func (f *FreqModulator[TPeriod]) Setup(settings FreqModulatorSettings[TPeriod]) error {
 	f.settings = settings
 	var empty TPeriod
 	f.unkeyed.period = empty
-	f.Reset()
+	return f.Reset()
 }
 
-func (f *FreqModulator[TPeriod]) Reset() {
+func (f *FreqModulator[TPeriod]) Reset() error {
 	f.keyed.delta = 0
-	f.updateFinal()
+	return f.updateFinal()
 }
 
 func (f FreqModulator[TPeriod]) Clone() FreqModulator[TPeriod] {
@@ -41,13 +42,14 @@ func (f FreqModulator[TPeriod]) Clone() FreqModulator[TPeriod] {
 }
 
 // SetPeriod sets the current period (before AutoVibrato and Delta calculation)
-func (f *FreqModulator[TPeriod]) SetPeriod(period TPeriod) {
+func (f *FreqModulator[TPeriod]) SetPeriod(period TPeriod) error {
 	if period.IsInvalid() {
-		return
+		// ignore it for now
+		return nil
 	}
 
 	f.unkeyed.period = period
-	f.updateFinal()
+	return f.updateFinal()
 }
 
 // GetPeriod returns the current period (before AutoVibrato and Delta calculation)
@@ -56,9 +58,9 @@ func (f *FreqModulator[TPeriod]) GetPeriod() TPeriod {
 }
 
 // SetPeriodDelta sets the current period delta (before AutoVibrato calculation)
-func (f *FreqModulator[TPeriod]) SetPeriodDelta(delta period.Delta) {
+func (f *FreqModulator[TPeriod]) SetPeriodDelta(delta period.Delta) error {
 	f.keyed.delta = delta
-	f.updateFinal()
+	return f.updateFinal()
 }
 
 // GetDelta returns the current period delta (before AutoVibrato calculation)
@@ -67,8 +69,8 @@ func (f *FreqModulator[TPeriod]) GetPeriodDelta() period.Delta {
 }
 
 // GetFinalPeriod returns the current period (after AutoVibrato and Delta calculation)
-func (f *FreqModulator[TPeriod]) GetFinalPeriod() TPeriod {
-	return f.final
+func (f *FreqModulator[TPeriod]) GetFinalPeriod() (TPeriod, error) {
+	return f.final, nil
 }
 
 func (f FreqModulator[TPeriod]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
@@ -79,6 +81,8 @@ func (f FreqModulator[TPeriod]) DumpState(ch index.Channel, t tracing.Tracer, co
 	), comment)
 }
 
-func (f *FreqModulator[TPeriod]) updateFinal() {
-	f.final = period.AddDelta(f.unkeyed.period, f.keyed.delta)
+func (f *FreqModulator[TPeriod]) updateFinal() error {
+	var err error
+	f.final, err = f.settings.PC.AddDelta(f.unkeyed.period, f.keyed.delta)
+	return err
 }

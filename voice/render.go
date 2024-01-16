@@ -29,7 +29,10 @@ func RenderAndTick[TPeriod Period](in Voice, pc period.PeriodConverter[TPeriod],
 		return nil, err
 	}
 
-	p := rs.GetFinalPeriod()
+	p, err := rs.GetFinalPeriod()
+	if err != nil {
+		return nil, err
+	}
 
 	samplerAdd := float32(pc.GetSamplerAdd(p, float64(rs.GetSampleRate())*float64(details.SamplerSpeed)))
 

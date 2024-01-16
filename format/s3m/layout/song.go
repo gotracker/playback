@@ -21,8 +21,9 @@ import (
 // Song is the full definition of the song data of an Song file
 type Song struct {
 	System          system.System
+	MS              any
 	Head            Header
-	Instruments     []*instrument.Instrument[s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
+	Instruments     []*instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
 	Patterns        []song.Pattern
 	ChannelSettings []ChannelSetting
 	ChannelOrders   []index.Channel
@@ -171,7 +172,7 @@ func (s Song) GetName() string {
 }
 
 func (s Song) GetPeriodCalculator() song.PeriodCalculatorIntf {
-	return s3mPeriod.AmigaConverter
+	return s3mPeriod.S3MAmigaConverter
 }
 
 func (s Song) GetInitialOrder() index.Order {
@@ -229,4 +230,8 @@ func (s Song) IsOPL2Enabled() bool {
 		}
 	}
 	return false
+}
+
+func (s Song) GetMachineSettings() any {
+	return s.MS
 }

@@ -38,14 +38,14 @@ func (p PitchPanModulator[TPanning]) Clone() PitchPanModulator[TPanning] {
 	return m
 }
 
-func (p *PitchPanModulator[TPanning]) Reset() {
-	p.updatePitchPan()
+func (p *PitchPanModulator[TPanning]) Reset() error {
+	return p.updatePitchPan()
 }
 
 // SetPitch updates the pan separation modulated by the provided pitch
-func (p *PitchPanModulator[TPanning]) SetPitch(st note.Semitone) {
+func (p *PitchPanModulator[TPanning]) SetPitch(st note.Semitone) error {
 	p.unkeyed.pitch = st
-	p.updatePitchPan()
+	return p.updatePitchPan()
 }
 
 // IsPitchPanEnabled returns the enablement of the pitch-pan separation function
@@ -54,9 +54,9 @@ func (p PitchPanModulator[TPanning]) IsPitchPanEnabled() bool {
 }
 
 // EnablePitchPan enables the pitch-pan separation function
-func (p *PitchPanModulator[TPanning]) EnablePitchPan(enabled bool) {
+func (p *PitchPanModulator[TPanning]) EnablePitchPan(enabled bool) error {
 	p.unkeyed.enabled = enabled
-	p.updatePitchPan()
+	return p.updatePitchPan()
 }
 
 // SetPanSeparation gets the current pan separation
@@ -78,12 +78,13 @@ func (p PitchPanModulator[TPanning]) GetSeparatedPan(pan TPanning) TPanning {
 func (p *PitchPanModulator[TPanning]) Advance() {
 }
 
-func (p *PitchPanModulator[TPanning]) updatePitchPan() {
+func (p *PitchPanModulator[TPanning]) updatePitchPan() error {
 	if !p.unkeyed.enabled {
-		return
+		return nil
 	}
 
 	p.panSep = (float32(p.unkeyed.pitch) - float32(p.settings.PitchPanCenter)) * p.settings.PitchPanSeparation
+	return nil
 }
 
 func (p PitchPanModulator[TPanning]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {

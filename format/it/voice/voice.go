@@ -25,7 +25,7 @@ type Period interface {
 }
 
 type itVoice[TPeriod Period] struct {
-	inst       *instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]
+	inst       *instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]
 	background bool
 
 	pitchAndFilterEnvShared bool
@@ -86,7 +86,9 @@ func New[TPeriod Period](config voice.VoiceConfig[TPeriod, itVolume.FineVolume, 
 		DefaultVolume:       config.InitialVolume,
 	})
 
-	v.freq.Setup(component.FreqModulatorSettings[TPeriod]{})
+	v.freq.Setup(component.FreqModulatorSettings[TPeriod]{
+		PC: config.PC,
+	})
 
 	v.pan.Setup(component.PanModulatorSettings[itPanning.Panning]{
 		Enabled:    config.PanEnabled,
@@ -159,7 +161,7 @@ func (v itVoice[TPeriod]) getFadeoutEnabled() bool {
 	return v.fadeoutMode.IsFadeoutActive(v.IsKeyFadeout(), v.volEnv.IsEnabled(), v.volEnv.IsDone())
 }
 
-func (v *itVoice[TPeriod]) Setup(inst *instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning], outputRate frequency.Frequency) error {
+func (v *itVoice[TPeriod]) Setup(inst *instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], outputRate frequency.Frequency) error {
 	v.inst = inst
 
 	v.voicer = nil
@@ -213,7 +215,7 @@ func (v *itVoice[TPeriod]) Setup(inst *instrument.Instrument[itVolume.FineVolume
 		return errors.New("instrument is nil")
 	}
 
-	v.autoVibrato.Setup(inst.GetAutoVibrato())
+	v.autoVibrato.Setup(inst.Static.AutoVibrato)
 
 	if factory := inst.GetFilterFactory(); factory != nil {
 		v.voiceFilter = factory(inst.SampleRate)
@@ -226,20 +228,22 @@ func (v *itVoice[TPeriod]) Setup(inst *instrument.Instrument[itVolume.FineVolume
 	return nil
 }
 
-func (v *itVoice[TPeriod]) Reset() {
+func (v *itVoice[TPeriod]) Reset() error {
 	v.KeyModulator.Release()
-	v.amp.Reset()
-	v.fadeout.Reset()
-	v.freq.Reset()
-	v.autoVibrato.Reset()
-	v.pan.Reset()
-	v.pitchPan.Reset()
-	v.volEnv.Reset()
-	v.pitchEnv.Reset()
-	v.panEnv.Reset()
-	v.filterEnv.Reset()
-	v.vol0Opt.Reset()
-	v.updateFinal()
+	return errors.Join(
+		v.amp.Reset(),
+		v.fadeout.Reset(),
+		v.freq.Reset(),
+		v.autoVibrato.Reset(),
+		v.pan.Reset(),
+		v.pitchPan.Reset(),
+		v.volEnv.Reset(),
+		v.pitchEnv.Reset(),
+		v.panEnv.Reset(),
+		v.filterEnv.Reset(),
+		v.vol0Opt.Reset(),
+		v.updateFinal(),
+	)
 }
 
 func (v *itVoice[TPeriod]) Stop() {
@@ -259,7 +263,7 @@ func (v *itVoice[TPeriod]) IsDone() bool {
 	return v.vol0Opt.IsDone()
 }
 
-func (v *itVoice[TPeriod]) Tick() {
+func (v *itVoice[TPeriod]) Tick() error {
 	v.fadeout.Advance()
 	v.autoVibrato.Advance()
 	v.pitchPan.Advance()
@@ -294,11 +298,12 @@ func (v *itVoice[TPeriod]) Tick() {
 
 	v.KeyModulator.Advance()
 
-	v.updateFinal()
+	return v.updateFinal()
 }
 
-func (v *itVoice[TPeriod]) RowEnd() {
+func (v *itVoice[TPeriod]) RowEnd() error {
 	v.vol0Opt.ObserveVolume(v.GetFinalVolume())
+	return nil
 }
 
 func (v *itVoice[TPeriod]) Clone(background bool) voice.Voice {
@@ -355,10 +360,10 @@ func (v *itVoice[TPeriod]) setupPCM(samp pcm.Sample, wholeLoop, sustainLoop loop
 	v.voicer = &s
 }
 
-func (v *itVoice[TPeriod]) updateFinal() {
+func (v *itVoice[TPeriod]) updateFinal() error {
 	if v.IsDone() {
 		v.finalVol = 0
-		return
+		return nil
 	}
 
 	// volume
@@ -372,10 +377,16 @@ func (v *itVoice[TPeriod]) updateFinal() {
 	v.finalVol = vol * volEnv * fadeVol
 
 	// period
-	p := v.freq.GetFinalPeriod()
+	p, err := v.freq.GetFinalPeriod()
+	if err != nil {
+		return err
+	}
 	if v.IsPitchEnvelopeEnabled() {
 		delta := v.GetCurrentPitchEnvelope()
-		p = period.AddDelta(p, delta)
+		p, err = v.inst.Static.PC.AddDelta(p, delta)
+		if err != nil {
+			return err
+		}
 	}
 	v.finalPeriod = p
 
@@ -386,4 +397,5 @@ func (v *itVoice[TPeriod]) updateFinal() {
 		envPan := v.panEnv.GetCurrentValue()
 		v.finalPan = v.pitchPan.GetSeparatedPan(envPan).ToPosition()
 	}
+	return err
 }

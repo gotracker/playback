@@ -6,8 +6,8 @@ import (
 
 // == PitchEnveloper ==
 
-func (v *itVoice[TPeriod]) EnablePitchEnvelope(enabled bool) {
-	v.pitchEnv.SetEnabled(enabled)
+func (v *itVoice[TPeriod]) EnablePitchEnvelope(enabled bool) error {
+	return v.pitchEnv.SetEnabled(enabled)
 }
 
 func (v itVoice[TPeriod]) IsPitchEnvelopeEnabled() bool {
@@ -24,12 +24,17 @@ func (v itVoice[TPeriod]) GetCurrentPitchEnvelope() period.Delta {
 	return 0
 }
 
-func (v *itVoice[TPeriod]) SetPitchEnvelopePosition(pos int) {
+func (v *itVoice[TPeriod]) SetPitchEnvelopePosition(pos int) error {
 	if !v.pitchAndFilterEnvShared || !v.filterEnvActive {
-		if doneCB := v.pitchEnv.SetEnvelopePosition(pos); doneCB != nil {
+		doneCB, err := v.pitchEnv.SetEnvelopePosition(pos)
+		if err != nil {
+			return err
+		}
+		if doneCB != nil {
 			doneCB(v)
 		}
 	}
+	return nil
 }
 
 func (v itVoice[TPeriod]) GetPitchEnvelopePosition() int {

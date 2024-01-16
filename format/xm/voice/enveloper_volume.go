@@ -6,8 +6,8 @@ import (
 
 // == VolumeEnveloper ==
 
-func (v *xmVoice[TPeriod]) EnableVolumeEnvelope(enabled bool) {
-	v.volEnv.SetEnabled(enabled)
+func (v *xmVoice[TPeriod]) EnableVolumeEnvelope(enabled bool) error {
+	return v.volEnv.SetEnabled(enabled)
 }
 
 func (v xmVoice[TPeriod]) IsVolumeEnvelopeEnabled() bool {
@@ -21,10 +21,15 @@ func (v xmVoice[TPeriod]) GetCurrentVolumeEnvelope() xmVolume.XmVolume {
 	return xmVolume.DefaultXmVolume
 }
 
-func (v *xmVoice[TPeriod]) SetVolumeEnvelopePosition(pos int) {
-	if doneCB := v.volEnv.SetEnvelopePosition(pos); doneCB != nil {
+func (v *xmVoice[TPeriod]) SetVolumeEnvelopePosition(pos int) error {
+	doneCB, err := v.volEnv.SetEnvelopePosition(pos)
+	if err != nil {
+		return err
+	}
+	if doneCB != nil {
 		doneCB(v)
 	}
+	return nil
 }
 
 func (v xmVoice[TPeriod]) GetVolumeEnvelopePosition() int {

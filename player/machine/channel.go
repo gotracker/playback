@@ -27,11 +27,11 @@ type channel[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 
 	prev struct {
 		Period   TPeriod
-		Inst     *instrument.Instrument[TMixingVolume, TVolume, TPanning]
+		Inst     *instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning]
 		Semitone memory.Value[note.Semitone]
 	}
 	target struct {
-		Inst       *instrument.Instrument[TMixingVolume, TVolume, TPanning]
+		Inst       *instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning]
 		Pos        optional.Value[sampling.Pos]
 		ActionTick optional.Value[ActionTick]
 	}
@@ -52,7 +52,7 @@ type channel[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 
 type channelInfo[TPeriod Period, TMixingVolume, TVolume Volume, TPanning Panning] struct {
 	Period TPeriod
-	Inst   *instrument.Instrument[TMixingVolume, TVolume, TPanning]
+	Inst   *instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning]
 }
 
 type channelTargets[TPeriod Period, TMixingVolume, TVolume Volume, TPanning Panning] struct {

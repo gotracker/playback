@@ -109,8 +109,8 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetC
 	})
 }
 
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetChannelInstrument(ch index.Channel) (*instrument.Instrument[TMixingVolume, TVolume, TPanning], error) {
-	return withChannelReturningValue(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) (*instrument.Instrument[TMixingVolume, TVolume, TPanning], error) {
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetChannelInstrument(ch index.Channel) (*instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning], error) {
+	return withChannelReturningValue(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) (*instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning], error) {
 		return c.target.Inst, nil
 	})
 }
@@ -125,7 +125,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetC
 		traceChannelValueChangeWithComment(m, ch, "target.Inst", oldID, i, "SetChannelInstrumentByID")
 		inst, _ := m.songData.GetInstrument(i)
 		var ok bool
-		c.target.Inst, ok = inst.(*instrument.Instrument[TMixingVolume, TVolume, TPanning])
+		c.target.Inst, ok = inst.(*instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning])
 		if !ok {
 			return errors.New("could not convert instrument to pointer type")
 		}
@@ -336,7 +336,10 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoCh
 	return withChannel(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 		if freqMod, ok := c.cv.(voice.FreqModulator[TPeriod]); ok {
 			p := freqMod.GetPeriod()
-			tp := period.PortaTo(p, int(delta), c.portaPeriod)
+			tp, err := m.ms.PeriodConverter.PortaToNote(p, delta, c.portaPeriod)
+			if err != nil {
+				return err
+			}
 
 			traceChannelValueChangeWithComment(m, ch, "target.Period", p, tp, "DoChannelPortaToNote")
 			freqMod.SetPeriod(tp)
@@ -349,7 +352,10 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoCh
 	return withChannel(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 		if freqMod, ok := c.cv.(voice.FreqModulator[TPeriod]); ok {
 			p := freqMod.GetPeriod()
-			tp := period.PortaDown[TPeriod](p, int(delta))
+			tp, err := m.ms.PeriodConverter.PortaDown(p, delta)
+			if err != nil {
+				return err
+			}
 
 			traceChannelValueChangeWithComment(m, ch, "target.Period", p, tp, "DoChannelPortaDown")
 			freqMod.SetPeriod(tp)
@@ -362,7 +368,10 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoCh
 	return withChannel(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 		if freqMod, ok := c.cv.(voice.FreqModulator[TPeriod]); ok {
 			p := freqMod.GetPeriod()
-			tp := period.PortaUp[TPeriod](p, int(delta))
+			tp, err := m.ms.PeriodConverter.PortaUp(p, delta)
+			if err != nil {
+				return err
+			}
 
 			traceChannelValueChangeWithComment(m, ch, "target.Period", p, tp, "DoChannelPortaUp")
 			freqMod.SetPeriod(tp)

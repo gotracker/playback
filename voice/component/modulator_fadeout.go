@@ -37,13 +37,15 @@ func (a FadeoutModulator) Clone() FadeoutModulator {
 }
 
 // Reset disables the fadeout and resets its volume
-func (a *FadeoutModulator) Reset() {
+func (a *FadeoutModulator) Reset() error {
 	a.keyed.vol = volume.Volume(1)
+	return nil
 }
 
 // SetEnabled sets the status of the fadeout enable flag
-func (a *FadeoutModulator) SetEnabled(enabled bool) {
+func (a *FadeoutModulator) SetEnabled(enabled bool) error {
 	a.unkeyed.enabled = enabled
+	return nil
 }
 
 // IsEnabled returns the status of the fadeout enablement flag

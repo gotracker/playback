@@ -15,6 +15,7 @@ import (
 	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/format/it/layout"
 	itPanning "github.com/gotracker/playback/format/it/panning"
+	"github.com/gotracker/playback/format/it/settings"
 	itSystem "github.com/gotracker/playback/format/it/system"
 	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/index"
@@ -108,11 +109,14 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 	stereoMode := f.Head.Flags.IsStereo()
 	vol0Enabled := f.Head.Flags.IsVol0Optimizations()
 
+	ms := settings.GetMachineSettings[TPeriod]()
+
 	songData := &layout.Song[TPeriod]{
 		System:            itSystem.ITSystem,
+		MS:                ms,
 		Head:              *h,
-		Instruments:       make(map[uint8]*instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning]),
-		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument),
+		Instruments:       make(map[uint8]*instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]),
+		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument[TPeriod]),
 		Patterns:          make([]song.Pattern, len(f.Patterns)),
 		OrderList:         make([]index.Pattern, int(f.Head.OrderCount)),
 		FilterPlugins:     make(map[int]filter.Factory),
@@ -142,7 +146,7 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 			}
 			switch ii := inst.(type) {
 			case *itfile.IMPIInstrumentOld:
-				instMap, err := convertITInstrumentOldToInstrument(ii, f.Samples, convSettings, features)
+				instMap, err := convertITInstrumentOldToInstrument(ii, ms.PeriodConverter, f.Samples, convSettings, features)
 				if err != nil {
 					return nil, err
 				}
@@ -152,7 +156,7 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 				}
 
 			case *itfile.IMPIInstrument:
-				instMap, err := convertITInstrumentToInstrument(ii, f.Samples, convSettings, songData.FilterPlugins, features)
+				instMap, err := convertITInstrumentToInstrument(ii, ms.PeriodConverter, f.Samples, convSettings, songData.FilterPlugins, features)
 				if err != nil {
 					return nil, err
 				}
@@ -230,7 +234,7 @@ type noteRemap struct {
 	Remap note.Semitone
 }
 
-func addSampleWithNoteMapToSong[TPeriod period.Period](song *layout.Song[TPeriod], sample *instrument.Instrument[itVolume.FineVolume, itVolume.Volume, itPanning.Panning], sts []noteRemap, instNum int) {
+func addSampleWithNoteMapToSong[TPeriod period.Period](song *layout.Song[TPeriod], sample *instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], sts []noteRemap, instNum int) {
 	if sample == nil {
 		return
 	}
@@ -246,11 +250,11 @@ func addSampleWithNoteMapToSong[TPeriod period.Period](song *layout.Song[TPeriod
 	}
 	inm, ok := song.InstrumentNoteMap[id.InstID]
 	if !ok {
-		inm = make(map[note.Semitone]layout.NoteInstrument)
+		inm = make(map[note.Semitone]layout.NoteInstrument[TPeriod])
 		song.InstrumentNoteMap[id.InstID] = inm
 	}
 	for _, st := range sts {
-		inm[st.Orig] = layout.NoteInstrument{
+		inm[st.Orig] = layout.NoteInstrument[TPeriod]{
 			NoteRemap: st.Remap,
 			Inst:      sample,
 		}

@@ -6,8 +6,8 @@ import (
 
 // == PanEnveloper ==
 
-func (v *xmVoice[TPeriod]) EnablePanEnvelope(enabled bool) {
-	v.panEnv.SetEnabled(enabled)
+func (v *xmVoice[TPeriod]) EnablePanEnvelope(enabled bool) error {
+	return v.panEnv.SetEnabled(enabled)
 }
 
 func (v xmVoice[TPeriod]) IsPanEnvelopeEnabled() bool {
@@ -21,10 +21,15 @@ func (v xmVoice[TPeriod]) GetCurrentPanEnvelope() xmPanning.Panning {
 	return xmPanning.DefaultPanning
 }
 
-func (v *xmVoice[TPeriod]) SetPanEnvelopePosition(pos int) {
-	if doneCB := v.panEnv.SetEnvelopePosition(pos); doneCB != nil {
+func (v *xmVoice[TPeriod]) SetPanEnvelopePosition(pos int) error {
+	doneCB, err := v.panEnv.SetEnvelopePosition(pos)
+	if err != nil {
+		return err
+	}
+	if doneCB != nil {
 		doneCB(v)
 	}
+	return nil
 }
 
 func (v xmVoice[TPeriod]) GetPanEnvelopePosition() int {

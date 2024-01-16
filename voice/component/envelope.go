@@ -53,9 +53,9 @@ func (e baseEnvelope[TIn, TOut]) Clone(update func(TIn, TIn, float64) TOut, onFi
 }
 
 // Reset resets the state to defaults based on the envelope provided
-func (e *baseEnvelope[TIn, TOut]) Reset() {
+func (e *baseEnvelope[TIn, TOut]) Reset() error {
 	e.keyed.active = e.settings.Enabled
-	e.stateReset()
+	return e.stateReset()
 }
 
 func (e baseEnvelope[TIn, TOut]) CanLoop() bool {
@@ -63,8 +63,9 @@ func (e baseEnvelope[TIn, TOut]) CanLoop() bool {
 }
 
 // SetEnabled sets the enabled flag for the envelope
-func (e *baseEnvelope[TIn, TOut]) SetEnabled(enabled bool) {
+func (e *baseEnvelope[TIn, TOut]) SetEnabled(enabled bool) error {
 	e.keyed.active = enabled
+	return nil
 }
 
 // IsEnabled returns the enabled flag for the envelope
@@ -82,7 +83,7 @@ func (e baseEnvelope[TIn, TOut]) GetCurrentValue() TOut {
 }
 
 // SetEnvelopePosition sets the current position in the envelope
-func (e *baseEnvelope[TIn, TOut]) SetEnvelopePosition(pos int) voice.Callback {
+func (e *baseEnvelope[TIn, TOut]) SetEnvelopePosition(pos int) (voice.Callback, error) {
 	prev := e.keyed.active
 	e.keyed.active = true
 	e.keyed.done = false
@@ -90,11 +91,11 @@ func (e *baseEnvelope[TIn, TOut]) SetEnvelopePosition(pos int) voice.Callback {
 	// TODO: this is gross, but currently the most optimal way to find the correct position
 	for i := 0; i < pos; i++ {
 		if doneCB := e.Advance(); doneCB != nil {
-			return doneCB
+			return doneCB, nil
 		}
 	}
 	e.keyed.active = prev
-	return nil
+	return nil, nil
 }
 
 func (e baseEnvelope[TIn, TOut]) GetEnvelopePosition() int {
@@ -119,26 +120,26 @@ func (e baseEnvelope[TIn, TOut]) DumpState(ch index.Channel, t tracing.Tracer, c
 	), comment)
 }
 
-func (e *baseEnvelope[TIn, TOut]) stateReset() {
+func (e *baseEnvelope[TIn, TOut]) stateReset() error {
 	if !e.settings.Envelope.Enabled {
 		e.keyed.done = true
-		return
+		return nil
 	}
 
 	e.keyed.pos = 0
 	e.keyed.done = false
-	e.updateValue()
+	return e.updateValue()
 }
 
-func (e *baseEnvelope[TIn, TOut]) updateValue() {
+func (e *baseEnvelope[TIn, TOut]) updateValue() error {
 	if !e.keyed.active || e.keyed.done {
-		return
+		return nil
 	}
 
 	nPoints := len(e.settings.Envelope.Values)
 
 	if nPoints == 0 {
-		return
+		return nil
 	}
 
 	curTick, _ := loop.CalcLoopPos(e.settings.Envelope.Loop, e.settings.Envelope.Sustain, e.keyed.pos, e.settings.Envelope.Length, e.prevKeyOn)
@@ -168,7 +169,7 @@ func (e *baseEnvelope[TIn, TOut]) updateValue() {
 
 	if nextPoint < 0 || nextPoint >= nPoints {
 		e.value = e.updater(cur.Y, cur.Y, 0)
-		return
+		return nil
 	}
 
 	next := e.settings.Values[nextPoint]
@@ -181,6 +182,7 @@ func (e *baseEnvelope[TIn, TOut]) updateValue() {
 	}
 
 	e.value = e.updater(cur.Y, next.Y, t)
+	return nil
 }
 
 func (e *baseEnvelope[TIn, TOut]) stateAdvance(keyOn bool) bool {
