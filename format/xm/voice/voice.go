@@ -209,7 +209,7 @@ func (v *xmVoice[TPeriod]) Stop() {
 	v.voicer = nil
 }
 
-func (v *xmVoice[TPeriod]) IsDone() bool {
+func (v xmVoice[TPeriod]) IsDone() bool {
 	if v.voicer == nil {
 		return true
 	}
@@ -219,6 +219,14 @@ func (v *xmVoice[TPeriod]) IsDone() bool {
 	}
 
 	return v.vol0Opt.IsDone()
+}
+
+func (v *xmVoice[TPeriod]) SetMuted(muted bool) error {
+	return v.amp.SetMuted(muted)
+}
+
+func (v xmVoice[TPeriod]) IsMuted() bool {
+	return v.amp.IsMuted()
 }
 
 func (v *xmVoice[TPeriod]) Tick() error {

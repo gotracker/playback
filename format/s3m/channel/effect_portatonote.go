@@ -27,13 +27,13 @@ func (e PortaToNote) Tick(ch index.Channel, m machine.Machine[period.Amiga, s3mV
 		return err
 	}
 
-	xx := mem.PortaToNote(DataEffect(e))
+	xx := mem.Porta(DataEffect(e))
 
 	if tick == 0 && !mem.Shared.AmigaSlides {
 		return nil
 	}
 
-	return m.DoChannelPortaToNote(ch, period.Delta(xx)*4, true)
+	return m.DoChannelPortaToNote(ch, period.Delta(xx)*4)
 }
 
 func (e PortaToNote) TraceData() string {

@@ -15,6 +15,7 @@ import (
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine/settings"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/system"
@@ -23,7 +24,7 @@ import (
 // Song is the full definition of the song data of an IT file
 type Song[TPeriod period.Period] struct {
 	System            system.System
-	MS                any
+	MS                *settings.MachineSettings[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]
 	Head              Header
 	Instruments       map[uint8]*instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]
 	InstrumentNoteMap map[uint8]map[note.Semitone]NoteInstrument[TPeriod]
@@ -208,8 +209,10 @@ func (s Song[TPeriod]) GetSystem() system.System {
 
 func (s Song[TPeriod]) ForEachChannel(enabledOnly bool, fn func(ch index.Channel) (bool, error)) error {
 	for i, cs := range s.ChannelSettings {
-		if enabledOnly && !cs.Enabled {
-			continue
+		if enabledOnly {
+			if !cs.Enabled || (cs.Muted && s.MS.Quirks.DoNotProcessEffectsOnMutedChannels) {
+				continue
+			}
 		}
 		cont, err := fn(index.Channel(i))
 		if err != nil {

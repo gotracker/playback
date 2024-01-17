@@ -155,7 +155,7 @@ func (m *Memory) Retrigger() {
 }
 
 // StartOrder is called when the first order's row at tick 0 is started
-func (m *Memory) StartOrder() {
+func (m *Memory) StartOrder0() {
 	if m.Shared.ResetMemoryAtStartOfOrder0 {
 		m.portaToNote.Reset()
 		m.vibrato.Reset()

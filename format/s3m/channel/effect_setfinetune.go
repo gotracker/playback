@@ -4,9 +4,9 @@ import (
 	"fmt"
 
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
+	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
-	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/machine"
 )
@@ -27,8 +27,7 @@ func (e SetFinetune) RowStart(ch index.Channel, m machine.Machine[period.Amiga, 
 	}
 
 	if inst != nil {
-		ft := (note.Finetune(x) - 8) * 4
-		inst.SetFinetune(ft)
+		inst.SetSampleRate(s3mPeriod.CalcFinetuneC4SampleRate(uint8(x)))
 	}
 	return nil
 }

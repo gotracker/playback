@@ -290,9 +290,6 @@ func convertMODInstrumentToS3M(num int, inst *modfile.InstrumentHeader, samp []u
 	copy(anc.SampleName[:], inst.Name[:])
 
 	scrs.Sample = samp
-	for i, s := range samp {
-		samp[i] = modSampleToS3MSample(s)
-	}
 	return &scrs, nil
 }
 
@@ -308,16 +305,22 @@ func Read(r io.Reader) (*s3mfile.File, error) {
 
 	f := s3mfile.File{
 		Head: s3mfile.ModuleHeader{
-			Name:            [28]byte{},
-			OrderCount:      uint16(mf.Head.SongLen),
-			InstrumentCount: 31,
-			PatternCount:    uint16(len(mf.Patterns)),
-			Flags:           0x0004 | 0x0010 | 0x0020, // amigaSlides | amigaLimits | sbFilterEnable
-			SCRM:            [4]byte{'S', 'C', 'R', 'M'},
-			GlobalVolume:    s3mfile.DefaultVolume,
-			InitialSpeed:    6,
-			InitialTempo:    125,
-			MixingVolume:    s3mfile.Volume(0x30) | s3mfile.Volume(0x80), // default mixing volume (0x30) for a converted mod in st3, stereo enabled (0x80)
+			Name:                  [28]byte{},
+			Reserved1C:            0x1A, // 0x1A = magic
+			Type:                  16,   // 16 = ST3 module
+			OrderCount:            uint16(mf.Head.SongLen),
+			InstrumentCount:       31,
+			PatternCount:          uint16(len(mf.Patterns)),
+			Flags:                 0x0004 | 0x0010 | 0x0020, // amigaSlides (0x0004) | amigaLimits (0x0010) | sbFilterEnable (0x0020)
+			TrackerVersion:        0x1300,                   // 0x1300 = specific version to support above flags
+			FileFormatInformation: 1,                        // 1 = signed samples
+			SCRM:                  [4]byte{'S', 'C', 'R', 'M'},
+			GlobalVolume:          s3mfile.DefaultVolume,
+			InitialSpeed:          6,
+			InitialTempo:          125,
+			MixingVolume:          s3mfile.Volume(0x30) | s3mfile.Volume(0x80), // default mixing volume (0x30) for a converted mod in st3, stereo enabled (0x80)
+			UltraClickRemoval:     uint8(numCh) * 2,
+			DefaultPanValueFlag:   252, // load pan settings
 		},
 	}
 
@@ -366,8 +369,4 @@ func Read(r io.Reader) (*s3mfile.File, error) {
 	}
 
 	return &f, nil
-}
-
-func modSampleToS3MSample(sample uint8) uint8 {
-	return sample - 0x80
 }

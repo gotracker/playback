@@ -8,7 +8,7 @@ import (
 )
 
 type ChannelSettings interface {
-	GetEnabled() bool
+	IsMuted() bool
 	GetOutputChannelNum() int
 	GetMemory() ChannelMemory
 	IsPanEnabled() bool

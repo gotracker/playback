@@ -8,11 +8,11 @@ import (
 type ClockableSystem interface {
 	System
 	GetBaseClock() frequency.Frequency
+	GetCommonPeriod() float64
 	GetBaseFinetunes() note.Finetune
 	GetFinetunesPerOctave() note.Finetune
 	GetFinetunesPerSemitone() note.Finetune
 	GetSemitonePeriod(note.Key) (float32, bool)
-	GetSamplerSpeed(sampleRate frequency.Frequency) float32
 }
 
 type ClockedSystem struct {
@@ -22,6 +22,7 @@ type ClockedSystem struct {
 	BaseFinetunes      note.Finetune
 	FinetunesPerOctave note.Finetune
 	FinetunesPerNote   note.Finetune
+	CommonPeriod       float64
 	CommonRate         frequency.Frequency
 	SemitonePeriods    [note.NumKeys]float32
 }
@@ -48,15 +49,12 @@ func (s ClockedSystem) GetFinetunesPerSemitone() note.Finetune {
 	return s.FinetunesPerNote
 }
 
-func (s ClockedSystem) GetCommonRate() frequency.Frequency {
-	return s.CommonRate
+func (s ClockedSystem) GetCommonPeriod() float64 {
+	return s.CommonPeriod
 }
 
-func (s ClockedSystem) GetSamplerSpeed(sampleRate frequency.Frequency) float32 {
-	if sampleRate == 0 {
-		panic("sampleRate is 0")
-	}
-	return float32(s.BaseClock) / float32(sampleRate)
+func (s ClockedSystem) GetCommonRate() frequency.Frequency {
+	return s.CommonRate
 }
 
 func (s ClockedSystem) GetSemitonePeriod(k note.Key) (float32, bool) {

@@ -30,6 +30,7 @@ var ITSystem system.ClockableSystem = system.ClockedSystem{
 	BaseFinetunes:          C5SlideFines,
 	FinetunesPerOctave:     SlideFinesPerOctave,
 	FinetunesPerNote:       SlideFinesPerNote,
+	CommonPeriod:           C5Period,
 	CommonRate:             DefaultC5SampleRate,
 	SemitonePeriods:        semitonePeriodTable,
 }

@@ -35,6 +35,8 @@ type tickerSettings struct {
 	InitialRow            index.Row
 	SongLoopStartingOrder index.Order
 	SongLoopCount         int
+	PlayUntilOrder        optional.Value[index.Order]
+	PlayUntilRow          optional.Value[index.Row]
 }
 
 func initTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](t *ticker, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], settings tickerSettings) error {
@@ -126,6 +128,24 @@ func runTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	t.current.row = row
 	t.current.order = order
 	m.us.SetTracingTick(t.current.order, t.current.row, t.current.tick)
+
+	if !done {
+		o, oset := t.settings.PlayUntilOrder.Get()
+		r, rset := t.settings.PlayUntilRow.Get()
+		if oset || rset {
+			orderMatch := true
+			if oset {
+				orderMatch = (o == t.current.order)
+			}
+
+			rowMatch := true
+			if rset {
+				rowMatch = (r == t.current.row)
+			}
+
+			done = orderMatch && rowMatch
+		}
+	}
 
 	if done {
 		return song.ErrStopSong

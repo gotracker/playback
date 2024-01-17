@@ -16,6 +16,7 @@ type AmpModulator[TMixingVolume, TVolume types.Volume] struct {
 
 	unkeyed struct {
 		active bool
+		muted  bool
 		vol    TVolume
 		mixing TMixingVolume
 	}
@@ -28,6 +29,7 @@ type AmpModulator[TMixingVolume, TVolume types.Volume] struct {
 
 type AmpModulatorSettings[TMixingVolume, TVolume types.Volume] struct {
 	Active              bool
+	Muted               bool
 	DefaultMixingVolume TMixingVolume
 	DefaultVolume       TVolume
 }
@@ -35,6 +37,7 @@ type AmpModulatorSettings[TMixingVolume, TVolume types.Volume] struct {
 func (a *AmpModulator[TMixingVolume, TVolume]) Setup(settings AmpModulatorSettings[TMixingVolume, TVolume]) {
 	a.settings = settings
 	a.unkeyed.active = settings.Active
+	a.unkeyed.muted = settings.Muted
 	a.unkeyed.vol = settings.DefaultVolume
 	a.unkeyed.mixing = settings.DefaultMixingVolume
 	a.Reset()
@@ -58,6 +61,15 @@ func (a *AmpModulator[TMixingVolume, TVolume]) SetActive(active bool) error {
 
 func (a AmpModulator[TMixingVolume, TVolume]) IsActive() bool {
 	return a.unkeyed.active
+}
+
+func (a *AmpModulator[TMixingVolume, TVolume]) SetMuted(muted bool) error {
+	a.unkeyed.muted = muted
+	return nil
+}
+
+func (a AmpModulator[TMixingVolume, TVolume]) IsMuted() bool {
+	return a.unkeyed.muted
 }
 
 // SetMixingVolume configures the mixing volume of the modulator
@@ -130,8 +142,9 @@ func (a *AmpModulator[TMixingVolume, TVolume]) updateFinal() error {
 }
 
 func (a AmpModulator[TMixingVolume, TVolume]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
-	t.TraceChannelWithComment(ch, fmt.Sprintf("active{%v} vol{%v} mixing{%v} mixingOverride{%v} delta{%v} final{%v}",
+	t.TraceChannelWithComment(ch, fmt.Sprintf("active{%v} muted{%v} vol{%v} mixing{%v} mixingOverride{%v} delta{%v} final{%v}",
 		a.unkeyed.active,
+		a.unkeyed.muted,
 		a.unkeyed.vol,
 		a.unkeyed.mixing,
 		a.keyed.mixingOverride,

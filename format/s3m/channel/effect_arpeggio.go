@@ -18,12 +18,7 @@ func (e Arpeggio) String() string {
 }
 
 func (e Arpeggio) Tick(ch index.Channel, m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], tick int) error {
-	mem, err := machine.GetChannelMemory[*Memory](m, ch)
-	if err != nil {
-		return err
-	}
-
-	x, y := mem.LastNonZeroXY(DataEffect(e))
+	x, y := DataEffect(e)>>4, DataEffect(e)&0xF
 	return doArpeggio(ch, m, tick, int8(x), int8(y))
 }
 

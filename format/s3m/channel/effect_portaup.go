@@ -23,7 +23,7 @@ func (e PortaUp) Tick(ch index.Channel, m machine.Machine[period.Amiga, s3mVolum
 		return err
 	}
 
-	xx := mem.LastNonZero(DataEffect(e))
+	xx := mem.Porta(DataEffect(e))
 
 	if tick == 0 && !mem.Shared.AmigaSlides {
 		return nil

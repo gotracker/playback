@@ -37,15 +37,12 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 		renderRow.RowText = m.rowStringer
 	}
 
-	sys := m.songData.GetSystem()
-
 	details := mixer.Details{
-		Mix:          s.Mixer(),
-		Panmixer:     s.GetPanMixer(),
-		SampleRate:   frequency.Frequency(s.SampleRate),
-		SamplerSpeed: sys.GetSamplerSpeed(frequency.Frequency(s.SampleRate)),
-		Samples:      premix.SamplesLen,
-		Duration:     tickDuration,
+		Mix:        s.Mixer(),
+		Panmixer:   s.GetPanMixer(),
+		SampleRate: frequency.Frequency(s.SampleRate),
+		Samples:    premix.SamplesLen,
+		Duration:   tickDuration,
 	}
 
 	centerAheadPan := details.Panmixer.GetMixingMatrix(panning.CenterAhead)

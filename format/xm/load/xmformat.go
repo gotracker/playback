@@ -369,6 +369,7 @@ func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []
 	for chNum := range channels {
 		cs := layout.ChannelSetting{
 			Enabled:        true,
+			Muted:          false,
 			InitialVolume:  xmVolume.DefaultXmVolume,
 			InitialPanning: xmPanning.DefaultPanning,
 			Memory: channel.Memory{

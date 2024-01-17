@@ -194,6 +194,7 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 		cs := layout.ChannelSetting{
 			OutputChannelNum: chNum,
 			Enabled:          true,
+			Muted:            false,
 			InitialVolume:    itVolume.Volume(itVolume.DefaultItVolume),
 			ChannelVolume:    min(itVolume.FineVolume(f.Head.ChannelVol[chNum]*2), itVolume.MaxItFineVolume),
 			PanEnabled:       stereoMode,

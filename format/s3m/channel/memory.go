@@ -7,7 +7,7 @@ import (
 
 // Memory is the storage object for custom effect/command values
 type Memory struct {
-	portaToNote   memory.Value[DataEffect]
+	porta         memory.Value[DataEffect]
 	vibratoSpeed  memory.Value[DataEffect]
 	vibratoDepth  memory.Value[DataEffect]
 	tremoloSpeed  memory.Value[DataEffect]
@@ -22,9 +22,9 @@ type Memory struct {
 	Shared *SharedMemory
 }
 
-// PortaToNote gets or sets the most recent non-zero value (or input) for Portamento-to-note
-func (m *Memory) PortaToNote(input DataEffect) DataEffect {
-	return m.portaToNote.Coalesce(input)
+// Porta gets or sets the most recent non-zero value (or input) for any Portamento command
+func (m *Memory) Porta(input DataEffect) DataEffect {
+	return m.porta.Coalesce(input)
 }
 
 // Vibrato gets or sets the most recent non-zero value (or input) for Vibrato
@@ -79,9 +79,9 @@ func (m *Memory) Retrigger() {
 }
 
 // StartOrder is called when the first order's row at tick 0 is started
-func (m *Memory) StartOrder() {
+func (m *Memory) StartOrder0() {
 	if m.Shared.ResetMemoryAtStartOfOrder0 {
-		m.portaToNote.Reset()
+		m.porta.Reset()
 		m.vibratoSpeed.Reset()
 		m.vibratoDepth.Reset()
 		m.tremoloSpeed.Reset()

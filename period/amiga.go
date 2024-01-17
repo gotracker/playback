@@ -3,7 +3,6 @@ package period
 import (
 	"fmt"
 
-	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/util"
 	"github.com/heucuva/comparison"
 )
@@ -18,23 +17,19 @@ func (p Amiga) Add(d Delta) Amiga {
 		return p
 	}
 
-	a -= int(d)
-	if a < 1 {
-		a = 1
-	}
-	p = Amiga(a)
+	p = Amiga(max(a-int(d), 1))
 	return p
 }
 
-func (p Amiga) PortaDown(amount int) Amiga {
-	return p.Add(Delta(-amount))
+func (p Amiga) PortaDown(amount Delta) Amiga {
+	return p.Add(-amount)
 }
 
-func (p Amiga) PortaUp(amount int) Amiga {
-	return p.Add(Delta(amount))
+func (p Amiga) PortaUp(amount Delta) Amiga {
+	return p.Add(amount)
 }
 
-func (p Amiga) PortaTo(amount int, target Amiga) Amiga {
+func (p Amiga) PortaTo(amount Delta, target Amiga) Amiga {
 	switch p.Compare(target) {
 	case comparison.SpaceshipLeftGreater:
 		// porta down to target
@@ -76,11 +71,6 @@ func (p Amiga) Compare(rhs Amiga) comparison.Spaceship {
 func (p Amiga) Lerp(t float64, rhs Amiga) Amiga {
 	p = util.Lerp(t, p, rhs)
 	return p
-}
-
-// GetFrequency returns the frequency defined by the period
-func (p Amiga) GetFrequency() frequency.Frequency {
-	panic("unimplemented") // must be implemented by format
 }
 
 func (p Amiga) String() string {

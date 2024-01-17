@@ -11,7 +11,9 @@ import (
 )
 
 func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) OrderStart(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
-	c.memory.StartOrder()
+	if m.ticker.current.order == 0 {
+		c.memory.StartOrder0()
+	}
 	c.resetPatternLoop()
 	return nil
 }
@@ -147,7 +149,16 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) RowE
 	c.prev.Inst = c.target.Inst
 
 	if freqMod, ok := c.cv.(voice.FreqModulator[TPeriod]); ok {
-		p := freqMod.GetPeriod()
+		var p TPeriod
+		if m.ms.Quirks.PreviousPeriodUsesModifiedPeriod {
+			var err error
+			p, err = freqMod.GetFinalPeriod()
+			if err != nil {
+				return err
+			}
+		} else {
+			p = freqMod.GetPeriod()
+		}
 		traceChannelValueChangeWithComment(m, ch, "prev.Period", c.prev.Period, p, "channel.RowEnd")
 		c.prev.Period = p
 	}

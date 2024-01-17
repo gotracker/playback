@@ -13,6 +13,7 @@ import (
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine/settings"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/system"
@@ -21,7 +22,7 @@ import (
 // Song is the full definition of the song data of an Song file
 type Song struct {
 	System          system.System
-	MS              any
+	MS              *settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
 	Head            Header
 	Instruments     []*instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
 	Patterns        []song.Pattern
@@ -186,7 +187,7 @@ func (s Song) GetRowRenderStringer(row song.Row, channels int, longFormat bool) 
 	pr := row.(Row)
 	nprch := min(len(pr), nch)
 	for i := 0; i < nprch; i++ {
-		if !s.ChannelSettings[i].Enabled {
+		if !s.ChannelSettings[i].Enabled || s.ChannelSettings[i].Muted {
 			continue
 		}
 		rowData = append(rowData, pr[i])
@@ -205,8 +206,10 @@ func (s Song) GetSystem() system.System {
 func (s Song) ForEachChannel(enabledOnly bool, fn func(ch index.Channel) (bool, error)) error {
 	for _, ch := range s.ChannelOrders {
 		cs := &s.ChannelSettings[ch]
-		if enabledOnly && !cs.Enabled {
-			continue
+		if enabledOnly {
+			if !cs.Enabled || (cs.Muted && s.MS.Quirks.DoNotProcessEffectsOnMutedChannels) {
+				continue
+			}
 		}
 		cont, err := fn(ch)
 		if err != nil {
@@ -221,7 +224,7 @@ func (s Song) ForEachChannel(enabledOnly bool, fn func(ch index.Channel) (bool, 
 
 func (s Song) IsOPL2Enabled() bool {
 	for _, cs := range s.ChannelSettings {
-		if !cs.Enabled {
+		if !cs.Enabled || cs.Muted {
 			continue
 		}
 

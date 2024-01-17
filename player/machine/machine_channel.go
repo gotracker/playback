@@ -62,6 +62,20 @@ func GetChannelMemory[TMemory song.ChannelMemory, TPeriod Period, TGlobalVolume,
 	return mem, nil
 }
 
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) IsChannelMuted(ch index.Channel) (bool, error) {
+	return withChannelReturningValue(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) (bool, error) {
+		return c.cv.IsMuted(), nil
+	})
+}
+
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetChannelMute(ch index.Channel, muted bool) error {
+	return withChannel(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
+		prevMute := c.cv.IsMuted()
+		traceChannelValueChangeWithComment(m, ch, "mute", prevMute, muted, "SetChannelMute")
+		return c.cv.SetMuted(muted)
+	})
+}
+
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetChannelMixingVolume(ch index.Channel, v TMixingVolume) error {
 	if v.IsInvalid() {
 		return fmt.Errorf("channel[%d] mixing volume out of range: %v", ch, v)
@@ -202,14 +216,6 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetC
 	})
 }
 
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetChannelMute(ch index.Channel, enabled bool) error {
-	return withChannel(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
-		traceChannelValueChangeWithComment(m, ch, "mute", c.mute, enabled, "SetChannelMute")
-		c.mute = enabled
-		return nil
-	})
-}
-
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetChannelSurround(ch index.Channel, enabled bool) error {
 	return withChannel(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 		traceChannelValueChangeWithComment(m, ch, "surround", c.surround, enabled, "SetChannelSurround")
@@ -333,11 +339,11 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Star
 	})
 }
 
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoChannelPortaToNote(ch index.Channel, delta period.Delta, useFinalPeriod bool) error {
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoChannelPortaToNote(ch index.Channel, delta period.Delta) error {
 	return withChannel(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 		if freqMod, ok := c.cv.(voice.FreqModulator[TPeriod]); ok {
 			var p TPeriod
-			if useFinalPeriod {
+			if m.ms.Quirks.PortaToNoteUsesModifiedPeriod {
 				var err error
 				p, err = freqMod.GetFinalPeriod()
 				if err != nil {

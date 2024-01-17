@@ -1,13 +1,11 @@
 package period
 
 import (
-	"errors"
 	"math"
 
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/system"
-	"github.com/heucuva/comparison"
 )
 
 // LinearConverter defines a sampler period that follows the Linear-style approach of note
@@ -18,9 +16,13 @@ type LinearConverter struct {
 
 var _ PeriodConverter[Linear] = (*LinearConverter)(nil)
 
+func (c LinearConverter) GetSystem() system.System {
+	return c.System
+}
+
 // GetSamplerAdd returns the number of samples to advance an instrument by given the period
-func (c LinearConverter) GetSamplerAdd(p Linear, samplerSpeed float64) float64 {
-	return float64(c.GetFrequency(p)) * samplerSpeed / float64(c.System.GetBaseClock())
+func (c LinearConverter) GetSamplerAdd(p Linear, instrumentRate, outputRate frequency.Frequency) float64 {
+	return float64(c.GetFrequency(p) * instrumentRate / outputRate)
 }
 
 // GetFrequency returns the frequency defined by the period
@@ -49,76 +51,18 @@ func (c LinearConverter) GetPeriod(n note.Note) Linear {
 	}
 }
 
-func (c LinearConverter) GetPeriodGeneric(n note.Note) Period {
-	return c.GetPeriod(n)
-}
-
 func (c LinearConverter) PortaToNote(p Linear, delta Delta, target Linear) (Linear, error) {
-	var err error
-	switch p.Compare(target) {
-	case comparison.SpaceshipRightGreater:
-		p, err = c.PortaUp(p, delta)
-		if ComparePeriods(p, target) == comparison.SpaceshipLeftGreater {
-			p = target
-		}
-	case comparison.SpaceshipLeftGreater:
-		p, err = c.PortaDown(p, delta)
-		if ComparePeriods(p, target) == comparison.SpaceshipRightGreater {
-			p = target
-		}
-	}
-	return p, err
-}
-
-func (c LinearConverter) PortaToNoteGeneric(p Period, delta Delta, target Period) (Period, error) {
-	lhs, ok := p.(Linear)
-	if !ok {
-		return p, errors.New("invalid period type conversion")
-	}
-
-	rhs, ok := target.(Linear)
-	if !ok {
-		return p, errors.New("invalid period target type conversion")
-	}
-
-	return c.PortaToNote(lhs, delta, rhs)
+	return p.PortaTo(int(delta), target), nil
 }
 
 func (c LinearConverter) PortaDown(p Linear, delta Delta) (Linear, error) {
 	return p.PortaDown(int(delta)), nil
 }
 
-func (c LinearConverter) PortaDownGeneric(p Period, delta Delta) (Period, error) {
-	cur, ok := p.(Linear)
-	if !ok {
-		return p, errors.New("invalid period type conversion")
-	}
-
-	return cur.PortaDown(int(delta)), nil
-}
-
 func (c LinearConverter) PortaUp(p Linear, delta Delta) (Linear, error) {
 	return p.PortaUp(int(delta)), nil
 }
 
-func (c LinearConverter) PortaUpGeneric(p Period, delta Delta) (Period, error) {
-	cur, ok := p.(Linear)
-	if !ok {
-		return p, errors.New("invalid period type conversion")
-	}
-
-	return cur.PortaUp(int(delta)), nil
-}
-
 func (c LinearConverter) AddDelta(p Linear, delta Delta) (Linear, error) {
 	return p.Add(delta), nil
-}
-
-func (c LinearConverter) AddDeltaGeneric(p Period, delta Delta) (Period, error) {
-	cur, ok := p.(Linear)
-	if !ok {
-		return p, errors.New("invalid period type conversion")
-	}
-
-	return c.AddDelta(cur, delta)
 }

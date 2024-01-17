@@ -51,6 +51,7 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) deco
 		ii, _ := m.songData.GetInstrument(i)
 		inst, _ = ii.(*instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning])
 		wantInstrumentDefaults = inst != nil
+		changeNote.Period.Set(c.prev.Period)
 		changeNote.Inst.Set(inst)
 		wantTriggerNNA = true
 	} else if st != 0 {

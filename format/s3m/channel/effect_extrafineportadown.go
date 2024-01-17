@@ -23,7 +23,7 @@ func (e ExtraFinePortaDown) Tick(ch index.Channel, m machine.Machine[period.Amig
 	}
 
 	y := DataEffect(e) & 0x0F
-	return m.DoChannelPortaDown(ch, period.Delta(y)*4)
+	return m.DoChannelPortaDown(ch, period.Delta(y)*1)
 }
 
 func (e ExtraFinePortaDown) TraceData() string {

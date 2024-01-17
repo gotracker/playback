@@ -259,7 +259,7 @@ func (v *itVoice[TPeriod]) Stop() {
 	v.updateFinal()
 }
 
-func (v *itVoice[TPeriod]) IsDone() bool {
+func (v itVoice[TPeriod]) IsDone() bool {
 	if v.voicer == nil {
 		return true
 	}
@@ -269,6 +269,14 @@ func (v *itVoice[TPeriod]) IsDone() bool {
 	}
 
 	return v.vol0Opt.IsDone()
+}
+
+func (v *itVoice[TPeriod]) SetMuted(muted bool) error {
+	return v.amp.SetMuted(muted)
+}
+
+func (v itVoice[TPeriod]) IsMuted() bool {
+	return v.amp.IsMuted()
 }
 
 func (v *itVoice[TPeriod]) Tick() error {

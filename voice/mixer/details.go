@@ -8,10 +8,9 @@ import (
 )
 
 type Details struct {
-	Mix          *mixing.Mixer
-	Panmixer     mixing.PanMixer
-	SampleRate   frequency.Frequency
-	SamplerSpeed float32
-	Samples      int
-	Duration     time.Duration
+	Mix        *mixing.Mixer
+	Panmixer   mixing.PanMixer
+	SampleRate frequency.Frequency
+	Samples    int
+	Duration   time.Duration
 }

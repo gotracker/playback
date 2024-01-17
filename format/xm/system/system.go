@@ -35,6 +35,7 @@ var XMSystem system.ClockableSystem = system.ClockedSystem{
 	BaseFinetunes:          C4SlideFines,
 	FinetunesPerOctave:     SlideFinesPerOctave,
 	FinetunesPerNote:       SlideFinesPerNote,
+	CommonPeriod:           C4Period,
 	CommonRate:             DefaultC4SampleRate,
 	SemitonePeriods:        semitonePeriodTable,
 }

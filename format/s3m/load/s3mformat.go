@@ -257,7 +257,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		return nil, err
 	}
 
-	amigaLimits := (f.Head.Flags & 0x0010) != 0
+	amigaLimits := (f.Head.Flags&0x0010) != 0 || wasModFile
 
 	s := layout.Song{
 		System:      s3mSystem.S3MSystem,
@@ -267,22 +267,28 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		OrderList:   make([]index.Pattern, len(f.OrderList)),
 	}
 
-	signedSamples := false
-	if f.Head.FileFormatInformation == 1 {
-		signedSamples = true
+	f.Head.GlobalVolume = min(f.Head.GlobalVolume, s3mfile.Volume(s3mVolume.MaxVolume))
+	if f.Head.GlobalVolume == 0 && f.Head.TrackerVersion < 0x1320 {
+		f.Head.GlobalVolume = s3mfile.Volume(s3mVolume.MaxVolume)
 	}
 
-	stereoMode := (f.Head.MixingVolume & 0x80) != 0
+	if f.Head.InitialSpeed == 0 || f.Head.InitialSpeed == 255 {
+		s.Head.InitialSpeed = 6
+	}
+
+	if f.Head.InitialTempo < 33 {
+		s.Head.InitialTempo = 125
+	}
+
+	signedSamples := f.Head.FileFormatInformation == 1
+
+	stereoMode := (f.Head.MixingVolume&0x80) != 0 || wasModFile
 	st2Vibrato := (f.Head.Flags & 0x0001) != 0
 	st2Tempo := (f.Head.Flags & 0x0002) != 0
-	amigaSlides := (f.Head.Flags & 0x0004) != 0
-	zeroVolOpt := (f.Head.Flags & 0x0008) != 0
-	//amigaLimits := (f.Head.Flags & 0x0010) != 0
-	sbFilterEnable := (f.Head.Flags & 0x0020) != 0
-	st300volSlides := (f.Head.Flags & 0x0040) != 0
-	if f.Head.TrackerVersion == 0x1300 {
-		st300volSlides = true
-	}
+	amigaSlides := (f.Head.Flags&0x0004) != 0 || wasModFile
+	zeroVolOpt := (f.Head.Flags&0x0008) != 0 && !wasModFile
+	sbFilterEnable := (f.Head.Flags&0x0020) != 0 || wasModFile
+	st300volSlides := (f.Head.Flags&0x0040) != 0 || f.Head.TrackerVersion == 0x1300
 	//ptrSpecialIsValid := (f.Head.Flags & 0x0080) != 0
 
 	for i, o := range f.OrderList {
@@ -302,7 +308,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 		s.Instruments[instNum] = sample
 	}
 
-	maxPatternChannel := 0
+	maxPatternChannel := 3
 	s.Patterns = make([]song.Pattern, len(f.Patterns))
 	for patNum, pkt := range f.Patterns {
 		pattern, maxCh := convertS3MPackedPattern(pkt, getPatternLen(patNum))
@@ -328,11 +334,12 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	}
 
 	channels := make([]layout.ChannelSetting, 0, maxPatternChannel+1)
-	lastEnabledChannel := 0
+	lastEnabledChannel := 3
 	for chNum, ch := range f.ChannelSettings {
 		chn := ch.GetChannel()
 		cs := layout.ChannelSetting{
 			Enabled:          ch.IsEnabled(),
+			Muted:            !ch.IsEnabled(),
 			Category:         chn.GetChannelCategory(),
 			OutputChannelNum: int(ch.GetChannel() & 0x07),
 			InitialVolume:    s3mVolume.Volume(s3mfile.DefaultVolume),

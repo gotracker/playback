@@ -167,7 +167,11 @@ func (v *s3mVoice) Stop() {
 	v.voicer = nil
 }
 
-func (v *s3mVoice) IsDone() bool {
+func (v s3mVoice) IsMuted() bool {
+	return v.AmpModulator.IsMuted()
+}
+
+func (v s3mVoice) IsDone() bool {
 	if v.voicer == nil {
 		return true
 	}

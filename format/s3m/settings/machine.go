@@ -22,6 +22,11 @@ func GetMachineSettings(modLimits bool) *settings.MachineSettings[period.Amiga, 
 }
 
 var (
+	s3mQuirks = settings.MachineQuirks{
+		PreviousPeriodUsesModifiedPeriod: true,
+		PortaToNoteUsesModifiedPeriod:    true,
+	}
+
 	amigaMOD31Settings = settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
 		PeriodConverter:     s3mPeriod.S3MAmigaConverter,
 		GetFilterFactory:    filterFactory,
@@ -30,6 +35,7 @@ var (
 		GetPanbrelloFactory: panbrelloFactory,
 		VoiceFactory:        amigaVoiceFactory,
 		OPL2Enabled:         true,
+		Quirks:              s3mQuirks,
 	}
 
 	amigaS3MSettings = settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
@@ -40,6 +46,7 @@ var (
 		GetPanbrelloFactory: panbrelloFactory,
 		VoiceFactory:        amigaVoiceFactory,
 		OPL2Enabled:         true,
+		Quirks:              s3mQuirks,
 	}
 )
 

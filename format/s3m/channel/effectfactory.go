@@ -19,7 +19,9 @@ func EffectFactory(mem *Memory, data song.ChannelData[s3mVolume.Volume]) playbac
 		return nil
 	}
 
-	mem.LastNonZero(d.Info)
+	// Store the last non-zero value
+	_ = mem.LastNonZero(d.Info)
+
 	switch d.Command + '@' {
 	case '@': // unused
 		return nil
@@ -32,7 +34,7 @@ func EffectFactory(mem *Memory, data song.ChannelData[s3mVolume.Volume]) playbac
 	case 'D': // Volume Slide / Fine Volume Slide
 		return volumeSlideFactory(mem, d.Command, d.Info)
 	case 'E': // Porta Down/Fine Porta Down/Xtra Fine Porta
-		xx := mem.LastNonZero(d.Info)
+		xx := mem.Porta(d.Info)
 		x := xx >> 4
 		if x == 0x0F {
 			return FinePortaDown(xx)
@@ -41,7 +43,7 @@ func EffectFactory(mem *Memory, data song.ChannelData[s3mVolume.Volume]) playbac
 		}
 		return PortaDown(d.Info)
 	case 'F': // Porta Up/Fine Porta Up/Extra Fine Porta Down
-		xx := mem.LastNonZero(d.Info)
+		xx := mem.Porta(d.Info)
 		x := xx >> 4
 		if x == 0x0F {
 			return FinePortaUp(xx)

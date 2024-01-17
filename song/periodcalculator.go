@@ -4,14 +4,11 @@ import (
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/system"
 )
 
 type PeriodCalculatorIntf interface {
-	GetPeriodGeneric(note.Note) period.Period
-	PortaToNoteGeneric(period.Period, period.Delta, period.Period) (period.Period, error)
-	PortaDownGeneric(period.Period, period.Delta) (period.Period, error)
-	PortaUpGeneric(period.Period, period.Delta) (period.Period, error)
-	AddDeltaGeneric(period.Period, period.Delta) (period.Period, error)
+	GetSystem() system.System
 }
 
 type PeriodCalculator[TPeriod period.Period] interface {
@@ -23,6 +20,6 @@ type PeriodCalculator[TPeriod period.Period] interface {
 	PortaUp(TPeriod, period.Delta) (TPeriod, error)
 	AddDelta(TPeriod, period.Delta) (TPeriod, error)
 
-	GetSamplerAdd(TPeriod, float64) float64
+	GetSamplerAdd(TPeriod, frequency.Frequency, frequency.Frequency) float64
 	GetFrequency(TPeriod) frequency.Frequency
 }

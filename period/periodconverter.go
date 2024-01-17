@@ -3,14 +3,11 @@ package period
 import (
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/system"
 )
 
 type PeriodConverter[TPeriod Period] interface {
-	GetPeriodGeneric(note.Note) Period
-	PortaToNoteGeneric(Period, Delta, Period) (Period, error)
-	PortaDownGeneric(Period, Delta) (Period, error)
-	PortaUpGeneric(Period, Delta) (Period, error)
-	AddDeltaGeneric(Period, Delta) (Period, error)
+	GetSystem() system.System
 
 	GetPeriod(note.Note) TPeriod
 	PortaToNote(TPeriod, Delta, TPeriod) (TPeriod, error)
@@ -18,6 +15,6 @@ type PeriodConverter[TPeriod Period] interface {
 	PortaUp(TPeriod, Delta) (TPeriod, error)
 	AddDelta(TPeriod, Delta) (TPeriod, error)
 
-	GetSamplerAdd(TPeriod, float64) float64
+	GetSamplerAdd(TPeriod, frequency.Frequency, frequency.Frequency) float64
 	GetFrequency(TPeriod) frequency.Frequency
 }

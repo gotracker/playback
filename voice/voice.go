@@ -34,6 +34,8 @@ type Voice interface {
 
 	// General Parameters
 	IsDone() bool
+	SetMuted(muted bool) error
+	IsMuted() bool
 	GetSampleRate() frequency.Frequency
 }
 

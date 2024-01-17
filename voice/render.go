@@ -34,7 +34,7 @@ func RenderAndTick[TPeriod Period](in Voice, pc period.PeriodConverter[TPeriod],
 		return nil, err
 	}
 
-	samplerAdd := float32(pc.GetSamplerAdd(p, float64(rs.GetSampleRate())*float64(details.SamplerSpeed)))
+	samplerAdd := float32(pc.GetSamplerAdd(p, rs.GetSampleRate(), details.SampleRate))
 
 	o := mixer.Output{
 		Input:  rs,

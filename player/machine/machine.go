@@ -74,6 +74,8 @@ type Machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 
 	// Channel
 	GetChannelMemory(ch index.Channel) (song.ChannelMemory, error)
+	IsChannelMuted(ch index.Channel) (bool, error)
+	SetChannelMute(ch index.Channel, muted bool) error
 	SetChannelMixingVolume(ch index.Channel, v TMixingVolume) error
 	GetChannelPeriod(ch index.Channel) (TPeriod, error)
 	SetChannelPeriod(ch index.Channel, p TPeriod) error
@@ -86,7 +88,6 @@ type Machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	GetChannelPan(ch index.Channel) (TPanning, error)
 	SetChannelPan(ch index.Channel, pan TPanning) error
 	SetChannelPanningDelta(ch index.Channel, d types.PanDelta) error
-	SetChannelMute(ch index.Channel, enabled bool) error
 	SetChannelSurround(ch index.Channel, enabled bool) error
 	SetChannelFilter(ch index.Channel, f filter.Filter) error
 	ChannelStopOrRelease(ch index.Channel) error
@@ -98,7 +99,7 @@ type Machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	SetPatternLoopStart(ch index.Channel) error
 	SetPatternLoops(ch index.Channel, count int) error
 	StartChannelPortaToNote(ch index.Channel) error
-	DoChannelPortaToNote(ch index.Channel, delta period.Delta, useFinalPeriod bool) error
+	DoChannelPortaToNote(ch index.Channel, delta period.Delta) error
 	DoChannelPortaDown(ch index.Channel, delta period.Delta) error
 	DoChannelPortaUp(ch index.Channel, delta period.Delta) error
 	DoChannelArpeggio(ch index.Channel, delta int8) error
@@ -194,14 +195,6 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) getC
 	}
 
 	return &m.channels[ch], nil
-}
-
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) IsChannelEnabled(ch index.Channel) bool {
-	if int(ch) >= len(m.channels) {
-		return false
-	}
-
-	return m.songData.GetChannelSettings(ch).GetEnabled()
 }
 
 type dataInstructionGenerator[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] interface {

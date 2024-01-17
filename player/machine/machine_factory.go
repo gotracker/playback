@@ -156,7 +156,10 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 			rc.GlobalVolume = volume.Volume(1)
 
 			c := &m.channels[ch]
-			c.enabled = cs.GetEnabled()
+			c.enabled = true
+			if m.ms.Quirks.DoNotProcessEffectsOnMutedChannels && cs.IsMuted() {
+				c.enabled = false
+			}
 			c.cv = m.ms.VoiceFactory.NewVoice(voice.VoiceConfig[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]{
 				PC:               ms.PeriodConverter,
 				OPLChannel:       cs.GetOPLChannel(),
@@ -184,6 +187,7 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 			if err != nil {
 				return nil, fmt.Errorf("channel[%d]: %w", i, err)
 			}
+			m.SetChannelMute(ch, cs.IsMuted())
 			m.SetChannelMixingVolume(ch, cmv)
 			cv, err := song.GetChannelInitialVolume[TVolume](cs)
 			if err != nil {
@@ -202,6 +206,8 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 			InitialRow:            row,
 			SongLoopStartingOrder: 0,
 			SongLoopCount:         us.SongLoopCount,
+			PlayUntilOrder:        us.PlayUntil.Order,
+			PlayUntilRow:          us.PlayUntil.Row,
 		}); err != nil {
 			return nil, err
 		}

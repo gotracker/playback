@@ -13,6 +13,7 @@ import (
 // ChannelSetting is settings specific to a single channel
 type ChannelSetting struct {
 	Enabled           bool
+	Muted             bool
 	OutputChannelNum  int
 	Category          s3mfile.ChannelCategory
 	InitialVolume     s3mVolume.Volume
@@ -24,8 +25,12 @@ type ChannelSetting struct {
 
 var _ song.ChannelSettings = (*ChannelSetting)(nil)
 
-func (c ChannelSetting) GetEnabled() bool {
+func (c ChannelSetting) IsEnabled() bool {
 	return c.Enabled
+}
+
+func (c ChannelSetting) IsMuted() bool {
+	return c.Muted
 }
 
 func (c ChannelSetting) GetOutputChannelNum() int {

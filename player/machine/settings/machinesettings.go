@@ -24,4 +24,11 @@ type MachineSettings[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 	GetPanbrelloFactory func() (oscillator.Oscillator, error)
 	VoiceFactory        voice.VoiceFactory[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
 	OPL2Enabled         bool
+	Quirks              MachineQuirks
+}
+
+type MachineQuirks struct {
+	PreviousPeriodUsesModifiedPeriod   bool
+	PortaToNoteUsesModifiedPeriod      bool
+	DoNotProcessEffectsOnMutedChannels bool
 }

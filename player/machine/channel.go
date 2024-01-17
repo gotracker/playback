@@ -39,7 +39,6 @@ type channel[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	}
 	newNote NewNoteInfo[TPeriod, TMixingVolume, TVolume, TPanning]
 
-	mute          bool
 	surround      bool
 	filter        filter.Filter
 	filterEnabled bool
