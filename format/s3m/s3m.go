@@ -4,15 +4,18 @@ package s3m
 import (
 	"io"
 
-	"github.com/gotracker/playback"
+	"github.com/gotracker/playback/format/common"
 	"github.com/gotracker/playback/format/s3m/load"
-	"github.com/gotracker/playback/format/s3m/settings"
+	s3mSettings "github.com/gotracker/playback/format/s3m/settings"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/player/machine"
+	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/util"
 )
 
-type format struct{}
+type format struct {
+	common.Format
+}
 
 var (
 	// S3M is the exported interface to the S3M file loader
@@ -20,7 +23,7 @@ var (
 )
 
 // Load loads an S3M file into a playback system
-func (f format) Load(filename string, features []feature.Feature) (playback.Playback, error) {
+func (f format) Load(filename string, features []feature.Feature) (song.Data, error) {
 	r, err := util.ReadFile(filename)
 	if err != nil {
 		return nil, err
@@ -30,10 +33,10 @@ func (f format) Load(filename string, features []feature.Feature) (playback.Play
 }
 
 // Load loads an S3M file on a reader into a playback system
-func (f format) LoadFromReader(r io.Reader, features []feature.Feature) (playback.Playback, error) {
+func (format) LoadFromReader(r io.Reader, features []feature.Feature) (song.Data, error) {
 	return load.S3M(r, features)
 }
 
 func init() {
-	machine.RegisterMachine(settings.GetMachineSettings(true))
+	machine.RegisterMachine(s3mSettings.GetMachineSettings(true))
 }

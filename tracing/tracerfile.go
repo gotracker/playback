@@ -10,12 +10,12 @@ import (
 	"github.com/gotracker/playback/index"
 )
 
-type Tracing struct {
-	tracingFile *os.File
-	chMap       map[int]*tracingChannelState
-	traces      []tracingMsgFunc
-	c           chan func(w io.Writer)
-	wg          sync.WaitGroup
+type tracerFile struct {
+	file   *os.File
+	chMap  map[int]*tracingChannelState
+	traces []tracingMsgFunc
+	c      chan func(w io.Writer)
+	wg     sync.WaitGroup
 
 	tick     Tick
 	updates  []entryIntf
@@ -35,28 +35,21 @@ type tracingChannelState struct {
 	traces []tracingMsgFunc
 }
 
-func (t *Tracing) EnableTracing(filename string) error {
-	var err error
-	t.tracingFile, err = os.Create(filename)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (t *Tracing) Close() {
+func (t *tracerFile) Close() error {
 	if t.c != nil {
 		close(t.c)
 	}
-	if t.tracingFile != nil {
-		t.tracingFile.Close()
+	if t.file != nil {
+		if err := t.file.Close(); err != nil {
+			return err
+		}
 	}
 	t.wg.Wait()
+	return nil
 }
 
-func (t *Tracing) OutputTraces() {
-	if t.tracingFile == nil {
+func (t *tracerFile) OutputTraces() {
+	if t.file == nil {
 		return
 	}
 
@@ -67,10 +60,10 @@ func (t *Tracing) OutputTraces() {
 	updates, t.updates = t.updates, nil
 
 	go func() {
-		logger := log.New(t.tracingFile, "", 0)
+		logger := log.New(t.file, "", 0)
 		for _, u := range updates {
 			if tick := u.GetTick(); !tick.Equals(t.prevTick) {
-				fmt.Fprintln(t.tracingFile)
+				fmt.Fprintln(t.file)
 				t.prevTick = tick
 			}
 
@@ -79,7 +72,7 @@ func (t *Tracing) OutputTraces() {
 	}()
 }
 
-func (t *Tracing) SetTracingTick(order index.Order, row index.Row, tick int) {
+func (t *tracerFile) SetTracingTick(order index.Order, row index.Row, tick int) {
 	t.mu.Lock()
 	t.tick = Tick{
 		Order: order,
@@ -89,37 +82,37 @@ func (t *Tracing) SetTracingTick(order index.Order, row index.Row, tick int) {
 	t.mu.Unlock()
 }
 
-func (t *Tracing) GetTracingTick() Tick {
+func (t *tracerFile) GetTracingTick() Tick {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
 	return t.tick
 }
 
-func (t *Tracing) Trace(op string) {
+func (t *tracerFile) Trace(op string) {
 	t.TraceWithComment(op, "")
 }
 
-func (t *Tracing) TraceWithComment(op, commentFmt string, commentParams ...any) {
+func (t *tracerFile) TraceWithComment(op, commentFmt string, commentParams ...any) {
 	traceWithPayload(t, t.GetTracingTick(), op, fmt.Sprintf(commentFmt, commentParams...), empty)
 }
 
-func (t *Tracing) TraceValueChange(op string, prev, new any) {
+func (t *tracerFile) TraceValueChange(op string, prev, new any) {
 	t.TraceValueChangeWithComment(op, prev, new, "")
 }
 
-func (t *Tracing) TraceValueChangeWithComment(op string, prev, new any, commentFmt string, commentParams ...any) {
+func (t *tracerFile) TraceValueChangeWithComment(op string, prev, new any, commentFmt string, commentParams ...any) {
 	traceWithPayload(t, t.GetTracingTick(), op, fmt.Sprintf(commentFmt, commentParams...), valueUpdate{
 		old: prev,
 		new: new,
 	})
 }
 
-func (t *Tracing) TraceChannel(ch index.Channel, op string) {
+func (t *tracerFile) TraceChannel(ch index.Channel, op string) {
 	t.TraceChannelWithComment(ch, op, "")
 }
 
-func (t *Tracing) TraceChannelWithComment(ch index.Channel, op, commentFmt string, commentParams ...any) {
+func (t *tracerFile) TraceChannelWithComment(ch index.Channel, op, commentFmt string, commentParams ...any) {
 	tc := tickChannel{
 		tick: t.GetTracingTick(),
 		ch:   ch,
@@ -127,11 +120,11 @@ func (t *Tracing) TraceChannelWithComment(ch index.Channel, op, commentFmt strin
 	traceWithPayload(t, tc, op, fmt.Sprintf(commentFmt, commentParams...), empty)
 }
 
-func (t *Tracing) TraceChannelValueChange(ch index.Channel, op string, prev, new any) {
+func (t *tracerFile) TraceChannelValueChange(ch index.Channel, op string, prev, new any) {
 	t.TraceChannelValueChangeWithComment(ch, op, prev, new, "")
 }
 
-func (t *Tracing) TraceChannelValueChangeWithComment(ch index.Channel, op string, prev, new any, commentFmt string, commentParams ...any) {
+func (t *tracerFile) TraceChannelValueChangeWithComment(ch index.Channel, op string, prev, new any, commentFmt string, commentParams ...any) {
 	tc := tickChannel{
 		tick: t.GetTracingTick(),
 		ch:   ch,

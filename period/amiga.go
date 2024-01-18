@@ -10,39 +10,51 @@ import (
 type Amiga uint16
 
 // Add adds the current period to a delta value then returns the resulting period
-func (p Amiga) Add(d Delta) Amiga {
+func (p Amiga) Add(d Delta, minPeriod, maxPeriod Amiga, canSlideTo0 bool) Amiga {
+	if d == 0 {
+		return p
+	}
 	a := int(p)
 	if a == 0 {
 		// 0 means "not playing", so keep it that way
 		return p
 	}
 
-	p = Amiga(max(a-int(d), 1))
-	return p
+	a -= int(d)
+	if a == 0 && canSlideTo0 {
+		return 0
+	}
+	// can't use Clamp() here because we need to clamp negatives
+	c := min(Amiga(max(a, int(minPeriod))), maxPeriod)
+	if c < 64 {
+		_ = c
+	}
+	return c
 }
 
-func (p Amiga) PortaDown(amount Delta) Amiga {
-	return p.Add(-amount)
+func (p Amiga) Clamp(minPeriod, maxPeriod Amiga) Amiga {
+	if p == 0 {
+		return 0
+	}
+	return min(max(p, minPeriod), maxPeriod)
 }
 
-func (p Amiga) PortaUp(amount Delta) Amiga {
-	return p.Add(amount)
+func (p Amiga) PortaDown(amount Delta, minPeriod, maxPeriod Amiga, canSlideTo0 bool) Amiga {
+	return p.Add(-amount, minPeriod, maxPeriod, canSlideTo0)
 }
 
-func (p Amiga) PortaTo(amount Delta, target Amiga) Amiga {
+func (p Amiga) PortaUp(amount Delta, minPeriod, maxPeriod Amiga, canSlideTo0 bool) Amiga {
+	return p.Add(amount, minPeriod, maxPeriod, canSlideTo0)
+}
+
+func (p Amiga) PortaTo(amount Delta, target, minPeriod, maxPeriod Amiga) Amiga {
 	switch p.Compare(target) {
 	case comparison.SpaceshipLeftGreater:
 		// porta down to target
-		p = p.PortaDown(amount)
-		if p.Compare(target) == comparison.SpaceshipRightGreater {
-			return target
-		}
+		p = p.PortaDown(amount, minPeriod, target, false)
 	case comparison.SpaceshipRightGreater:
 		// porta up to target
-		p = p.PortaUp(amount)
-		if p.Compare(target) == comparison.SpaceshipLeftGreater {
-			return target
-		}
+		p = p.PortaUp(amount, target, maxPeriod, false)
 	}
 	return p
 }

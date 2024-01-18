@@ -6,9 +6,10 @@ import (
 )
 
 var S3MAmigaConverter period.PeriodConverter[period.Amiga] = period.AmigaConverter{
-	System:    system.S3MSystem,
-	MinPeriod: 64,
-	MaxPeriod: 32767,
+	System:          system.S3MSystem,
+	MinPeriod:       64,
+	MaxPeriod:       32767,
+	SlideTo0Allowed: true, // this will allow sliding unclamped to 0, which in S3M stops the playback
 }
 
 //MinMOD15Period = 452

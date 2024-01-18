@@ -22,7 +22,7 @@ const (
 	C5SlideFines          = 5 * SlideFinesPerOctave
 )
 
-var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
+var semitonePeriodTable = [...]uint16{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
 
 var ITSystem system.ClockableSystem = system.ClockedSystem{
 	MaxPastNotesPerChannel: 1,

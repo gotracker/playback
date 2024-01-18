@@ -23,7 +23,7 @@ func (e VolumeSlideDown) Tick(ch index.Channel, m machine.Machine[period.Amiga, 
 		return err
 	}
 	y := DataEffect(e) & 0x0F
-	if mem.Shared.VolSlideEveryFrame || tick != 0 {
+	if mem.Shared.VolSlideEveryTick || tick != 0 {
 		return m.SlideChannelVolume(ch, 1, -float32(y))
 	}
 	return nil

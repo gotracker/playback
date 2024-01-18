@@ -21,12 +21,12 @@ func (e tickChannel) GetTick() Tick {
 
 ///////////////////////////////////////////////////////////
 
-func (t *Tracing) traceChannel(tick Tick, ch index.Channel, op string) {
+func (t *tracerFile) traceChannel(tick Tick, ch index.Channel, op string) {
 	t.traceChannelWithComment(tick, ch, op, "")
 }
 
-func (t *Tracing) traceChannelWithComment(tick Tick, ch index.Channel, op string, comment string) {
-	if t.tracingFile == nil {
+func (t *tracerFile) traceChannelWithComment(tick Tick, ch index.Channel, op string, comment string) {
+	if t.file == nil {
 		return
 	}
 	tc := tickChannel{

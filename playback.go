@@ -12,8 +12,12 @@ type Playback interface {
 	SetupSampler(samplesPerSecond int, channels int) error
 	Configure([]feature.Feature) error
 
+	// runs the internal ticker and returns sample output
 	Update(time.Duration, chan<- *output.PremixData) error
 	Generate(time.Duration) (*output.PremixData, error)
+
+	// runs the internal ticker without caring about the sample output
+	Tick() error
 
 	GetNumOrders() int
 	CanOrderLoop() bool

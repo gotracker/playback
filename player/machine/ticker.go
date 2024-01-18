@@ -200,10 +200,12 @@ func advanceRowOrder[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 
 	orderScanMax := len(m.songData.GetOrderList())
 	orderScanIter := 0
+	forceLoopDetect := false
 orderScan:
 	if orderScanIter >= orderScanMax {
 		order = int(t.settings.SongLoopStartingOrder)
 		orderUpdated = true
+		forceLoopDetect = true
 	}
 
 	pat, err := m.songData.GetPatternByOrder(index.Order(order))
@@ -231,7 +233,7 @@ orderScan:
 		goto orderScan
 	}
 
-	if orderUpdated && order != int(t.current.order) && t.settings.SongLoopCount >= 0 {
+	if orderUpdated && (forceLoopDetect || order != int(t.current.order)) && t.settings.SongLoopCount >= 0 {
 		if _, found := t.songLoop.detect[index.Order(order)]; found {
 			t.songLoop.current++
 			if t.settings.SongLoopCount >= 0 && t.songLoop.current >= t.settings.SongLoopCount {

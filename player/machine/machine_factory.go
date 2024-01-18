@@ -156,10 +156,7 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 			rc.GlobalVolume = volume.Volume(1)
 
 			c := &m.channels[ch]
-			c.enabled = true
-			if m.ms.Quirks.DoNotProcessEffectsOnMutedChannels && cs.IsMuted() {
-				c.enabled = false
-			}
+			c.enabled = cs.IsEnabled()
 			c.cv = m.ms.VoiceFactory.NewVoice(voice.VoiceConfig[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]{
 				PC:               ms.PeriodConverter,
 				OPLChannel:       cs.GetOPLChannel(),

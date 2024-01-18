@@ -29,7 +29,11 @@ func (e PortaUp) Tick(ch index.Channel, m machine.Machine[period.Amiga, s3mVolum
 		return nil
 	}
 
-	return m.DoChannelPortaUp(ch, period.Delta(xx)*4)
+	var mul period.Delta = 4
+	if mem.Shared.ST300Portas {
+		mul = 2
+	}
+	return m.DoChannelPortaUp(ch, period.Delta(xx)*mul)
 }
 
 func (e PortaUp) TraceData() string {

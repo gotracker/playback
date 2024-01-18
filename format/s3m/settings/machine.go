@@ -23,8 +23,9 @@ func GetMachineSettings(modLimits bool) *settings.MachineSettings[period.Amiga, 
 
 var (
 	s3mQuirks = settings.MachineQuirks{
-		PreviousPeriodUsesModifiedPeriod: true,
-		PortaToNoteUsesModifiedPeriod:    true,
+		PreviousPeriodUsesModifiedPeriod:   true,
+		PortaToNoteUsesModifiedPeriod:      true,
+		DoNotProcessEffectsOnMutedChannels: true,
 	}
 
 	amigaMOD31Settings = settings.MachineSettings[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{

@@ -23,7 +23,7 @@ func (e VolumeSlideUp) Tick(ch index.Channel, m machine.Machine[period.Amiga, s3
 		return err
 	}
 	x := DataEffect(e) >> 4
-	if mem.Shared.VolSlideEveryFrame || tick != 0 {
+	if mem.Shared.VolSlideEveryTick || tick != 0 {
 		return m.SlideChannelVolume(ch, 1, float32(x))
 	}
 	return nil

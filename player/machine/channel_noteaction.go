@@ -1,13 +1,12 @@
 package machine
 
 import (
-	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/voice"
 )
 
-func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNoteAction(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], outputRate frequency.Frequency) error {
+func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNoteAction(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 	na, set := c.target.ActionTick.Get()
 	if !set {
 		// assume continue
@@ -67,7 +66,7 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNo
 	case note.ActionRetrigger:
 		c.cv.Release()
 
-		if err := c.doSetupInstrument(ch, m, outputRate); err != nil {
+		if err := c.doSetupInstrument(ch, m); err != nil {
 			return err
 		}
 
@@ -104,7 +103,7 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNo
 	return nil
 }
 
-func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSetupInstrument(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], outputRate frequency.Frequency) error {
+func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSetupInstrument(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 	inst := c.target.Inst
 	prevInst := c.prev.Inst
 	if inst != nil {
@@ -112,12 +111,11 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSe
 			rc := &m.actualOutputs[ch]
 			if factory := inst.GetPluginFilterFactory(); factory != nil {
 				rc.PluginFilter = factory(inst.SampleRate)
-				rc.PluginFilter.SetPlaybackRate(outputRate)
 			} else {
 				rc.PluginFilter = nil
 			}
 
-			if err := c.cv.Setup(inst, outputRate); err != nil {
+			if err := c.cv.Setup(inst); err != nil {
 				return err
 			}
 		}

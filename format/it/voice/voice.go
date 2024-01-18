@@ -159,7 +159,14 @@ func (v itVoice[TPeriod]) getFadeoutEnabled() bool {
 	return v.fadeoutMode.IsFadeoutActive(v.IsKeyFadeout(), v.volEnv.IsEnabled(), v.volEnv.IsDone())
 }
 
-func (v *itVoice[TPeriod]) Setup(inst *instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], outputRate frequency.Frequency) error {
+func (v *itVoice[TPeriod]) SetPlaybackRate(outputRate frequency.Frequency) error {
+	if v.voiceFilter != nil {
+		v.voiceFilter.SetPlaybackRate(outputRate)
+	}
+	return nil
+}
+
+func (v *itVoice[TPeriod]) Setup(inst *instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]) error {
 	v.inst = inst
 
 	v.voicer = nil
@@ -227,7 +234,6 @@ func (v *itVoice[TPeriod]) Setup(inst *instrument.Instrument[TPeriod, itVolume.F
 
 	if factory := inst.GetFilterFactory(); factory != nil {
 		v.voiceFilter = factory(inst.SampleRate)
-		v.voiceFilter.SetPlaybackRate(outputRate)
 	} else {
 		v.voiceFilter = nil
 	}

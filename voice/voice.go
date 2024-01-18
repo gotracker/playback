@@ -20,6 +20,7 @@ type Voice interface {
 
 	// Configuration
 	Reset() error
+	SetPlaybackRate(outputRate frequency.Frequency) error
 	SetOPL2Chip(chip opl2.Chip)
 
 	// Actions
@@ -43,7 +44,8 @@ type RenderVoice[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, T
 	Voice
 
 	// Configuration
-	Setup(inst *instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning], outputRate frequency.Frequency) error
+	SetPlaybackRate(outputRate frequency.Frequency) error
+	Setup(inst *instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning]) error
 }
 
 type AmpModulator[TGlobalVolume, TMixingVolume, TVolume Volume] interface {

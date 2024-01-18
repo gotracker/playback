@@ -7,7 +7,7 @@ import (
 )
 
 type UserSettings struct {
-	tracing.Tracer
+	Tracer        tracing.TracerWithClose
 	SongLoopCount int
 	Start         struct {
 		Order optional.Value[index.Order] // default: based on song
@@ -22,6 +22,42 @@ type UserSettings struct {
 	LongChannelOutput    bool
 	IgnoreUnknownEffect  bool
 	EnableNewNoteActions bool
+}
+
+// Reset applies the defaults
+//
+//	NOTE: does not reset the Tracer value
+func (s *UserSettings) Reset() {
+	// don't touch the Tracer here
+	s.SongLoopCount = 0
+	s.Start.Order.Reset()
+	s.Start.Row.Reset()
+	s.Start.Tempo = 0
+	s.Start.BPM = 0
+	s.PlayUntil.Order.Reset()
+	s.PlayUntil.Row.Reset()
+	s.LongChannelOutput = true
+	s.IgnoreUnknownEffect = false
+	s.EnableNewNoteActions = true
+}
+
+func (s *UserSettings) SetupTracingWithFilename(filename string) error {
+	var err error
+	s.Tracer, err = tracing.NewFromFilename(filename)
+	return err
+}
+
+func (s *UserSettings) OutputTraces() {
+	if s.Tracer != nil {
+		s.Tracer.OutputTraces()
+	}
+}
+
+func (s *UserSettings) CloseTracing() error {
+	if s.Tracer != nil {
+		return s.Tracer.Close()
+	}
+	return nil
 }
 
 func (s UserSettings) SetTracingTick(order index.Order, row index.Row, tick int) {

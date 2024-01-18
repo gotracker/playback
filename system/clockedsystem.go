@@ -8,11 +8,12 @@ import (
 type ClockableSystem interface {
 	System
 	GetBaseClock() frequency.Frequency
-	GetCommonPeriod() float64
+	GetCommonPeriod() uint16
 	GetBaseFinetunes() note.Finetune
 	GetFinetunesPerOctave() note.Finetune
 	GetFinetunesPerSemitone() note.Finetune
-	GetSemitonePeriod(note.Key) (float32, bool)
+	GetSemitonePeriod(note.Key) (uint16, bool)
+	GetOctaveShift() uint16
 }
 
 type ClockedSystem struct {
@@ -22,9 +23,10 @@ type ClockedSystem struct {
 	BaseFinetunes      note.Finetune
 	FinetunesPerOctave note.Finetune
 	FinetunesPerNote   note.Finetune
-	CommonPeriod       float64
+	CommonPeriod       uint16
 	CommonRate         frequency.Frequency
-	SemitonePeriods    [note.NumKeys]float32
+	SemitonePeriods    [note.NumKeys]uint16
+	OctaveShift        uint16
 }
 
 var _ ClockableSystem = (*ClockedSystem)(nil)
@@ -49,7 +51,7 @@ func (s ClockedSystem) GetFinetunesPerSemitone() note.Finetune {
 	return s.FinetunesPerNote
 }
 
-func (s ClockedSystem) GetCommonPeriod() float64 {
+func (s ClockedSystem) GetCommonPeriod() uint16 {
 	return s.CommonPeriod
 }
 
@@ -57,9 +59,13 @@ func (s ClockedSystem) GetCommonRate() frequency.Frequency {
 	return s.CommonRate
 }
 
-func (s ClockedSystem) GetSemitonePeriod(k note.Key) (float32, bool) {
+func (s ClockedSystem) GetSemitonePeriod(k note.Key) (uint16, bool) {
 	if int(k) < note.NumKeys {
-		return s.SemitonePeriods[int(k)], true
+		return s.SemitonePeriods[int(k)] >> s.OctaveShift, true
 	}
 	return 0, false
+}
+
+func (s ClockedSystem) GetOctaveShift() uint16 {
+	return s.OctaveShift
 }

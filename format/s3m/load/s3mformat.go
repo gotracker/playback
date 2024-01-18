@@ -289,6 +289,7 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	zeroVolOpt := (f.Head.Flags&0x0008) != 0 && !wasModFile
 	sbFilterEnable := (f.Head.Flags&0x0020) != 0 || wasModFile
 	st300volSlides := (f.Head.Flags&0x0040) != 0 || f.Head.TrackerVersion == 0x1300
+	st300portas := f.Head.TrackerVersion == 0x1300
 	//ptrSpecialIsValid := (f.Head.Flags & 0x0080) != 0
 
 	for i, o := range f.OrderList {
@@ -322,7 +323,8 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	}
 
 	sharedMem := channel.SharedMemory{
-		VolSlideEveryFrame:         st300volSlides,
+		VolSlideEveryTick:          st300volSlides,
+		ST300Portas:                st300portas,
 		LowPassFilterEnable:        sbFilterEnable,
 		ResetMemoryAtStartOfOrder0: true,
 		ST2Vibrato:                 st2Vibrato,

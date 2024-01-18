@@ -3,44 +3,42 @@ package machine
 import (
 	"errors"
 
-	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/player/sampler"
-	"github.com/gotracker/playback/song"
 )
 
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick(s *sampler.Sampler) (*output.PremixData, error) {
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Generate(s *sampler.Sampler) (*output.PremixData, error) {
 	if m.opl2Enabled && m.opl2 == nil && m.ms.OPL2Enabled {
 		if err := m.setupOPL2(s); err != nil {
 			return nil, err
 		}
 	}
 
+	tickErr := m.Tick()
+
+	premix, err := m.render(s)
+	return premix, errors.Join(tickErr, err)
+}
+
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick() error {
 	if err := m.songData.ForEachChannel(true, func(ch index.Channel) (bool, error) {
 		c := &m.channels[ch]
-		if err := c.DoNoteAction(ch, m, frequency.Frequency(s.SampleRate)); err != nil {
+		if err := c.DoNoteAction(ch, m); err != nil {
 			return false, err
 		}
 		return true, nil
 	}); err != nil {
-		return nil, err
+		return err
 	}
 
-	premix, err := m.render(s)
+	err := runTick(&m.ticker, m)
 	if err != nil {
-		return premix, err
-	}
-
-	tickErr := runTick(&m.ticker, m)
-	if tickErr != nil {
-		if !errors.Is(tickErr, song.ErrStopSong) {
-			return nil, tickErr
-		}
+		return err
 	}
 
 	m.age++
-	return premix, errors.Join(tickErr, err)
+	return nil
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) onTick() error {

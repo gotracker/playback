@@ -46,7 +46,8 @@ type MachineInfo interface {
 type MachineTicker interface {
 	MachineInfo
 
-	Tick(s *sampler.Sampler) (*output.PremixData, error)
+	Generate(s *sampler.Sampler) (*output.PremixData, error)
+	Tick() error
 }
 
 type Machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] interface {
@@ -54,6 +55,7 @@ type Machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 
 	ConvertToPeriod(n note.Note) TPeriod
 	IgnoreUnknownEffect() bool
+	GetQuirks() *settings.MachineQuirks
 
 	// Globals
 	SetTempo(tempo int) error
@@ -169,11 +171,15 @@ func NewMachine(songData song.Data, us settings.UserSettings) (MachineTicker, er
 	return factory(songData, us)
 }
 
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) ConvertToPeriod(n note.Note) TPeriod {
+func (m machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetQuirks() *settings.MachineQuirks {
+	return &m.ms.Quirks
+}
+
+func (m machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) ConvertToPeriod(n note.Note) TPeriod {
 	return m.ms.PeriodConverter.GetPeriod(n)
 }
 
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) IgnoreUnknownEffect() bool {
+func (m machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) IgnoreUnknownEffect() bool {
 	return m.us.IgnoreUnknownEffect
 }
 
@@ -231,7 +237,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) upda
 		}
 
 		c := &m.channels[ch]
-		if !c.enabled || d == nil {
+		if !c.enabled || d == nil || (m.ms.Quirks.DoNotProcessEffectsOnMutedChannels && c.cv.IsMuted()) {
 			return true, nil
 		}
 

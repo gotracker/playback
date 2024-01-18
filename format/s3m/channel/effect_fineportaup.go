@@ -22,8 +22,18 @@ func (e FinePortaUp) Tick(ch index.Channel, m machine.Machine[period.Amiga, s3mV
 		return nil
 	}
 
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return err
+	}
+
 	y := DataEffect(e) & 0x0F
-	return m.DoChannelPortaUp(ch, period.Delta(y)*4)
+
+	var mul period.Delta = 4
+	if mem.Shared.ST300Portas {
+		mul = 2
+	}
+	return m.DoChannelPortaUp(ch, period.Delta(y)*mul)
 }
 
 func (e FinePortaUp) TraceData() string {

@@ -15,7 +15,7 @@ type testPeriod = period.Amiga
 func periodCompareTest(t *testing.T, lhs, rhs testPeriod, expected comparison.Spaceship) {
 	t.Helper()
 
-	if period.ComparePeriods(lhs, rhs) != expected {
+	if lhs.Compare(rhs) != expected {
 		t.Fatalf("%v <=> %v was not %v", lhs, rhs, expected)
 	}
 }

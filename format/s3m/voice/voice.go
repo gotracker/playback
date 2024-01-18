@@ -108,7 +108,22 @@ func (v *s3mVoice) doDeferredRelease() {
 	}
 }
 
-func (v *s3mVoice) Setup(inst *instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], outputRate frequency.Frequency) error {
+func (v *s3mVoice) SetPlaybackRate(outputRate frequency.Frequency) error {
+	if v.voiceFilter != nil {
+		v.voiceFilter.SetPlaybackRate(outputRate)
+	}
+	return nil
+}
+
+func (v *s3mVoice) SetPeriod(p period.Amiga) error {
+	if p.IsInvalid() {
+		v.Stop()
+		return nil
+	}
+	return v.FreqModulator.SetPeriod(p)
+}
+
+func (v *s3mVoice) Setup(inst *instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) error {
 	v.inst = inst
 
 	switch d := inst.GetData().(type) {
@@ -145,7 +160,6 @@ func (v *s3mVoice) Setup(inst *instrument.Instrument[period.Amiga, s3mVolume.Fin
 
 	if factory := inst.GetFilterFactory(); factory != nil {
 		v.voiceFilter = factory(inst.SampleRate)
-		v.voiceFilter.SetPlaybackRate(outputRate)
 	} else {
 		v.voiceFilter = nil
 	}

@@ -9,6 +9,9 @@ import (
 	"github.com/gotracker/playback/format"
 	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/player/feature"
+	"github.com/gotracker/playback/player/machine"
+	"github.com/gotracker/playback/player/machine/settings"
+	"github.com/gotracker/playback/player/sampler"
 	"github.com/gotracker/playback/song"
 )
 
@@ -53,7 +56,21 @@ func ExamplePlayFileToStdout() {
 	// There's an automagical loader utility which divines the file type and presents a player that can
 	// effectively play it. See `ExamplePlayBufferToStdout` (./internal/examples/bufferload) for an
 	// example of the io.Reader version of this call.
-	player, _, err := format.Load(filename, features)
+	songData, songFormat, err := format.Load(filename, features)
+	if err != nil {
+		panic(err)
+	}
+
+	// Here is where we get a final chance to submit any overrides or configurations we want to
+	// supply - we can send it the configuration we already have built up, since it will know how to
+	// pull the settings it wants, so no need to worry about filtering or splitting out the settings.
+	var userSettings settings.UserSettings
+	if err := songFormat.ConvertFeaturesToSettings(&userSettings, features); err != nil {
+		panic(err)
+	}
+
+	// Next, create a player machine to operate over the song configured by the settings.
+	player, err := machine.NewMachine(songData, userSettings)
 	if err != nil {
 		panic(err)
 	}
@@ -62,16 +79,9 @@ func ExamplePlayFileToStdout() {
 	// for the stream of data we are wanting to produce - namely, the sampling rate and the number of
 	// channels. These two parameters are fundamental to a huge number of operations, so they must be
 	// set outside of the configuration process you will see below.
-	if err := player.SetupSampler(sampleRate, channels); err != nil {
-		panic(err)
-	}
-
-	// The player's nearly ready to start playing! Here is where we get a final chance to submit any
-	// overrides or configurations we want to supply - we can send it the configuration we already
-	// have built up, since it will know how to pull the settings it wants, so no need to worry about
-	// filtering or splitting out the settings.
-	if err := player.Configure(features); err != nil {
-		panic(err)
+	out := sampler.NewSampler(sampleRate, channels)
+	if out == nil {
+		panic(errors.New("could not create sampler"))
 	}
 
 	// Now that the player is configured, we can allocate a channel is filled with bundles of
@@ -118,7 +128,8 @@ playerUpdateLoop:
 		// Now we need to tell the player to update its internal state - this will generate a single
 		// row tick's worth of pre-mix data and add it to the `premixDataChannel`.
 		// normally, we would want to set up a goroutine for this call to run in and
-		if err := player.Update(0, premixDataChannel); err != nil {
+		premix, err := player.Generate(out)
+		if err != nil {
 			// In the event we finish our song, we will receive a specific error message informing us
 			// we can quit.
 			if errors.Is(err, song.ErrStopSong) {
@@ -127,6 +138,8 @@ playerUpdateLoop:
 			// If we get here, then we don't know what the error is...
 			panic(err)
 		}
+
+		premixDataChannel <- premix
 	}
 
 	// We're done!

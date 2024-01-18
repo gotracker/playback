@@ -8,6 +8,7 @@ import (
 )
 
 type ChannelSettings interface {
+	IsEnabled() bool
 	IsMuted() bool
 	GetOutputChannelNum() int
 	GetMemory() ChannelMemory

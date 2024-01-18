@@ -36,7 +36,7 @@ func (e entry[TPrefix, TPayload]) Prefix() string {
 
 ///////////////////////////////////////////////////////////
 
-func (t *Tracing) trace(tick Tick, op string) {
+func (t *tracerFile) trace(tick Tick, op string) {
 	t.traceWithComment(tick, op, "")
 }
 
@@ -48,14 +48,14 @@ func (emptyPayload) String() string {
 
 var empty emptyPayload
 
-func (t *Tracing) traceWithComment(tick Tick, op, comment string) {
-	if t.tracingFile == nil {
+func (t *tracerFile) traceWithComment(tick Tick, op, comment string) {
+	if t.file == nil {
 		return
 	}
 	traceWithPayload(t, tick, op, comment, empty)
 }
 
-func traceWithPayload[TPrefix Ticker, TPayload fmt.Stringer](t *Tracing, prefix TPrefix, op, comment string, payload TPayload) {
+func traceWithPayload[TPrefix Ticker, TPayload fmt.Stringer](t *tracerFile, prefix TPrefix, op, comment string, payload TPayload) {
 	e := entry[TPrefix, TPayload]{
 		prefix:    prefix,
 		operation: op,

@@ -8,8 +8,6 @@ import (
 )
 
 const (
-	floatDefaultC4SampleRate = float32(DefaultC4SampleRate)
-
 	// DefaultC4SampleRate is the default c4 sample rate for S3M samples
 	DefaultC4SampleRate = frequency.Frequency(s3mfile.DefaultC2Spd)
 	// C4Period is the sampler (Amiga-style) period of the C-4 note
@@ -29,7 +27,7 @@ const (
 	C4SlideFines          = C4Note * SlideFinesPerNote
 )
 
-var semitonePeriodTable = [...]float32{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
+var semitonePeriodTable = [...]uint16{27392, 25856, 24384, 23040, 21696, 20480, 19328, 18240, 17216, 16256, 15360, 14496}
 
 var S3MSystem system.ClockableSystem = system.ClockedSystem{
 	MaxPastNotesPerChannel: 0,
@@ -40,4 +38,5 @@ var S3MSystem system.ClockableSystem = system.ClockedSystem{
 	CommonPeriod:           C4Period,
 	CommonRate:             DefaultC4SampleRate,
 	SemitonePeriods:        semitonePeriodTable,
+	OctaveShift:            1,
 }

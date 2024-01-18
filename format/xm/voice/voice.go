@@ -130,7 +130,14 @@ func (v xmVoice[TPeriod]) getFadeoutEnabled() bool {
 	return v.fadeoutMode.IsFadeoutActive(v.IsKeyFadeout(), v.volEnv.IsEnabled(), v.volEnv.IsDone())
 }
 
-func (v *xmVoice[TPeriod]) Setup(inst *instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], outputRate frequency.Frequency) error {
+func (v *xmVoice[TPeriod]) SetPlaybackRate(outputRate frequency.Frequency) error {
+	if v.voiceFilter != nil {
+		v.voiceFilter.SetPlaybackRate(outputRate)
+	}
+	return nil
+}
+
+func (v *xmVoice[TPeriod]) Setup(inst *instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]) error {
 	v.inst = inst
 
 	switch d := inst.GetData().(type) {
@@ -182,7 +189,6 @@ func (v *xmVoice[TPeriod]) Setup(inst *instrument.Instrument[TPeriod, xmVolume.X
 
 	if factory := inst.GetFilterFactory(); factory != nil {
 		v.voiceFilter = factory(inst.SampleRate)
-		v.voiceFilter.SetPlaybackRate(outputRate)
 	} else {
 		v.voiceFilter = nil
 	}

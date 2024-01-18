@@ -18,12 +18,12 @@ func (e valueUpdate) String() string {
 
 ///////////////////////////////////////////////////////////
 
-func (t *Tracing) traceValueChange(tick Tick, op string, prev, new any) {
+func (t *tracerFile) traceValueChange(tick Tick, op string, prev, new any) {
 	t.traceValueChangeWithComment(tick, op, prev, new, "")
 }
 
-func (t *Tracing) traceValueChangeWithComment(tick Tick, op string, prev, new any, comment string) {
-	if t.tracingFile == nil {
+func (t *tracerFile) traceValueChangeWithComment(tick Tick, op string, prev, new any, comment string) {
+	if t.file == nil {
 		return
 	}
 	if reflect.DeepEqual(prev, new) {
@@ -35,12 +35,12 @@ func (t *Tracing) traceValueChangeWithComment(tick Tick, op string, prev, new an
 	})
 }
 
-func (t *Tracing) traceChannelValueChange(tick Tick, ch index.Channel, op string, prev, new any) {
+func (t *tracerFile) traceChannelValueChange(tick Tick, ch index.Channel, op string, prev, new any) {
 	t.traceChannelValueChangeWithComment(tick, ch, op, prev, new, "")
 }
 
-func (t *Tracing) traceChannelValueChangeWithComment(tick Tick, ch index.Channel, op string, prev, new any, comment string) {
-	if t.tracingFile == nil {
+func (t *tracerFile) traceChannelValueChangeWithComment(tick Tick, ch index.Channel, op string, prev, new any, comment string) {
+	if t.file == nil {
 		return
 	}
 	if reflect.DeepEqual(prev, new) {
