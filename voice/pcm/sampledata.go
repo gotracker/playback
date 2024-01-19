@@ -2,6 +2,7 @@ package pcm
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/binary"
 	"errors"
 	"math"
@@ -13,9 +14,11 @@ import (
 type Sample interface {
 	SampleReader
 	Channels() int
+	Format() SampleDataFormat
 	Length() int
 	Seek(pos int)
 	Tell() int
+	Base64() string
 }
 
 // SampleData is the presentation of the core data of the sample
@@ -49,6 +52,10 @@ func (s *SampleData) Seek(pos int) {
 // Tell returns the current position in the sample data
 func (s *SampleData) Tell() int {
 	return s.pos
+}
+
+func (s SampleData) Base64() string {
+	return base64.StdEncoding.EncodeToString(s.data)
 }
 
 // NewSample constructs a sampler that can handle the requested sampler format
@@ -212,4 +219,13 @@ func ConvertTo(from Sample, format SampleDataFormat) (Sample, error) {
 	}
 	to := NewSample(cvt.Bytes(), length, channels, format)
 	return to, nil
+}
+
+func NewSampleFromBase64(channels int, format SampleDataFormat, data string) Sample {
+	d, err := base64.StdEncoding.DecodeString(data)
+	if err != nil {
+		panic(err)
+	}
+
+	return NewSample(d, len(d), channels, format)
 }

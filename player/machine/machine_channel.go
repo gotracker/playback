@@ -294,8 +294,8 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetC
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetPatternLoopStart(ch index.Channel) error {
 	return withChannel(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
-		traceChannelValueChangeWithComment(m, ch, "patternLoopStart", c.patternLoop.Start, m.ticker.current.row, "SetPatternLoopStart")
-		c.patternLoop.Start = m.ticker.current.row
+		traceChannelValueChangeWithComment(m, ch, "patternLoopStart", c.patternLoop.Start, m.ticker.current.Row, "SetPatternLoopStart")
+		c.patternLoop.Start = m.ticker.current.Row
 		return nil
 	})
 }
@@ -308,8 +308,8 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetP
 	return withChannel(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
 		pl := &c.patternLoop
 
-		traceChannelValueChangeWithComment(m, ch, "patternLoopEnd", pl.End, m.ticker.current.row, "SetPatternLoops")
-		pl.End = m.ticker.current.row
+		traceChannelValueChangeWithComment(m, ch, "patternLoopEnd", pl.End, m.ticker.current.Row, "SetPatternLoops")
+		pl.End = m.ticker.current.Row
 
 		traceChannelValueChangeWithComment(m, ch, "patternLoopTotal", pl.Total, count, "SetPatternLoops")
 		pl.Total = count

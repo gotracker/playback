@@ -41,7 +41,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoIn
 	if !ok {
 		return nil
 	}
-	return ii.Tick(ch, m, m.ticker.current.tick)
+	return ii.Tick(ch, m, m.ticker.current.Tick)
 }
 
 type instructionRowEnd[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] interface {

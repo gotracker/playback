@@ -69,6 +69,7 @@ type Machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	SetOrder(o index.Order) error
 	SetRow(r index.Row, breakOrder bool) error
 	SetFilterOnAllChannelsByFilterName(name string, enabled bool) error
+	GetPosition() Position
 
 	// Single Row
 	AddExtraTicks(ticks int) error
@@ -171,6 +172,10 @@ func NewMachine(songData song.Data, us settings.UserSettings) (MachineTicker, er
 	return factory(songData, us)
 }
 
+func (m machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetPosition() Position {
+	return m.ticker.current
+}
+
 func (m machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetQuirks() *settings.MachineQuirks {
 	return &m.ms.Quirks
 }
@@ -208,15 +213,15 @@ type dataInstructionGenerator[TPeriod Period, TGlobalVolume, TMixingVolume, TVol
 }
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) getRowData() (song.Row, error) {
-	pat, err := m.songData.GetPatternByOrder(m.ticker.current.order)
+	pat, err := m.songData.GetPatternByOrder(m.ticker.current.Order)
 	if err != nil {
 		return nil, err
 	}
-	if pat == nil || int(m.ticker.current.row) >= pat.NumRows() {
+	if pat == nil || int(m.ticker.current.Row) >= pat.NumRows() {
 		return nil, song.ErrStopSong
 	}
 
-	row := pat.GetRow(m.ticker.current.row)
+	row := pat.GetRow(m.ticker.current.Row)
 	if row == nil {
 		return nil, song.ErrStopSong
 	}

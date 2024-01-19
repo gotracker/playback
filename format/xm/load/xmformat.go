@@ -9,11 +9,12 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/heucuva/optional"
 
-	"github.com/gotracker/playback/format/xm/channel"
-	"github.com/gotracker/playback/format/xm/layout"
+	"github.com/gotracker/playback/format/common"
+	xmChannel "github.com/gotracker/playback/format/xm/channel"
+	xmLayout "github.com/gotracker/playback/format/xm/layout"
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
 	xmPeriod "github.com/gotracker/playback/format/xm/period"
-	"github.com/gotracker/playback/format/xm/settings"
+	xmSettings "github.com/gotracker/playback/format/xm/settings"
 	xmSystem "github.com/gotracker/playback/format/xm/system"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
 	"github.com/gotracker/playback/frequency"
@@ -31,11 +32,11 @@ import (
 	"github.com/gotracker/playback/voice/pcm"
 )
 
-func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*layout.Header, error) {
+func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*xmLayout.Header, error) {
 	if fh == nil {
 		return nil, errors.New("file header is nil")
 	}
-	head := layout.Header{
+	head := xmLayout.Header{
 		Name:             fh.GetName(),
 		InitialSpeed:     int(fh.DefaultSpeed),
 		InitialTempo:     int(fh.DefaultTempo),
@@ -262,17 +263,17 @@ func convertXmPattern[TPeriod period.Period](pkt xmfile.Pattern) (song.Pattern, 
 
 	maxCh := uint8(0)
 	for rowNum, drow := range pkt.Data {
-		row := make(layout.Row[TPeriod], len(drow))
+		row := make(xmLayout.Row[TPeriod], len(drow))
 		pat[rowNum] = row
 
 		for channelNum, chn := range drow {
-			cd := channel.Data[TPeriod]{
+			cd := xmChannel.Data[TPeriod]{
 				What:            chn.Flags,
 				Note:            chn.Note,
 				Instrument:      chn.Instrument,
 				Volume:          xmVolume.VolEffect(chn.Volume),
-				Effect:          channel.Command(chn.Effect),
-				EffectParameter: channel.DataEffect(chn.EffectParameter),
+				Effect:          xmChannel.Command(chn.Effect),
+				EffectParameter: xmChannel.DataEffect(chn.EffectParameter),
 			}
 			row[channelNum] = cd
 			if maxCh < uint8(channelNum) {
@@ -292,7 +293,7 @@ func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (song.Data,
 	}
 }
 
-func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []feature.Feature) (*layout.Song[TPeriod], error) {
+func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []feature.Feature) (*xmLayout.Song[TPeriod], error) {
 	h, err := moduleHeaderToHeader(&f.Head)
 	if err != nil {
 		return nil, err
@@ -300,16 +301,23 @@ func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []
 
 	linearFrequencySlides := f.Head.Flags.IsLinearSlides()
 
-	ms := settings.GetMachineSettings[TPeriod]()
+	ms := xmSettings.GetMachineSettings[TPeriod]()
 
-	s := layout.Song[TPeriod]{
-		System:            xmSystem.XMSystem,
-		MS:                ms,
-		Head:              *h,
-		Instruments:       make(map[uint8]*instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]),
+	s := xmLayout.Song[TPeriod]{
+		BaseSong: common.BaseSong[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]{
+			System:       xmSystem.XMSystem,
+			MS:           ms,
+			Name:         h.Name,
+			InitialBPM:   h.InitialTempo,
+			InitialTempo: h.InitialSpeed,
+			GlobalVolume: h.GlobalVolume,
+			MixingVolume: h.MixingVolume,
+			InitialOrder: h.InitialOrder,
+			Instruments:  make([]*instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning], len(f.Instruments)),
+			Patterns:     make([]song.Pattern, len(f.Patterns)),
+			OrderList:    make([]index.Pattern, f.Head.SongLength),
+		},
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]),
-		Patterns:          make([]song.Pattern, len(f.Patterns)),
-		OrderList:         make([]index.Pattern, int(f.Head.SongLength)),
 	}
 
 	for i := 0; i < int(f.Head.SongLength); i++ {
@@ -325,15 +333,15 @@ func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []
 			if sample == nil {
 				continue
 			}
-			id := channel.SampleID{
+			id := xmChannel.SampleID{
 				InstID: uint8(instNum + 1),
 			}
 			sample.Static.ID = id
-			s.Instruments[id.InstID] = sample
+			s.Instruments[instNum] = sample
 		}
 		for i, sts := range noteMap {
 			sample := samples[i]
-			id, ok := sample.Static.ID.(channel.SampleID)
+			id, ok := sample.Static.ID.(xmChannel.SampleID)
 			if !ok {
 				continue
 			}
@@ -360,24 +368,22 @@ func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []
 		s.Patterns[patNum] = pat
 	}
 
-	sharedMem := channel.SharedMemory{
+	sharedMem := xmChannel.SharedMemory{
 		LinearFreqSlides:           linearFrequencySlides,
 		ResetMemoryAtStartOfOrder0: true,
 	}
 
-	channels := make([]layout.ChannelSetting, lastEnabledChannel+1)
+	channels := make([]xmLayout.ChannelSetting, lastEnabledChannel+1)
 	for chNum := range channels {
-		cs := layout.ChannelSetting{
+		cs := xmLayout.ChannelSetting{
 			Enabled:        true,
 			Muted:          false,
 			InitialVolume:  xmVolume.DefaultXmVolume,
 			InitialPanning: xmPanning.DefaultPanning,
-			Memory: channel.Memory{
+			Memory: xmChannel.Memory{
 				Shared: &sharedMem,
 			},
 		}
-
-		cs.Memory.ResetOscillators()
 
 		channels[chNum] = cs
 	}

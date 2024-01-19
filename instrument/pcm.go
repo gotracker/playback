@@ -33,10 +33,6 @@ type PitchPan struct {
 	Separation float32
 }
 
-func (PCM[TMixingVolume, TVolume, TPanning]) GetKind() Kind {
-	return KindPCM
-}
-
 func (p PCM[TMixingVolume, TVolume, TPanning]) GetLength() sampling.Pos {
 	return sampling.Pos{Pos: p.Sample.Length()}
 }

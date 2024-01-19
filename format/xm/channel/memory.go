@@ -1,10 +1,7 @@
 package channel
 
 import (
-	"github.com/gotracker/playback/voice/oscillator"
-
 	"github.com/gotracker/playback/memory"
-	oscillatorImpl "github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/tremor"
 )
 
@@ -29,17 +26,9 @@ type Memory struct {
 	extraFinePortaUp    memory.Value[DataEffect]
 	extraFinePortaDown  memory.Value[DataEffect]
 
-	tremorMem         tremor.Tremor
-	vibratoOscillator oscillator.Oscillator
-	tremoloOscillator oscillator.Oscillator
+	tremorMem tremor.Tremor
 
 	Shared *SharedMemory
-}
-
-// ResetOscillators resets the oscillators to defaults
-func (m *Memory) ResetOscillators() {
-	m.vibratoOscillator = oscillatorImpl.NewProtrackerOscillator()
-	m.tremoloOscillator = oscillatorImpl.NewProtrackerOscillator()
 }
 
 // PortaToNote gets or sets the most recent non-zero value (or input) for Portamento-to-note
@@ -137,21 +126,7 @@ func (m *Memory) TremorMem() *tremor.Tremor {
 	return &m.tremorMem
 }
 
-// VibratoOscillator returns the Vibrato oscillator object
-func (m *Memory) VibratoOscillator() oscillator.Oscillator {
-	return m.vibratoOscillator
-}
-
-// TremoloOscillator returns the Tremolo oscillator object
-func (m *Memory) TremoloOscillator() oscillator.Oscillator {
-	return m.tremoloOscillator
-}
-
-// Retrigger runs certain operations when a note is retriggered
 func (m *Memory) Retrigger() {
-	for _, osc := range []oscillator.Oscillator{m.VibratoOscillator(), m.TremoloOscillator()} {
-		osc.Reset()
-	}
 }
 
 // StartOrder is called when the first order's row at tick 0 is started

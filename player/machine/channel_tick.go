@@ -11,7 +11,7 @@ import (
 )
 
 func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) OrderStart(ch index.Channel, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
-	if m.ticker.current.order == 0 {
+	if m.ticker.current.Order == 0 {
 		c.memory.StartOrder0()
 	}
 	c.resetPatternLoop()

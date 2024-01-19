@@ -22,7 +22,6 @@ type InstrumentIntf interface {
 	GetFinetune() note.Finetune
 	GetID() ID
 	GetSemitoneShift() int8
-	GetKind() Kind
 	GetNewNoteAction() note.Action
 	GetData() Data
 	GetFilterFactory() filter.Factory
@@ -111,11 +110,6 @@ func (inst Instrument[TPeriod, TMixingVolume, TVolume, TPanning]) GetSemitoneShi
 	return inst.Static.RelativeNoteNumber
 }
 
-// GetKind returns the kind of the instrument
-func (inst Instrument[TPeriod, TMixingVolume, TVolume, TPanning]) GetKind() Kind {
-	return inst.Inst.GetKind()
-}
-
 // GetNewNoteAction returns the NewNoteAction associated to the instrument
 func (inst Instrument[TPeriod, TMixingVolume, TVolume, TPanning]) GetNewNoteAction() note.Action {
 	return inst.Static.NewNoteAction
@@ -140,7 +134,10 @@ func (inst Instrument[TPeriod, TMixingVolume, TVolume, TPanning]) GetPluginFilte
 func (inst Instrument[TPeriod, TMixingVolume, TVolume, TPanning]) IsReleaseNote(n note.Note) bool {
 	switch n.Type() {
 	case note.SpecialTypeStopOrRelease:
-		return inst.GetKind() == KindOPL2
+		switch inst.GetData().(type) {
+		case *OPL2:
+			return true
+		}
 	}
 	return note.IsRelease(n)
 }
@@ -149,7 +146,10 @@ func (inst Instrument[TPeriod, TMixingVolume, TVolume, TPanning]) IsReleaseNote(
 func (inst Instrument[TPeriod, TMixingVolume, TVolume, TPanning]) IsStopNote(n note.Note) bool {
 	switch n.Type() {
 	case note.SpecialTypeStopOrRelease:
-		return inst.GetKind() == KindPCM
+		switch inst.GetData().(type) {
+		case *OPL2:
+			return true
+		}
 	}
 	return note.IsRelease(n)
 }

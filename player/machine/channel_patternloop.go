@@ -13,7 +13,7 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doPa
 		return nil
 	}
 
-	if m.ticker.current.row != c.patternLoop.End {
+	if m.ticker.current.Row != c.patternLoop.End {
 		return nil
 	}
 

@@ -12,6 +12,7 @@ import (
 	itblock "github.com/gotracker/goaudiofile/music/tracked/it/block"
 
 	"github.com/gotracker/playback/filter"
+	"github.com/gotracker/playback/format/common"
 	"github.com/gotracker/playback/format/it/channel"
 	"github.com/gotracker/playback/format/it/layout"
 	itPanning "github.com/gotracker/playback/format/it/panning"
@@ -112,13 +113,20 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 	ms := settings.GetMachineSettings[TPeriod]()
 
 	songData := &layout.Song[TPeriod]{
-		System:            itSystem.ITSystem,
-		MS:                ms,
-		Head:              *h,
-		Instruments:       make(map[uint8]*instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]),
+		BaseSong: common.BaseSong[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
+			System:       itSystem.ITSystem,
+			MS:           ms,
+			Name:         h.Name,
+			InitialBPM:   h.InitialTempo,
+			InitialTempo: h.InitialSpeed,
+			GlobalVolume: h.GlobalVolume,
+			MixingVolume: h.MixingVolume,
+			InitialOrder: h.InitialOrder,
+			Instruments:  make([]*instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], f.Head.InstrumentCount),
+			Patterns:     make([]song.Pattern, len(f.Patterns)),
+			OrderList:    make([]index.Pattern, int(f.Head.OrderCount)),
+		},
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument[TPeriod]),
-		Patterns:          make([]song.Pattern, len(f.Patterns)),
-		OrderList:         make([]index.Pattern, int(f.Head.OrderCount)),
 		FilterPlugins:     make(map[int]filter.Factory),
 	}
 
@@ -205,8 +213,6 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 			Vol0OptEnabled: vol0Enabled,
 		}
 
-		cs.Memory.ResetOscillators()
-
 		channels[chNum] = cs
 	}
 
@@ -243,7 +249,7 @@ func addSampleWithNoteMapToSong[TPeriod period.Period](song *layout.Song[TPeriod
 		InstID: uint8(instNum + 1),
 	}
 	sample.Static.ID = id
-	song.Instruments[id.InstID] = sample
+	song.Instruments[instNum] = sample
 
 	id, ok := sample.Static.ID.(channel.SampleID)
 	if !ok {

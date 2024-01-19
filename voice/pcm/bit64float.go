@@ -16,7 +16,7 @@ const (
 type Sample64BitFloat struct{}
 
 // Size returns the size of the sample in bytes
-func (s Sample64BitFloat) Size() int {
+func (Sample64BitFloat) Size() int {
 	return cSample64BitFloatBytes
 }
 
@@ -31,4 +31,12 @@ func (s Sample64BitFloat) ReadAt(d *SampleData, ofs int64) (volume.Volume, error
 
 	f := math.Float64frombits(d.byteOrder.Uint64(d.data[ofs:]))
 	return volume.Volume(f), nil
+}
+
+func (Sample64BitFloat) Format(d *SampleData) SampleDataFormat {
+	if d.byteOrder.Uint16([]byte{0x01, 0x02}) == 0x0102 {
+		return SampleDataFormat64BitLEFloat
+	} else {
+		return SampleDataFormat64BitBEFloat
+	}
 }

@@ -15,12 +15,12 @@ const (
 type Sample16BitSigned struct{}
 
 // Volume returns the volume value for the sample
-func (s Sample16BitSigned) volume(v int16) volume.Volume {
+func (Sample16BitSigned) volume(v int16) volume.Volume {
 	return volume.Volume(v) * cSample16BitVolumeCoeff
 }
 
 // Size returns the size of the sample in bytes
-func (s Sample16BitSigned) Size() int {
+func (Sample16BitSigned) Size() int {
 	return cSample16BitBytes
 }
 
@@ -37,16 +37,24 @@ func (s Sample16BitSigned) ReadAt(d *SampleData, ofs int64) (volume.Volume, erro
 	return s.volume(v), nil
 }
 
+func (Sample16BitSigned) Format(d *SampleData) SampleDataFormat {
+	if d.byteOrder.Uint16([]byte{0x01, 0x02}) == 0x0102 {
+		return SampleDataFormat16BitLESigned
+	} else {
+		return SampleDataFormat16BitBESigned
+	}
+}
+
 // Sample16BitUnsigned is an unsigned 16-bit sample
 type Sample16BitUnsigned struct{}
 
 // Volume returns the volume value for the sample
-func (s Sample16BitUnsigned) volume(v uint16) volume.Volume {
+func (Sample16BitUnsigned) volume(v uint16) volume.Volume {
 	return volume.Volume(int16(v-0x8000)) * cSample16BitVolumeCoeff
 }
 
 // Size returns the size of the sample in bytes
-func (s Sample16BitUnsigned) Size() int {
+func (Sample16BitUnsigned) Size() int {
 	return cSample16BitBytes
 }
 
@@ -61,4 +69,12 @@ func (s Sample16BitUnsigned) ReadAt(d *SampleData, ofs int64) (volume.Volume, er
 
 	v := uint16(d.byteOrder.Uint16(d.data[ofs:]))
 	return s.volume(v), nil
+}
+
+func (Sample16BitUnsigned) Format(d *SampleData) SampleDataFormat {
+	if d.byteOrder.Uint16([]byte{0x01, 0x02}) == 0x0102 {
+		return SampleDataFormat16BitLEUnsigned
+	} else {
+		return SampleDataFormat16BitBEUnsigned
+	}
 }

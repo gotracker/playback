@@ -21,9 +21,9 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 	}
 
 	renderRow := render.RowRender{
-		Order: int(m.ticker.current.order),
-		Row:   int(m.ticker.current.row),
-		Tick:  m.ticker.current.tick,
+		Order: int(m.ticker.current.Order),
+		Row:   int(m.ticker.current.Row),
+		Tick:  m.ticker.current.Tick,
 	}
 
 	premix := output.PremixData{
@@ -32,7 +32,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 		Userdata:    &renderRow,
 	}
 
-	if m.ticker.current.tick == 0 {
+	if m.ticker.current.Tick == 0 {
 		// make a copy so it doesn't get stomped
 		renderRow.RowText = m.rowStringer
 	}

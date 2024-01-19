@@ -6,6 +6,7 @@ import (
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/heucuva/optional"
 
 	"github.com/gotracker/playback"
 	xmNote "github.com/gotracker/playback/format/xm/note"
@@ -70,9 +71,10 @@ func (d Data[TPeriod]) GetInstrument(stmem note.Semitone) instrument.ID {
 			st = note.Semitone(nn)
 		}
 	}
+
 	return SampleID{
 		InstID:   d.Instrument,
-		Semitone: st,
+		Semitone: optional.NewValue[note.Semitone](st),
 	}
 }
 

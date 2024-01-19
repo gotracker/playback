@@ -13,7 +13,7 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) DoNo
 		return nil
 	}
 
-	if na.Tick != m.ticker.current.tick {
+	if na.Tick != m.ticker.current.Tick {
 		// not time yet
 		return nil
 	}

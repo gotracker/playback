@@ -1,7 +1,6 @@
 package machine
 
 import (
-	"errors"
 	"fmt"
 	"reflect"
 
@@ -46,13 +45,20 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 		cv:  reflect.TypeOf(cv),
 		cp:  reflect.TypeOf(cp),
 	}
+
+	if _, exists := factoryRegistry[tl]; exists {
+		panic(fmt.Sprintf("attempted to re-register factory for %s", tl.String()))
+	}
+
 	factoryRegistry[tl] = func(songData song.Data, us settings.UserSettings) (MachineTicker, error) {
 		var m machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
 		// we have to use the songData's machine settings
+		sms := songData.GetMachineSettings()
+
 		var ok bool
-		m.ms, ok = songData.GetMachineSettings().(*settings.MachineSettings[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning])
+		m.ms, ok = sms.(*settings.MachineSettings[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning])
 		if !ok {
-			return nil, errors.New("invalid machine settings from songdata")
+			return nil, fmt.Errorf("invalid machine settings from songdata: %T - expected %s", sms, tl.String())
 		}
 
 		m.songData = songData

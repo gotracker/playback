@@ -9,6 +9,7 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/volume"
 
+	"github.com/gotracker/playback/format/common"
 	"github.com/gotracker/playback/format/s3m/channel"
 	"github.com/gotracker/playback/format/s3m/layout"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
@@ -56,6 +57,9 @@ func scrsNoneToInstrument(scrs *s3mfile.SCRSFull, si *s3mfile.SCRSNoneHeader) (*
 			Volume:   s3mVolume.Volume(si.Volume),
 		},
 		SampleRate: frequency.Frequency(si.C2Spd.Lo),
+	}
+	if sample.Static.Volume.IsInvalid() {
+		sample.Static.Volume = s3mVolume.MaxVolume
 	}
 	return &sample, nil
 }
@@ -260,24 +264,32 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 	amigaLimits := (f.Head.Flags&0x0010) != 0 || wasModFile
 
 	s := layout.Song{
-		System:      s3mSystem.S3MSystem,
-		MS:          settings.GetMachineSettings(amigaLimits),
-		Head:        *h,
-		Instruments: make([]*instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], len(f.InstrumentPointers)),
-		OrderList:   make([]index.Pattern, len(f.OrderList)),
+		BaseSong: common.BaseSong[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]{
+			System:       s3mSystem.S3MSystem,
+			MS:           settings.GetMachineSettings(amigaLimits),
+			Name:         h.Name,
+			InitialBPM:   h.InitialTempo,
+			InitialTempo: h.InitialSpeed,
+			GlobalVolume: h.GlobalVolume,
+			MixingVolume: h.MixingVolume,
+			InitialOrder: h.InitialOrder,
+			Instruments:  make([]*instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], len(f.InstrumentPointers)),
+			Patterns:     nil,
+			OrderList:    make([]index.Pattern, len(f.OrderList)),
+		},
 	}
 
 	f.Head.GlobalVolume = min(f.Head.GlobalVolume, s3mfile.Volume(s3mVolume.MaxVolume))
 	if f.Head.GlobalVolume == 0 && f.Head.TrackerVersion < 0x1320 {
-		f.Head.GlobalVolume = s3mfile.Volume(s3mVolume.MaxVolume)
+		s.GlobalVolume = s3mVolume.MaxVolume
 	}
 
 	if f.Head.InitialSpeed == 0 || f.Head.InitialSpeed == 255 {
-		s.Head.InitialSpeed = 6
+		s.InitialTempo = 6
 	}
 
 	if f.Head.InitialTempo < 33 {
-		s.Head.InitialTempo = 125
+		s.InitialBPM = 125
 	}
 
 	signedSamples := f.Head.FileFormatInformation == 1

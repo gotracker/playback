@@ -1,10 +1,7 @@
 package channel
 
 import (
-	"github.com/gotracker/playback/voice/oscillator"
-
 	"github.com/gotracker/playback/memory"
-	oscillatorImpl "github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/tremor"
 )
 
@@ -28,20 +25,10 @@ type Memory struct {
 	panbrello          memory.Value[DataEffect] `usage:"Yxy"`
 	volChanVolumeSlide memory.Value[DataEffect] `usage:"vDxy"`
 
-	tremorMem           tremor.Tremor
-	vibratoOscillator   oscillator.Oscillator
-	tremoloOscillator   oscillator.Oscillator
-	panbrelloOscillator oscillator.Oscillator
-	HighOffset          int
+	tremorMem  tremor.Tremor
+	HighOffset int
 
 	Shared *SharedMemory
-}
-
-// ResetOscillators resets the oscillators to defaults
-func (m *Memory) ResetOscillators() {
-	m.vibratoOscillator = oscillatorImpl.NewImpulseTrackerOscillator(4)
-	m.tremoloOscillator = oscillatorImpl.NewImpulseTrackerOscillator(4)
-	m.panbrelloOscillator = oscillatorImpl.NewImpulseTrackerOscillator(1)
 }
 
 // VolumeSlide gets or sets the most recent non-zero value (or input) for Volume Slide
@@ -140,26 +127,8 @@ func (m *Memory) TremorMem() *tremor.Tremor {
 	return &m.tremorMem
 }
 
-// VibratoOscillator returns the Vibrato oscillator object
-func (m *Memory) VibratoOscillator() oscillator.Oscillator {
-	return m.vibratoOscillator
-}
-
-// TremoloOscillator returns the Tremolo oscillator object
-func (m *Memory) TremoloOscillator() oscillator.Oscillator {
-	return m.tremoloOscillator
-}
-
-// PanbrelloOscillator returns the Panbrello oscillator object
-func (m *Memory) PanbrelloOscillator() oscillator.Oscillator {
-	return m.panbrelloOscillator
-}
-
 // Retrigger runs certain operations when a note is retriggered
 func (m *Memory) Retrigger() {
-	for _, osc := range []oscillator.Oscillator{m.VibratoOscillator(), m.TremoloOscillator(), m.PanbrelloOscillator()} {
-		osc.Reset()
-	}
 }
 
 // StartOrder is called when the first order's row at tick 0 is started

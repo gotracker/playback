@@ -10,12 +10,8 @@ import (
 
 type ticker struct {
 	settings tickerSettings
-	current  struct {
-		tick  int
-		row   index.Row
-		order index.Order
-	}
-	next struct {
+	current  Position
+	next     struct {
 		row   optional.Value[tickerRowBreak]
 		order optional.Value[index.Order]
 	}
@@ -41,9 +37,9 @@ type tickerSettings struct {
 
 func initTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](t *ticker, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], settings tickerSettings) error {
 	t.settings = settings
-	t.current.tick = 0
-	t.current.row = 0
-	t.current.order = 0
+	t.current.Tick = 0
+	t.current.Row = 0
+	t.current.Order = 0
 	t.next.row.Set(tickerRowBreak{
 		row:        settings.InitialRow,
 		breakOrder: false,
@@ -56,19 +52,19 @@ func initTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPan
 	}
 
 	if row, set := nextRow.Get(); set {
-		t.current.row = row
+		t.current.Row = row
 	}
 	if order, set := nextOrder.Get(); set {
-		t.current.order = order
+		t.current.Order = order
 	}
 
 	if t.songLoop.detect == nil {
 		t.songLoop.detect = make(map[index.Order]struct{})
 	}
 
-	t.songLoop.detect[t.current.order] = struct{}{}
+	t.songLoop.detect[t.current.Order] = struct{}{}
 
-	m.us.SetTracingTick(t.current.order, t.current.row, t.current.tick)
+	m.us.SetTracingTick(t.current.Order, t.current.Row, t.current.Tick)
 
 	if err := m.onOrderStart(); err != nil {
 		return err
@@ -82,9 +78,9 @@ func runTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 		return err
 	}
 
-	tick := t.current.tick + 1
-	row := t.current.row
-	order := t.current.order
+	tick := t.current.Tick + 1
+	row := t.current.Row
+	order := t.current.Order
 	rowAdvanced := false
 	orderAdvanced := false
 	done := false
@@ -121,13 +117,13 @@ func runTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 		}
 	}
 
-	traceValueChangeWithComment(m, "tick", t.current.tick, tick, "runTick")
-	traceValueChangeWithComment(m, "row", t.current.row, row, "runTick")
-	traceValueChangeWithComment(m, "order", t.current.order, order, "runTick")
-	t.current.tick = tick
-	t.current.row = row
-	t.current.order = order
-	m.us.SetTracingTick(t.current.order, t.current.row, t.current.tick)
+	traceValueChangeWithComment(m, "tick", t.current.Tick, tick, "runTick")
+	traceValueChangeWithComment(m, "row", t.current.Row, row, "runTick")
+	traceValueChangeWithComment(m, "order", t.current.Order, order, "runTick")
+	t.current.Tick = tick
+	t.current.Row = row
+	t.current.Order = order
+	m.us.SetTracingTick(t.current.Order, t.current.Row, t.current.Tick)
 
 	if !done {
 		o, oset := t.settings.PlayUntilOrder.Get()
@@ -135,12 +131,12 @@ func runTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 		if oset || rset {
 			orderMatch := true
 			if oset {
-				orderMatch = (o == t.current.order)
+				orderMatch = (o == t.current.Order)
 			}
 
 			rowMatch := true
 			if rset {
-				rowMatch = (r == t.current.row)
+				rowMatch = (r == t.current.Row)
 			}
 
 			done = orderMatch && rowMatch
@@ -165,9 +161,9 @@ func runTick[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 }
 
 func advanceRowOrder[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning](t *ticker, m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) (optional.Value[index.Row], optional.Value[index.Order], error) {
-	row := int(t.current.row)
+	row := int(t.current.Row)
 	rowUpdated := false
-	order := int(t.current.order)
+	order := int(t.current.Order)
 	orderUpdated := false
 
 	desiredRow, rowSet := t.next.row.Get()
@@ -233,7 +229,7 @@ orderScan:
 		goto orderScan
 	}
 
-	if orderUpdated && (forceLoopDetect || order != int(t.current.order)) && t.settings.SongLoopCount >= 0 {
+	if orderUpdated && (forceLoopDetect || order != int(t.current.Order)) && t.settings.SongLoopCount >= 0 {
 		if _, found := t.songLoop.detect[index.Order(order)]; found {
 			t.songLoop.current++
 			if t.settings.SongLoopCount >= 0 && t.songLoop.current >= t.settings.SongLoopCount {

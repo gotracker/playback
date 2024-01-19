@@ -113,15 +113,14 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) deco
 	changeNote.Vol.Set(inst.GetDefaultVolume())
 	changeNote.NewNoteAction.Set(inst.GetNewNoteAction())
 
-	switch inst.GetKind() {
-	case instrument.KindPCM:
-		if d, ok := inst.GetData().(*instrument.PCM[TMixingVolume, TVolume, TPanning]); ok {
-			if pan, set := d.Panning.Get(); set {
-				changeNote.Pan.Set(pan)
-			}
+	switch d := inst.GetData().(type) {
+	case *instrument.PCM[TMixingVolume, TVolume, TPanning]:
+		if pan, set := d.Panning.Get(); set {
+			changeNote.Pan.Set(pan)
 		}
-	case instrument.KindOPL2:
-		// TODO
+
+	case *instrument.OPL2:
+		// TODO - is there anything to do?
 	}
 	return nil
 }

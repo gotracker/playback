@@ -10,7 +10,6 @@ import (
 	"github.com/gotracker/playback/frequency"
 	oscillatorImpl "github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/player/machine"
 	"github.com/gotracker/playback/player/machine/settings"
 	"github.com/gotracker/playback/voice/oscillator"
 )
@@ -72,9 +71,4 @@ func tremoloFactory() (oscillator.Oscillator, error) {
 
 func panbrelloFactory() (oscillator.Oscillator, error) {
 	return oscillatorImpl.NewImpulseTrackerOscillator(1), nil
-}
-
-func init() {
-	machine.RegisterMachine(GetMachineSettings[period.Amiga]())
-	machine.RegisterMachine(GetMachineSettings[period.Linear]())
 }
