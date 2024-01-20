@@ -57,7 +57,7 @@ func (StringRow[TPeriod]) decodeChannel(cstr string) (channel.Data[TPeriod], err
 	d.Note = 0
 
 	// note
-	if note == "===" {
+	if note == "===" || note == "== " {
 		d.What |= xmfile.ChannelFlagHasNote
 		d.Note = 97
 	} else if note != "..." {
@@ -113,7 +113,7 @@ func (StringRow[TPeriod]) decodeChannel(cstr string) (channel.Data[TPeriod], err
 
 	// vol
 	if vol != ".." {
-		v, err := strconv.Atoi(vol)
+		v, err := strconv.ParseUint(vol, 16, 8)
 		if err != nil {
 			return d, err
 		}
@@ -133,7 +133,7 @@ func (StringRow[TPeriod]) decodeChannel(cstr string) (channel.Data[TPeriod], err
 		d.What |= xmfile.ChannelFlagHasEffect | xmfile.ChannelFlagHasEffectParameter
 		if e := c - '0'; e <= 9 {
 			d.Effect = channel.Command(e)
-		} else if e := c - 'A'; e < 36 {
+		} else if e := c - 'A' + 10; e < 36 {
 			d.Effect = channel.Command(e)
 		}
 		d.EffectParameter = channel.DataEffect(i)

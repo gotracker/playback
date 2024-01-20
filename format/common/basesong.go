@@ -156,6 +156,9 @@ func (s BaseSong[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetI
 		return nil, note.UnchangedSemitone
 	}
 	idx, st := instID.GetIndexAndSemitone()
+	if idx >= len(s.Instruments) {
+		return nil, st
+	}
 	return s.Instruments[idx], st
 }
 

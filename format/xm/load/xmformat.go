@@ -317,7 +317,7 @@ func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []
 			Patterns:     make([]song.Pattern, len(f.Patterns)),
 			OrderList:    make([]index.Pattern, f.Head.SongLength),
 		},
-		InstrumentNoteMap: make(map[uint8]map[note.Semitone]*instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]),
+		InstrumentNoteMap: make(map[uint8]xmLayout.SemitoneSamples),
 	}
 
 	for i := 0; i < int(f.Head.SongLength); i++ {
@@ -341,18 +341,12 @@ func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []
 		}
 		for i, sts := range noteMap {
 			sample := samples[i]
-			id, ok := sample.Static.ID.(xmChannel.SampleID)
-			if !ok {
-				continue
-			}
-			inm, ok := s.InstrumentNoteMap[id.InstID]
-			if !ok {
-				inm = make(map[note.Semitone]*instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning])
-				s.InstrumentNoteMap[id.InstID] = inm
-			}
+			inm, _ := s.InstrumentNoteMap[uint8(instNum)]
+			idx, _ := sample.Static.ID.GetIndexAndSemitone()
 			for _, st := range sts {
-				inm[st] = samples[i]
+				inm[st] = idx
 			}
+			s.InstrumentNoteMap[uint8(instNum)] = inm
 		}
 	}
 

@@ -17,9 +17,11 @@ import (
 type Song[TPeriod period.Period] struct {
 	common.BaseSong[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
 
-	InstrumentNoteMap map[uint8]map[note.Semitone]*instrument.Instrument[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
+	InstrumentNoteMap map[uint8]SemitoneSamples
 	ChannelSettings   []ChannelSetting
 }
+
+type SemitoneSamples [96]int // semitone -> instrument index
 
 // GetNumChannels returns the number of channels the song has
 func (s Song[TPeriod]) GetNumChannels() int {
@@ -29,6 +31,26 @@ func (s Song[TPeriod]) GetNumChannels() int {
 // GetChannelSettings returns the channel settings at index `channelNum`
 func (s Song[TPeriod]) GetChannelSettings(channelNum index.Channel) song.ChannelSettings {
 	return s.ChannelSettings[channelNum]
+}
+
+// GetInstrument returns the instrument interface indexed by `instNum` (0-based)
+func (s Song[TPeriod]) GetInstrument(instID instrument.ID) (instrument.InstrumentIntf, note.Semitone) {
+	if instID.IsEmpty() {
+		return nil, note.UnchangedSemitone
+	}
+
+	idx, st := instID.GetIndexAndSemitone()
+
+	i := idx
+	if inm, ok := s.InstrumentNoteMap[uint8(idx)]; ok {
+		i = inm[st]
+	}
+
+	if i < 0 || i >= len(s.Instruments) {
+		return nil, st
+	}
+
+	return s.Instruments[i], st
 }
 
 func (s Song[TPeriod]) GetRowRenderStringer(row song.Row, channels int, longFormat bool) render.RowStringer {
