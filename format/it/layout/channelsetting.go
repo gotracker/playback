@@ -1,6 +1,7 @@
 package layout
 
 import (
+	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/format/it/channel"
 	itPanning "github.com/gotracker/playback/format/it/panning"
 	itVolume "github.com/gotracker/playback/format/it/volume"
@@ -59,8 +60,8 @@ func (c ChannelSetting) IsPanEnabled() bool {
 	return c.PanEnabled
 }
 
-func (c ChannelSetting) GetDefaultFilterName() string {
-	return ""
+func (c ChannelSetting) GetDefaultFilterInfo() filter.Info {
+	return filter.Info{}
 }
 
 func (c ChannelSetting) IsDefaultFilterEnabled() bool {

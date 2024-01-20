@@ -13,8 +13,10 @@ const (
 )
 
 var (
+	DefaultS3MVolume = Volume(s3mfile.DefaultVolume)
+
 	// DefaultVolume is the default volume value for most everything in S3M format
-	DefaultVolume = VolumeFromS3M(Volume(s3mfile.DefaultVolume))
+	DefaultVolume = VolumeFromS3M(DefaultS3MVolume)
 )
 
 type Volume s3mfile.Volume
@@ -24,7 +26,7 @@ var (
 	_ types.VolumeDeltaer[Volume] = Volume(0)
 )
 
-const volCoeff = volume.Volume(1) / volume.Volume(64)
+const volCoeff = volume.Volume(1) / volume.Volume(MaxVolume)
 
 func (v Volume) ToVolume() volume.Volume {
 	if v != Volume(s3mfile.EmptyVolume) {
@@ -34,7 +36,7 @@ func (v Volume) ToVolume() volume.Volume {
 }
 
 func (v Volume) IsInvalid() bool {
-	return v > 64 && v != Volume(s3mfile.EmptyVolume)
+	return v > MaxVolume && v != Volume(s3mfile.EmptyVolume)
 }
 
 func (v Volume) IsUseInstrumentVol() bool {
@@ -64,9 +66,9 @@ func VolumeFromS3M(vol Volume) volume.Volume {
 	case vol == Volume(s3mfile.EmptyVolume):
 		v = volume.VolumeUseInstVol
 	case vol >= 63:
-		v = volume.Volume(63.0) / 64.0
+		v = volume.Volume(63.0) / volume.Volume(MaxVolume)
 	case vol < 63:
-		v = volume.Volume(vol) / 64.0
+		v = volume.Volume(vol) / volume.Volume(MaxVolume)
 	default:
 		v = 0.0
 	}
@@ -79,7 +81,7 @@ func VolumeToS3M(v volume.Volume) Volume {
 	case v == volume.VolumeUseInstVol:
 		return Volume(s3mfile.EmptyVolume)
 	default:
-		return Volume(v * 64.0)
+		return Volume(v * volume.Volume(MaxVolume))
 	}
 }
 

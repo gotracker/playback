@@ -64,6 +64,7 @@ func NewSample(data []byte, length int, channels int, format SampleDataFormat) S
 		length:   length,
 		channels: channels,
 	}
+
 	switch format {
 	case SampleDataFormat8BitSigned:
 		return &PCMReader[Sample8BitSigned]{
@@ -227,5 +228,8 @@ func NewSampleFromBase64(channels int, format SampleDataFormat, data string) Sam
 		panic(err)
 	}
 
-	return NewSample(d, len(d), channels, format)
+	sb := getSampleBytes(format)
+	length := len(d) / (sb * channels)
+
+	return NewSample(d, length, channels, format)
 }

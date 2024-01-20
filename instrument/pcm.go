@@ -2,11 +2,11 @@ package instrument
 
 import (
 	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/voice/envelope"
 	"github.com/gotracker/playback/voice/fadeout"
 	"github.com/gotracker/playback/voice/loop"
 	"github.com/gotracker/playback/voice/pcm"
+	"github.com/gotracker/playback/voice/pitchpan"
 	"github.com/gotracker/playback/voice/types"
 	"github.com/heucuva/optional"
 )
@@ -19,18 +19,12 @@ type PCM[TMixingVolume, TVolume types.Volume, TPanning types.Panning] struct {
 	Panning              optional.Value[TPanning]
 	MixingVolume         optional.Value[TMixingVolume]
 	FadeOut              fadeout.Settings
-	PitchPan             PitchPan
+	PitchPan             pitchpan.PitchPan
 	VolEnv               envelope.Envelope[TVolume]
 	VolEnvFinishFadesOut bool
 	PanEnv               envelope.Envelope[TPanning]
 	PitchFiltMode        bool                                    // true = filter, false = pitch
 	PitchFiltEnv         envelope.Envelope[types.PitchFiltValue] // this is either pitch or filter
-}
-
-type PitchPan struct {
-	Enabled    bool
-	Center     note.Semitone
-	Separation float32
 }
 
 func (p PCM[TMixingVolume, TVolume, TPanning]) GetLength() sampling.Pos {

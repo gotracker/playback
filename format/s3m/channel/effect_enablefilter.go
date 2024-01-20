@@ -23,7 +23,7 @@ func (e EnableFilter) Tick(ch index.Channel, m machine.Machine[period.Amiga, s3m
 	}
 
 	x := DataEffect(e) & 0xf
-	return m.SetFilterOnAllChannelsByFilterName("amigalpf", x != 0)
+	return m.SetFilterOnAllChannelsByFilterName("amigalpf", x != 0, nil)
 }
 
 func (e EnableFilter) TraceData() string {

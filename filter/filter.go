@@ -5,6 +5,11 @@ import (
 	"github.com/gotracker/playback/frequency"
 )
 
+type Info struct {
+	Name   string
+	Params any
+}
+
 // Filter is an interface to a filter
 type Filter interface {
 	Filter(volume.Matrix) volume.Matrix

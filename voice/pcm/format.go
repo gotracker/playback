@@ -29,3 +29,28 @@ const (
 )
 
 const SampleDataFormatNative = math.MaxUint8
+
+func getSampleBytes(sdf SampleDataFormat) int {
+	switch sdf {
+	case SampleDataFormat8BitUnsigned:
+		return Sample8BitUnsigned{}.Size()
+
+	case SampleDataFormat8BitSigned:
+		return Sample8BitSigned{}.Size()
+
+	case SampleDataFormat16BitLEUnsigned, SampleDataFormat16BitBEUnsigned:
+		return Sample16BitUnsigned{}.Size()
+
+	case SampleDataFormat16BitLESigned, SampleDataFormat16BitBESigned:
+		return Sample16BitSigned{}.Size()
+
+	case SampleDataFormat32BitLEFloat, SampleDataFormat32BitBEFloat:
+		return Sample32BitFloat{}.Size()
+
+	case SampleDataFormat64BitLEFloat, SampleDataFormat64BitBEFloat:
+		return Sample64BitFloat{}.Size()
+
+	default:
+		return 1
+	}
+}

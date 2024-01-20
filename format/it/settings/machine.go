@@ -1,17 +1,13 @@
 package settings
 
 import (
-	"fmt"
-
-	"github.com/gotracker/playback/filter"
+	itFilter "github.com/gotracker/playback/format/it/filter"
+	itOscillator "github.com/gotracker/playback/format/it/oscillator"
 	itPanning "github.com/gotracker/playback/format/it/panning"
 	itPeriod "github.com/gotracker/playback/format/it/period"
 	itVolume "github.com/gotracker/playback/format/it/volume"
-	"github.com/gotracker/playback/frequency"
-	oscillatorImpl "github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/machine/settings"
-	"github.com/gotracker/playback/voice/oscillator"
 )
 
 func GetMachineSettings[TPeriod period.Period]() *settings.MachineSettings[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning] {
@@ -29,46 +25,21 @@ func GetMachineSettings[TPeriod period.Period]() *settings.MachineSettings[TPeri
 var (
 	amigaMachine = settings.MachineSettings[period.Amiga, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
 		PeriodConverter:     itPeriod.AmigaConverter,
-		GetFilterFactory:    filterFactory,
-		GetVibratoFactory:   vibratoFactory,
-		GetTremoloFactory:   tremoloFactory,
-		GetPanbrelloFactory: panbrelloFactory,
+		GetFilterFactory:    itFilter.Factory,
+		GetVibratoFactory:   itOscillator.VibratoFactory,
+		GetTremoloFactory:   itOscillator.TremoloFactory,
+		GetPanbrelloFactory: itOscillator.PanbrelloFactory,
 		VoiceFactory:        amigaVoiceFactory,
 		OPL2Enabled:         false,
 	}
 
 	linearMachine = settings.MachineSettings[period.Linear, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
 		PeriodConverter:     itPeriod.LinearConverter,
-		GetFilterFactory:    filterFactory,
-		GetVibratoFactory:   vibratoFactory,
-		GetTremoloFactory:   tremoloFactory,
-		GetPanbrelloFactory: panbrelloFactory,
+		GetFilterFactory:    itFilter.Factory,
+		GetVibratoFactory:   itOscillator.VibratoFactory,
+		GetTremoloFactory:   itOscillator.TremoloFactory,
+		GetPanbrelloFactory: itOscillator.PanbrelloFactory,
 		VoiceFactory:        linearVoiceFactory,
 		OPL2Enabled:         false,
 	}
 )
-
-func filterFactory(name string) (settings.FilterFactoryFunc, error) {
-	switch name {
-	case "amigalpf":
-		return func(instrument frequency.Frequency) (filter.Filter, error) {
-			lpf := filter.NewAmigaLPF(instrument)
-			return lpf, nil
-		}, nil
-
-	default:
-		return nil, fmt.Errorf("unsupported filter: %q", name)
-	}
-}
-
-func vibratoFactory() (oscillator.Oscillator, error) {
-	return oscillatorImpl.NewImpulseTrackerOscillator(4), nil
-}
-
-func tremoloFactory() (oscillator.Oscillator, error) {
-	return oscillatorImpl.NewImpulseTrackerOscillator(4), nil
-}
-
-func panbrelloFactory() (oscillator.Oscillator, error) {
-	return oscillatorImpl.NewImpulseTrackerOscillator(1), nil
-}

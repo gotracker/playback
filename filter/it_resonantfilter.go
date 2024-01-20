@@ -33,6 +33,13 @@ type ResonantFilter struct {
 	playbackRate frequency.Frequency
 }
 
+type ITResonantFilterParams struct {
+	Cutoff              uint8
+	Resonance           uint8
+	ExtendedFilterRange bool
+	Highpass            bool
+}
+
 // NewITResonantFilter creates a new resonant filter with the provided cutoff and resonance values
 func NewITResonantFilter(cutoff uint8, resonance uint8, extendedFilterRange bool, highpass bool) Filter {
 	rf := ResonantFilter{

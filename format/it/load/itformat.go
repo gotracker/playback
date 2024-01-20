@@ -127,7 +127,7 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 			OrderList:    make([]index.Pattern, int(f.Head.OrderCount)),
 		},
 		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument[TPeriod]),
-		FilterPlugins:     make(map[int]filter.Factory),
+		FilterPlugins:     make(map[int]filter.Info),
 	}
 
 	for _, block := range f.Blocks {
@@ -220,7 +220,7 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 	return songData, nil
 }
 
-func decodeFilter(f *itblock.FX) (filter.Factory, error) {
+func decodeFilter(f *itblock.FX) (filter.Info, error) {
 	lib := f.LibraryName.String()
 	name := f.UserPluginName.String()
 	switch {
@@ -228,11 +228,16 @@ func decodeFilter(f *itblock.FX) (filter.Factory, error) {
 		r := bytes.NewReader(f.Data)
 		e := filter.EchoFilterFactory{}
 		if err := binary.Read(r, binary.LittleEndian, &e); err != nil {
-			return nil, err
+			return filter.Info{}, err
 		}
-		return e.Factory(), nil
+		echo := filter.Info{
+			Name:   "echo",
+			Params: e.EchoFilterSettings,
+		}
+		return echo, nil
+
 	default:
-		return nil, fmt.Errorf("unhandled fx lib[%s] name[%s]", lib, name)
+		return filter.Info{}, fmt.Errorf("unhandled fx lib[%s] name[%s]", lib, name)
 	}
 }
 

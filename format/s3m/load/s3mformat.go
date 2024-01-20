@@ -362,11 +362,10 @@ func convertS3MFileToSong(f *s3mfile.File, getPatternLen func(patNum int) uint8,
 			Memory: channel.Memory{
 				Shared: &sharedMem,
 			},
-			DefaultFilterName: "",
 		}
 
 		if sbFilterEnable {
-			cs.DefaultFilterName = "amigalpf"
+			cs.DefaultFilter.Name = "amigalpf"
 		}
 
 		pf := f.Panning[chNum]

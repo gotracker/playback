@@ -3,6 +3,7 @@ package song
 import (
 	"errors"
 
+	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/voice/vol0optimization"
 )
@@ -13,7 +14,7 @@ type ChannelSettings interface {
 	GetOutputChannelNum() int
 	GetMemory() ChannelMemory
 	IsPanEnabled() bool
-	GetDefaultFilterName() string
+	GetDefaultFilterInfo() filter.Info
 	IsDefaultFilterEnabled() bool
 	GetVol0OptimizationSettings() vol0optimization.Vol0OptimizationSettings
 	GetOPLChannel() index.OPLChannel

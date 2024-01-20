@@ -68,7 +68,7 @@ type Machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	SetSampleVolume(v volume.Volume) error
 	SetOrder(o index.Order) error
 	SetRow(r index.Row, breakOrder bool) error
-	SetFilterOnAllChannelsByFilterName(name string, enabled bool) error
+	SetFilterOnAllChannelsByFilterName(name string, enabled bool, params any) error
 	GetPosition() Position
 
 	// Single Row

@@ -79,13 +79,13 @@ func xmInstrumentToInstrument[TPeriod period.Period](inst *xmfile.InstrumentHead
 				Name:               inst.GetName(),
 				Volume:             v,
 				RelativeNoteNumber: si.RelativeNoteNumber,
-				AutoVibrato: autovibrato.AutoVibratoSettings[TPeriod]{
+				AutoVibrato: autovibrato.AutoVibratoConfig[TPeriod]{
 					Enabled:           (inst.VibratoDepth != 0 && inst.VibratoRate != 0),
 					Sweep:             int(inst.VibratoSweep),
 					WaveformSelection: xmAutoVibratoWSToProtrackerWS(inst.VibratoType),
 					Depth:             float32(inst.VibratoDepth),
 					Rate:              int(inst.VibratoRate),
-					Factory:           oscillator.NewProtrackerOscillator,
+					FactoryName:       "vibrato",
 				},
 			},
 			SampleRate: frequency.Frequency(0), // uses si.Finetune, below
@@ -343,10 +343,18 @@ func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []
 			sample := samples[i]
 			inm, _ := s.InstrumentNoteMap[uint8(instNum)]
 			idx, _ := sample.Static.ID.GetIndexAndSemitone()
+
+			var remapped bool
 			for _, st := range sts {
 				inm[st] = idx
+				if idx != instNum {
+					remapped = true
+				}
 			}
-			s.InstrumentNoteMap[uint8(instNum)] = inm
+			// only add it back to the map if there's a remapping
+			if remapped {
+				s.InstrumentNoteMap[uint8(instNum)] = inm
+			}
 		}
 	}
 

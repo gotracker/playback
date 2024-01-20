@@ -2,6 +2,7 @@ package layout
 
 import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
+	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/format/s3m/channel"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
@@ -12,15 +13,15 @@ import (
 
 // ChannelSetting is settings specific to a single channel
 type ChannelSetting struct {
-	Enabled           bool
-	Muted             bool
-	OutputChannelNum  int
-	Category          s3mfile.ChannelCategory
-	InitialVolume     s3mVolume.Volume
-	PanEnabled        bool
-	InitialPanning    s3mPanning.Panning
-	Memory            channel.Memory
-	DefaultFilterName string
+	Enabled          bool
+	Muted            bool
+	OutputChannelNum int
+	Category         s3mfile.ChannelCategory
+	InitialVolume    s3mVolume.Volume
+	PanEnabled       bool
+	InitialPanning   s3mPanning.Panning
+	Memory           channel.Memory
+	DefaultFilter    filter.Info
 }
 
 var _ song.ChannelSettings = (*ChannelSetting)(nil)
@@ -60,12 +61,12 @@ func (c ChannelSetting) IsPanEnabled() bool {
 	return c.PanEnabled
 }
 
-func (c ChannelSetting) GetDefaultFilterName() string {
-	return c.DefaultFilterName
+func (c ChannelSetting) GetDefaultFilterInfo() filter.Info {
+	return c.DefaultFilter
 }
 
 func (c ChannelSetting) IsDefaultFilterEnabled() bool {
-	return len(c.DefaultFilterName) > 0
+	return len(c.DefaultFilter.Name) > 0
 }
 
 func (c ChannelSetting) GetVol0OptimizationSettings() vol0optimization.Vol0OptimizationSettings {

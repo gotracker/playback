@@ -24,8 +24,8 @@ type InstrumentIntf interface {
 	GetSemitoneShift() int8
 	GetNewNoteAction() note.Action
 	GetData() Data
-	GetFilterFactory() filter.Factory
-	GetPluginFilterFactory() filter.Factory
+	GetVoiceFilterInfo() filter.Info
+	GetPluginFilterInfo() filter.Info
 	IsReleaseNote(n note.Note) bool
 	IsStopNote(n note.Note) bool
 	GetDefaultVolumeGeneric() volume.Volume
@@ -41,11 +41,11 @@ type StaticValues[TPeriod types.Period, TMixingVolume, TVolume types.Volume, TPa
 	MixingVolume       optional.Value[TMixingVolume]
 	Panning            optional.Value[TPanning]
 	RelativeNoteNumber int8
-	AutoVibrato        autovibrato.AutoVibratoSettings[TPeriod]
+	AutoVibrato        autovibrato.AutoVibratoConfig[TPeriod]
 	NewNoteAction      note.Action
 	Finetune           note.Finetune
-	FilterFactory      filter.Factory
-	PluginFilter       filter.Factory
+	VoiceFilter        filter.Info
+	PluginFilter       filter.Info
 }
 
 // Instrument is the mildly-decoded instrument/sample header
@@ -120,13 +120,13 @@ func (inst Instrument[TPeriod, TMixingVolume, TVolume, TPanning]) GetData() Data
 	return inst.Inst
 }
 
-// GetFilterFactory returns the factory for the channel filter
-func (inst Instrument[TPeriod, TMixingVolume, TVolume, TPanning]) GetFilterFactory() filter.Factory {
-	return inst.Static.FilterFactory
+// GetVoiceFilterInfo returns the factory for the channel filter
+func (inst Instrument[TPeriod, TMixingVolume, TVolume, TPanning]) GetVoiceFilterInfo() filter.Info {
+	return inst.Static.VoiceFilter
 }
 
-// GetPluginFilterFactory returns the factory for the channel plugin filter
-func (inst Instrument[TPeriod, TMixingVolume, TVolume, TPanning]) GetPluginFilterFactory() filter.Factory {
+// GetPluginFilterInfo returns the factory for the channel plugin filter
+func (inst Instrument[TPeriod, TMixingVolume, TVolume, TPanning]) GetPluginFilterInfo() filter.Info {
 	return inst.Static.PluginFilter
 }
 

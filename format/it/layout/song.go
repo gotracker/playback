@@ -19,7 +19,7 @@ type Song[TPeriod period.Period] struct {
 
 	InstrumentNoteMap map[uint8]map[note.Semitone]NoteInstrument[TPeriod]
 	ChannelSettings   []ChannelSetting
-	FilterPlugins     map[int]filter.Factory
+	FilterPlugins     map[int]filter.Info
 }
 
 // GetNumChannels returns the number of channels the song has

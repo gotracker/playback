@@ -18,7 +18,7 @@ type FilterFactoryFunc func(instrument frequency.Frequency) (filter.Filter, erro
 
 type MachineSettings[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] struct {
 	PeriodConverter     song.PeriodCalculator[TPeriod]
-	GetFilterFactory    func(name string) (FilterFactoryFunc, error)
+	GetFilterFactory    func(name string, instrumentRate frequency.Frequency, params any) (filter.Filter, error)
 	GetVibratoFactory   func() (oscillator.Oscillator, error)
 	GetTremoloFactory   func() (oscillator.Oscillator, error)
 	GetPanbrelloFactory func() (oscillator.Oscillator, error)

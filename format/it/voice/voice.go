@@ -7,12 +7,15 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/filter"
+	itFilter "github.com/gotracker/playback/format/it/filter"
+	itOscillator "github.com/gotracker/playback/format/it/oscillator"
 	itPanning "github.com/gotracker/playback/format/it/panning"
 	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice"
+	"github.com/gotracker/playback/voice/autovibrato"
 	"github.com/gotracker/playback/voice/component"
 	"github.com/gotracker/playback/voice/fadeout"
 	"github.com/gotracker/playback/voice/opl2"
@@ -230,13 +233,17 @@ func (v *itVoice[TPeriod]) Setup(inst *instrument.Instrument[TPeriod, itVolume.F
 		return errors.New("instrument is nil")
 	}
 
-	v.autoVibrato.Setup(inst.Static.AutoVibrato)
+	v.autoVibrato.Setup(autovibrato.AutoVibratoSettings[TPeriod]{
+		AutoVibratoConfig: inst.Static.AutoVibrato,
+		Factory:           itOscillator.OscillatorFactory,
+	})
 
-	if factory := inst.GetFilterFactory(); factory != nil {
-		v.voiceFilter = factory(inst.SampleRate)
-	} else {
-		v.voiceFilter = nil
+	info := inst.GetVoiceFilterInfo()
+	f, err := itFilter.Factory(info.Name, inst.SampleRate, info.Params)
+	if err != nil {
+		return fmt.Errorf("filter factory(%q) error: %w", info.Name, err)
 	}
+	v.voiceFilter = f
 
 	v.Reset()
 	return nil

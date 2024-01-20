@@ -39,9 +39,9 @@ func (s Sample16BitSigned) ReadAt(d *SampleData, ofs int64) (volume.Volume, erro
 
 func (Sample16BitSigned) Format(d *SampleData) SampleDataFormat {
 	if d.byteOrder.Uint16([]byte{0x01, 0x02}) == 0x0102 {
-		return SampleDataFormat16BitLESigned
-	} else {
 		return SampleDataFormat16BitBESigned
+	} else {
+		return SampleDataFormat16BitLESigned
 	}
 }
 
@@ -73,8 +73,8 @@ func (s Sample16BitUnsigned) ReadAt(d *SampleData, ofs int64) (volume.Volume, er
 
 func (Sample16BitUnsigned) Format(d *SampleData) SampleDataFormat {
 	if d.byteOrder.Uint16([]byte{0x01, 0x02}) == 0x0102 {
-		return SampleDataFormat16BitLEUnsigned
-	} else {
 		return SampleDataFormat16BitBEUnsigned
+	} else {
+		return SampleDataFormat16BitLEUnsigned
 	}
 }

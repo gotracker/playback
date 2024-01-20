@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gotracker/playback/filter"
+	s3mFilter "github.com/gotracker/playback/format/s3m/filter"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mPeriod "github.com/gotracker/playback/format/s3m/period"
 	s3mSystem "github.com/gotracker/playback/format/s3m/system"
@@ -158,11 +159,12 @@ func (v *s3mVoice) Setup(inst *instrument.Instrument[period.Amiga, s3mVolume.Fin
 		return errors.New("instrument is nil")
 	}
 
-	if factory := inst.GetFilterFactory(); factory != nil {
-		v.voiceFilter = factory(inst.SampleRate)
-	} else {
-		v.voiceFilter = nil
+	info := inst.GetVoiceFilterInfo()
+	f, err := s3mFilter.Factory(info.Name, inst.SampleRate, info.Params)
+	if err != nil {
+		return fmt.Errorf("filter factory(%q) error: %w", info.Name, err)
 	}
+	v.voiceFilter = f
 
 	v.Reset()
 	return nil

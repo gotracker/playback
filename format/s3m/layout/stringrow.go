@@ -25,21 +25,16 @@ func (r StringRow) ForEach(fn func(ch index.Channel, d song.ChannelData[s3mVolum
 	cstrPieces = slices.DeleteFunc(cstrPieces, func(s string) bool {
 		return len(s) == 0 || s == "|"
 	})
+	row := make(Row, len(cstrPieces))
 	for ch, cstr := range cstrPieces {
 		d, err := r.decodeChannel(strings.TrimSuffix(cstr, "|"))
 		if err != nil {
 			return err
 		}
-		cont, err := fn(index.Channel(ch), d)
-		if err != nil {
-			return err
-		}
-
-		if !cont {
-			break
-		}
+		row[ch] = d
 	}
-	return nil
+
+	return row.ForEach(fn)
 }
 
 var channelRegex = regexp.MustCompile(`^(...) +(..) +(..) +(...)$`)

@@ -19,7 +19,7 @@ var (
 	_ types.VolumeDeltaer[FineVolume] = FineVolume(0)
 )
 
-const finevolCoeff = volume.Volume(1) / volume.Volume(0x80)
+const finevolCoeff = volume.Volume(1) / volume.Volume(MaxFineVolume)
 
 func (v FineVolume) ToVolume() volume.Volume {
 	if v != FineVolume(s3mfile.EmptyVolume) {
@@ -29,7 +29,7 @@ func (v FineVolume) ToVolume() volume.Volume {
 }
 
 func (v FineVolume) IsInvalid() bool {
-	return v > 0x7f && v != FineVolume(s3mfile.EmptyVolume)
+	return v > MaxFineVolume && v != FineVolume(s3mfile.EmptyVolume)
 }
 
 func (v FineVolume) IsUseInstrumentVol() bool {

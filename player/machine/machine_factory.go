@@ -127,13 +127,8 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 			rc.OutputFilter = nil
 
 			if cs.IsDefaultFilterEnabled() {
-				name := cs.GetDefaultFilterName()
-				filtFactory, err := ms.GetFilterFactory(name)
-				if err != nil {
-					return nil, err
-				}
-
-				filt, err := filtFactory(sys.GetCommonRate())
+				info := cs.GetDefaultFilterInfo()
+				filt, err := ms.GetFilterFactory(info.Name, sys.GetCommonRate(), info.Params)
 				if err != nil {
 					return nil, err
 				}

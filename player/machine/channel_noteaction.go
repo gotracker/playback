@@ -109,10 +109,11 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) doSe
 	if inst != nil {
 		if prevInst != inst {
 			rc := &m.actualOutputs[ch]
-			if factory := inst.GetPluginFilterFactory(); factory != nil {
-				rc.PluginFilter = factory(inst.SampleRate)
-			} else {
-				rc.PluginFilter = nil
+			info := inst.GetPluginFilterInfo()
+			var err error
+			rc.PluginFilter, err = m.ms.GetFilterFactory(info.Name, inst.SampleRate, info.Params)
+			if err != nil {
+				return err
 			}
 
 			if err := c.cv.Setup(inst); err != nil {

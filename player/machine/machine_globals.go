@@ -141,18 +141,16 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetR
 	return nil
 }
 
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetFilterOnAllChannelsByFilterName(name string, enabled bool) error {
-	filtFactory, err := m.ms.GetFilterFactory(name)
-	if err != nil {
-		return err
-	}
-
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetFilterOnAllChannelsByFilterName(name string, enabled bool, params any) error {
 	cr := m.songData.GetSystem().GetCommonRate()
-
 	return m.songData.ForEachChannel(true, func(ch index.Channel) (bool, error) {
 		c := &m.channels[ch]
 		if enabled {
-			filt, err := filtFactory(cr)
+			filt, err := m.ms.GetFilterFactory(name, cr, params)
+			if err != nil {
+				return false, err
+			}
+
 			if err != nil {
 				return false, err
 			}

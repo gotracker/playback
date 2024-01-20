@@ -17,8 +17,8 @@ import (
 	"github.com/gotracker/playback/voice/envelope"
 	"github.com/gotracker/playback/voice/fadeout"
 	"github.com/gotracker/playback/voice/loop"
-	"github.com/gotracker/playback/voice/oscillator"
 	"github.com/gotracker/playback/voice/pcm"
+	"github.com/gotracker/playback/voice/pitchpan"
 	"github.com/gotracker/playback/voice/types"
 	"github.com/heucuva/optional"
 
@@ -140,7 +140,7 @@ func convertITInstrumentOldToInstrument[TPeriod period.Period](inst *itfile.IMPI
 	return outInsts, nil
 }
 
-func convertITInstrumentToInstrument[TPeriod period.Period](inst *itfile.IMPIInstrument, pc period.PeriodConverter[TPeriod], sampData []itfile.FullSample, convSettings convertITInstrumentSettings, pluginFilters map[int]filter.Factory, features []feature.Feature) (map[int]*convInst[TPeriod], error) {
+func convertITInstrumentToInstrument[TPeriod period.Period](inst *itfile.IMPIInstrument, pc period.PeriodConverter[TPeriod], sampData []itfile.FullSample, convSettings convertITInstrumentSettings, pluginFilters map[int]filter.Info, features []feature.Feature) (map[int]*convInst[TPeriod], error) {
 	outInsts := make(map[int]*convInst[TPeriod])
 
 	if err := buildNoteSampleKeyboard(outInsts, inst.NoteSampleKeyboard[:]); err != nil {
@@ -148,18 +148,22 @@ func convertITInstrumentToInstrument[TPeriod period.Period](inst *itfile.IMPIIns
 	}
 
 	var (
-		channelFilterFactory filter.Factory
-		pluginFilterFactory  filter.Factory
+		voiceFilter  filter.Info
+		pluginFilter filter.Info
 	)
 	if inst.InitialFilterResonance != 0 {
-		channelFilterFactory = func(instrument frequency.Frequency) filter.Filter {
-			return filter.NewITResonantFilter(inst.InitialFilterCutoff, inst.InitialFilterResonance, convSettings.extendedFilterRange, convSettings.useHighPassFilter)
+		voiceFilter.Name = "itresonant"
+		voiceFilter.Params = filter.ITResonantFilterParams{
+			Cutoff:              inst.InitialFilterCutoff,
+			Resonance:           inst.InitialFilterResonance,
+			ExtendedFilterRange: convSettings.extendedFilterRange,
+			Highpass:            convSettings.useHighPassFilter,
 		}
 	}
 
 	if inst.MidiChannel >= 0x81 {
-		if pf, ok := pluginFilters[int(inst.MidiChannel)-0x81]; ok && pf != nil {
-			pluginFilterFactory = pf
+		if pf, ok := pluginFilters[int(inst.MidiChannel)-0x81]; ok {
+			pluginFilter = pf
 		}
 	}
 
@@ -169,7 +173,7 @@ func convertITInstrumentToInstrument[TPeriod period.Period](inst *itfile.IMPIIns
 				Mode:   fadeout.ModeAlwaysActive,
 				Amount: volume.Volume(inst.Fadeout) / 1024,
 			},
-			PitchPan: instrument.PitchPan{
+			PitchPan: pitchpan.PitchPan{
 				Enabled:    inst.PitchPanSeparation != 0,
 				Center:     note.Semitone(inst.PitchPanCenter),
 				Separation: float32(inst.PitchPanSeparation) / 8,
@@ -178,9 +182,9 @@ func convertITInstrumentToInstrument[TPeriod period.Period](inst *itfile.IMPIIns
 
 		ii := instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
 			Static: instrument.StaticValues[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]{
-				PC:            pc,
-				FilterFactory: channelFilterFactory,
-				PluginFilter:  pluginFilterFactory,
+				PC:           pc,
+				VoiceFilter:  voiceFilter,
+				PluginFilter: pluginFilter,
 			},
 			Inst: &id,
 		}
@@ -465,15 +469,13 @@ func addSampleInfoToConvertedInstrument[TPeriod period.Period](ii *instrument.In
 	ii.Static.Filename = si.Header.GetFilename()
 	ii.Static.Name = si.Header.GetName()
 	ii.SampleRate = frequency.Frequency(si.Header.C5Speed)
-	ii.Static.AutoVibrato = autovibrato.AutoVibratoSettings[TPeriod]{
+	ii.Static.AutoVibrato = autovibrato.AutoVibratoConfig[TPeriod]{
 		Enabled:           (si.Header.VibratoDepth != 0 && si.Header.VibratoSpeed != 0 && si.Header.VibratoSweep != 0),
 		Sweep:             255,
 		WaveformSelection: itAutoVibratoWSToProtrackerWS(si.Header.VibratoType),
 		Depth:             float32(si.Header.VibratoDepth),
 		Rate:              int(si.Header.VibratoSpeed),
-		Factory: func() oscillator.Oscillator {
-			return oscillatorImpl.NewImpulseTrackerOscillator(1)
-		},
+		FactoryName:       "autovibrato",
 	}
 	ii.Static.Volume = itVolume.Volume(si.Header.Volume)
 
