@@ -129,7 +129,7 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) deco
 		}
 
 	case *instrument.OPL2:
-		// TODO - is there anything to do?
+		// TODO - is there anything to actually do here?
 	}
 	return nil
 }

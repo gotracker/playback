@@ -214,5 +214,5 @@ func (o *OPL2[TPeriod, TMixingVolume, TVolume]) freqToFnumBlock(freq float64) (u
 }
 
 func (o OPL2[TPeriod, TMixingVolume, TVolume]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
-	// TODO
+	// TODO - add state dumper
 }

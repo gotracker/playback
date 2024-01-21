@@ -88,7 +88,7 @@ func (e *baseEnvelope[TIn, TOut]) SetEnvelopePosition(pos int) (voice.Callback, 
 	e.keyed.active = true
 	e.keyed.done = false
 	e.stateReset()
-	// TODO: this is gross, but currently the most optimal way to find the correct position
+	// XXX: this is gross, but currently the most optimal way to find the correct position
 	for i := 0; i < pos; i++ {
 		if doneCB := e.Advance(); doneCB != nil {
 			return doneCB, nil

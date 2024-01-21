@@ -236,7 +236,7 @@ func soundControlEffect[TPeriod period.Period](data Data[TPeriod]) EffectIT {
 	case 0x0: // Surround Off
 	case 0x1: // Surround On
 		// only S91 is supported directly by IT
-		return nil // TODO: SurroundOn
+		return SurroundOn(data.EffectParameter)
 	case 0x8: // Reverb Off
 	case 0x9: // Reverb On
 	case 0xA: // Center Surround

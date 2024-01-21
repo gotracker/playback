@@ -18,7 +18,7 @@ func (e SurroundOn) String() string {
 }
 
 func (e SurroundOn) RowStart(ch index.Channel, m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]) error {
-	// TODO: support for center rear panning
+	// TODO: support for surround function
 	return nil
 }
 

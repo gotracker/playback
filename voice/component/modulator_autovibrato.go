@@ -39,18 +39,17 @@ func (f AutoVibratoModulator[TPeriod]) Clone() AutoVibratoModulator[TPeriod] {
 
 func (f *AutoVibratoModulator[TPeriod]) Reset() error {
 	f.keyed.age = 0
-	f.autoVibrato = f.settings.Generate(f.settings.Factory)
+	var err error
+	f.autoVibrato, err = f.settings.Generate(f.settings.Factory)
+	if err != nil {
+		return err
+	}
 	return f.ResetAutoVibrato()
 }
 
 // SetEnabled sets the status of the AutoVibrato enablement flag
 func (f *AutoVibratoModulator[TPeriod]) SetEnabled(enabled bool) {
 	f.unkeyed.enabled = enabled
-}
-
-// ConfigureAutoVibrato sets the AutoVibrato oscillator settings
-func (f *AutoVibratoModulator[TPeriod]) ConfigureAutoVibrato() {
-	f.autoVibrato = f.settings.Generate(f.settings.Factory)
 }
 
 // ResetAutoVibrato resets the current AutoVibrato

@@ -18,17 +18,16 @@ type AutoVibratoConfig[TPeriod types.Period] struct {
 }
 
 // Generate creates an AutoVibrato waveform oscillator and configures it with the inital values
-func (a AutoVibratoConfig[TPeriod]) Generate(factory func(string) (oscillator.Oscillator, error)) oscillator.Oscillator {
+func (a AutoVibratoConfig[TPeriod]) Generate(factory func(string) (oscillator.Oscillator, error)) (oscillator.Oscillator, error) {
 	if factory == nil {
 		return nil
 	}
 
 	o, err := factory(a.FactoryName)
 	if err != nil {
-		// TODO: maybe return an error? maybe panic?
-		return nil
+		return err
 	}
 
 	o.SetWaveform(oscillator.WaveTableSelect(a.WaveformSelection))
-	return o
+	return o, nil
 }
