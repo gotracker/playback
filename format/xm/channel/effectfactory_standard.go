@@ -87,7 +87,7 @@ func specialEffectFactory[TPeriod period.Period](mem *Memory, ce Command, cp Dat
 	case 0x2: // Fine porta down
 		return FinePortaDown[TPeriod](cp)
 	//case 0x3: // Set glissando control
-
+	// TODO: add glissando functionality
 	case 0x4: // Set vibrato control
 		return SetVibratoWaveform[TPeriod](cp)
 	case 0x5: // Set finetune
