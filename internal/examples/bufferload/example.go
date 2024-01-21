@@ -76,20 +76,10 @@ func ExamplePlayBufferToStdout() {
 		panic(err)
 	}
 
-	// Now that we have a player allocated for the format, we need to tell it the minimal configuration
-	// for the stream of data we are wanting to produce - namely, the sampling rate and the number of
-	// channels. These two parameters are fundamental to a huge number of operations, so they must be
-	// set outside of the configuration process you will see below.
-	out := sampler.NewSampler(sampleRate, channels)
-	if out == nil {
-		panic(errors.New("could not create sampler"))
-	}
-
-	// The player's nearly ready to start playing! Now that the player is configured, we can allocate
-	// a channel is filled with bundles of pre-mix data (i.e.: data which is ready to be converted into
-	// the final, mixed version). We want to use a buffered channel with a bit of room in it. It doesn't
-	// have to be huge, but the more space you supply, the more likely the player will not underflow the
-	// channel.
+	// Now that the player is configured, we can allocate a channel is filled with bundles of
+	// pre-mix data (i.e.: data which is ready to be converted into the final, mixed version).
+	// We want to use a buffered channel with a bit of room in it. It doesn't have to be huge,
+	// but the more space you supply, the more likely the player will not underflow the channel.
 	const premixChannelSize = 8
 	premixDataChannel := make(chan *output.PremixData, premixChannelSize)
 
@@ -99,6 +89,21 @@ func ExamplePlayBufferToStdout() {
 	// but in this case, when the function ends, the channel deferred close will cause the goroutine
 	// to end.
 	defer close(premixDataChannel)
+
+	// Now that we have a player allocated for the format, we need to tell it the minimal configuration
+	// for the stream of data we are wanting to produce - namely, the sampling rate and the number of
+	// channels. These first two parameters are fundamental to a huge number of operations, so they must
+	// be set outside of the configuration process you will see below. The third parameter provides a
+	// way for the calling application (our example) to get the generated output data in the form of
+	// pre-mixed packets. These packets can be further mixed into audio streams for use with sound
+	// devices and files.
+	out := sampler.NewSampler(sampleRate, channels, func(premix *output.PremixData) {
+		// put our premixed data into the premixDataChannel we built earlier.
+		premixDataChannel <- premix
+	})
+	if out == nil {
+		panic(errors.New("could not create sampler"))
+	}
 
 	// Our desire is to output a specific format of PCM audio data to the standard output device, so
 	// we need to mix and convert the pre-mix data into that format. This mixer will be able to do
@@ -128,10 +133,10 @@ func ExamplePlayBufferToStdout() {
 playerUpdateLoop:
 	for {
 		// Now we need to tell the player to update its internal state - this will generate a single
-		// row tick's worth of pre-mix data and add it to the `premixDataChannel`.
-		// normally, we would want to set up a goroutine for this call to run in and
-		premix, err := player.Generate(out)
-		if err != nil {
+		// row tick's worth of pre-mix data and call our callback function specified in the Sampler
+		// stage we specified earlier. Normally, we would want to set up a goroutine for this call to
+		// run in, but in this example, we're fine to do a simple loop.
+		if err := player.Tick(out); err != nil {
 			// In the event we finish our song, we will receive a specific error message informing us
 			// we can quit.
 			if errors.Is(err, song.ErrStopSong) {
@@ -140,8 +145,6 @@ playerUpdateLoop:
 			// If we get here, then we don't know what the error is...
 			panic(err)
 		}
-
-		premixDataChannel <- premix
 	}
 
 	// We're done!

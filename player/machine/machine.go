@@ -12,7 +12,6 @@ import (
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
-	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/machine/instruction"
 	"github.com/gotracker/playback/player/machine/settings"
@@ -46,8 +45,7 @@ type MachineInfo interface {
 type MachineTicker interface {
 	MachineInfo
 
-	Generate(s *sampler.Sampler) (*output.PremixData, error)
-	Tick() error
+	Tick(s *sampler.Sampler) error
 }
 
 type Machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] interface {

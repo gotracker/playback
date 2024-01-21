@@ -1,27 +1,19 @@
 package machine
 
 import (
-	"errors"
-
 	"github.com/gotracker/playback/index"
-	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/player/sampler"
 )
 
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Generate(s *sampler.Sampler) (*output.PremixData, error) {
-	if m.opl2Enabled && m.opl2 == nil && m.ms.OPL2Enabled {
-		if err := m.setupOPL2(s); err != nil {
-			return nil, err
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick(s *sampler.Sampler) error {
+	if s != nil {
+		if m.opl2Enabled && m.opl2 == nil && m.ms.OPL2Enabled {
+			if err := m.setupOPL2(s); err != nil {
+				return err
+			}
 		}
 	}
 
-	tickErr := m.Tick()
-
-	premix, err := m.render(s)
-	return premix, errors.Join(tickErr, err)
-}
-
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick() error {
 	if err := m.songData.ForEachChannel(true, func(ch index.Channel) (bool, error) {
 		c := &m.channels[ch]
 		if err := c.DoNoteAction(ch, m); err != nil {
@@ -38,6 +30,16 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick
 	}
 
 	m.age++
+
+	if s != nil {
+		premix, err := m.render(s)
+		if err != nil {
+			return err
+		}
+		if s.OnGenerate != nil {
+			s.OnGenerate(premix)
+		}
+	}
 	return nil
 }
 
