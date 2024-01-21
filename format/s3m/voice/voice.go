@@ -78,7 +78,7 @@ func New(config voice.VoiceConfig[period.Amiga, s3mVolume.Volume, s3mVolume.Fine
 	return v
 }
 
-func (v *s3mVoice) SetOPL2Chip(chip opl2.Chip) {
+func (v *s3mVoice) SetOPL2Chip(chip *opl2.Chip) {
 	v.opl2Chip = chip
 }
 

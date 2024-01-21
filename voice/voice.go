@@ -41,7 +41,7 @@ type Voice interface {
 }
 
 type VoiceOPL2er interface {
-	SetOPL2Chip(chip opl2.Chip)
+	SetOPL2Chip(chip *opl2.Chip)
 }
 
 type RenderVoice[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] interface {
