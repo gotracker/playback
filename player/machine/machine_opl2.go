@@ -6,8 +6,9 @@ import (
 	"github.com/gotracker/gomixing/mixing"
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/opl2"
 	"github.com/gotracker/playback/player/sampler"
-	"github.com/gotracker/playback/voice/opl2"
+	"github.com/gotracker/playback/voice"
 )
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) setupOPL2(s *sampler.Sampler) error {
@@ -15,7 +16,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) setu
 		return errors.New("sampler is nil")
 	}
 
-	o := opl2.NewOPL2Chip(uint32(s.SampleRate))
+	o := opl2.NewChip(uint32(s.SampleRate), false)
 	o.WriteReg(0x01, 0x20) // enable all waveforms
 	o.WriteReg(0x04, 0x00) // clear timer flags
 	o.WriteReg(0x08, 0x40) // clear CSW and set NOTE-SEL
@@ -24,14 +25,14 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) setu
 
 	for i := range m.actualOutputs {
 		rc := &m.actualOutputs[i]
-		if v := rc.GetVoice(); v != nil {
+		if v, _ := rc.GetVoice().(voice.VoiceOPL2er); v != nil {
 			v.SetOPL2Chip(m.opl2)
 		}
 	}
 
 	for i := range m.virtualOutputs {
 		rc := &m.virtualOutputs[i]
-		if v := rc.GetVoice(); v != nil {
+		if v, _ := rc.GetVoice().(voice.VoiceOPL2er); v != nil {
 			v.SetOPL2Chip(m.opl2)
 		}
 	}

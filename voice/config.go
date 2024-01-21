@@ -1,9 +1,10 @@
 package voice
 
 import (
+	"github.com/gotracker/opl2"
+
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/voice/opl2"
 	"github.com/gotracker/playback/voice/types"
 	"github.com/gotracker/playback/voice/vol0optimization"
 )
@@ -16,7 +17,7 @@ type (
 
 type VoiceConfig[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] struct {
 	PC               period.PeriodConverter[TPeriod]
-	OPLChip          opl2.Chip
+	OPLChip          *opl2.Chip
 	OPLChannel       index.OPLChannel
 	InitialVolume    TVolume
 	InitialMixing    TMixingVolume

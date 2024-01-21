@@ -4,13 +4,14 @@ import (
 	"github.com/gotracker/gomixing/panning"
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/opl2"
+
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/tracing"
-	"github.com/gotracker/playback/voice/opl2"
 	"github.com/gotracker/playback/voice/types"
 )
 
@@ -21,7 +22,6 @@ type Voice interface {
 	// Configuration
 	Reset() error
 	SetPlaybackRate(outputRate frequency.Frequency) error
-	SetOPL2Chip(chip opl2.Chip)
 
 	// Actions
 	Attack()
@@ -38,6 +38,10 @@ type Voice interface {
 	SetMuted(muted bool) error
 	IsMuted() bool
 	GetSampleRate() frequency.Frequency
+}
+
+type VoiceOPL2er interface {
+	SetOPL2Chip(chip opl2.Chip)
 }
 
 type RenderVoice[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] interface {

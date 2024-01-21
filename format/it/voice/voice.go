@@ -18,7 +18,6 @@ import (
 	"github.com/gotracker/playback/voice/autovibrato"
 	"github.com/gotracker/playback/voice/component"
 	"github.com/gotracker/playback/voice/fadeout"
-	"github.com/gotracker/playback/voice/opl2"
 )
 
 type Period interface {
@@ -100,9 +99,6 @@ func New[TPeriod Period](config voice.VoiceConfig[TPeriod, itVolume.FineVolume, 
 	v.vol0Opt.Setup(config.Vol0Optimization)
 
 	return v
-}
-
-func (v *itVoice[TPeriod]) SetOPL2Chip(chip opl2.Chip) {
 }
 
 func (v *itVoice[TPeriod]) doAttack() {

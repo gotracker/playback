@@ -5,13 +5,14 @@ import (
 	"reflect"
 
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/opl2"
+
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/machine/settings"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice"
-	"github.com/gotracker/playback/voice/opl2"
 )
 
 type typeLookup struct {
@@ -135,7 +136,7 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 
 				rc.OutputFilter = filt
 			}
-			rc.GetOPL2Chip = func() opl2.Chip {
+			rc.GetOPL2Chip = func() *opl2.Chip {
 				return m.opl2
 			}
 

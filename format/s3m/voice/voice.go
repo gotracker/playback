@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/gotracker/opl2"
+
 	"github.com/gotracker/playback/filter"
 	s3mFilter "github.com/gotracker/playback/format/s3m/filter"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
@@ -16,12 +18,11 @@ import (
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/component"
-	"github.com/gotracker/playback/voice/opl2"
 )
 
 type s3mVoice struct {
 	inst        *instrument.Instrument[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
-	opl2Chip    opl2.Chip
+	opl2Chip    *opl2.Chip
 	opl2Channel index.OPLChannel
 
 	component.KeyModulator

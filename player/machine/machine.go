@@ -6,6 +6,7 @@ import (
 
 	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/opl2"
 
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/index"
@@ -18,7 +19,6 @@ import (
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/player/sampler"
 	"github.com/gotracker/playback/song"
-	"github.com/gotracker/playback/voice/opl2"
 	"github.com/gotracker/playback/voice/oscillator"
 	"github.com/gotracker/playback/voice/types"
 )
@@ -139,7 +139,7 @@ type machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	songData    song.Data
 	ms          *settings.MachineSettings[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
 	us          settings.UserSettings
-	opl2        opl2.Chip
+	opl2        *opl2.Chip
 	opl2Enabled bool
 
 	rowStringer render.RowStringer

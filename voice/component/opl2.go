@@ -2,13 +2,12 @@ package component
 
 import (
 	"github.com/gotracker/gomixing/volume"
-	opl2Impl "github.com/gotracker/opl2"
+	"github.com/gotracker/opl2"
 
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/tracing"
-	"github.com/gotracker/playback/voice/opl2"
 	"github.com/gotracker/playback/voice/types"
 )
 
@@ -35,7 +34,7 @@ func (o OPL2Registers) Clone() OPL2Registers {
 
 // OPL2 is an OPL2 component
 type OPL2[TPeriod types.Period, TMixingVolume, TVolume types.Volume] struct {
-	chip            opl2.Chip
+	chip            *opl2.Chip
 	channel         int
 	reg             OPL2Registers
 	baseFreq        frequency.Frequency
@@ -45,7 +44,7 @@ type OPL2[TPeriod types.Period, TMixingVolume, TVolume types.Volume] struct {
 }
 
 // Setup sets up the OPL2 component
-func (o *OPL2[TPeriod, TMixingVolume, TVolume]) Setup(chip opl2.Chip, channel int, reg OPL2Registers, pc period.PeriodConverter[TPeriod], baseFreq frequency.Frequency, defaultVolume TVolume) {
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) Setup(chip *opl2.Chip, channel int, reg OPL2Registers, pc period.PeriodConverter[TPeriod], baseFreq frequency.Frequency, defaultVolume TVolume) {
 	o.chip = chip
 	o.channel = channel
 	o.reg = reg
@@ -208,7 +207,7 @@ func (o *OPL2[TPeriod, TMixingVolume, TVolume]) freqToFnumBlock(freq float64) (u
 	} else {
 		block = 0
 	}
-	fnum := uint16(freq * float64(int(1)<<(20-block)) / opl2Impl.OPLRATE)
+	fnum := uint16(freq * float64(int(1)<<(20-block)) / opl2.OPLRATE)
 
 	return fnum, block
 }
