@@ -11,7 +11,6 @@ import (
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
-	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/machine"
@@ -26,7 +25,7 @@ type DataEffect uint8
 type Data struct {
 	What       s3mfile.PatternFlags
 	Note       s3mfile.Note
-	Instrument InstID
+	Instrument uint8
 	Volume     s3mVolume.Volume
 	Command    uint8
 	Info       DataEffect
@@ -48,8 +47,8 @@ func (d Data) HasInstrument() bool {
 }
 
 // GetInstrument returns the instrument for the channel
-func (d Data) GetInstrument(stmem note.Semitone) instrument.ID {
-	return d.Instrument
+func (d Data) GetInstrument() int {
+	return int(d.Instrument)
 }
 
 // HasVolume returns true if there exists a volume on the channel

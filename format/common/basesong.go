@@ -141,21 +141,12 @@ func (s BaseSong[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) NumI
 	return len(s.Instruments)
 }
 
-// IsValidInstrumentID returns true if the instrument exists
-func (s BaseSong[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) IsValidInstrumentID(instNum instrument.ID) bool {
-	if instNum.IsEmpty() {
-		return false
-	}
-	idx, _ := instNum.GetIndexAndSemitone()
-	return idx > 0 && idx <= len(s.Instruments)
-}
-
 // GetInstrument returns the instrument interface indexed by `instNum` (0-based)
-func (s BaseSong[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetInstrument(instID instrument.ID) (instrument.InstrumentIntf, note.Semitone) {
-	if instID.IsEmpty() {
-		return nil, note.UnchangedSemitone
+func (s BaseSong[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetInstrument(instID int, st note.Semitone) (instrument.InstrumentIntf, note.Semitone) {
+	if instID == 0 {
+		return nil, st
 	}
-	idx, st := instID.GetIndexAndSemitone()
+	idx := instID - 1
 	if idx >= len(s.Instruments) {
 		return nil, st
 	}

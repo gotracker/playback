@@ -26,7 +26,8 @@ type s3mVoice struct {
 
 	component.KeyModulator
 
-	voicer component.Voicer[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]
+	stopped bool
+	voicer  component.Voicer[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]
 	component.AmpModulator[s3mVolume.FineVolume, s3mVolume.Volume]
 	component.FreqModulator[period.Amiga]
 	component.PanModulator[s3mPanning.Panning]
@@ -171,6 +172,7 @@ func (v *s3mVoice) Setup(inst *instrument.Instrument[period.Amiga, s3mVolume.Fin
 }
 
 func (v *s3mVoice) Reset() error {
+	v.stopped = false
 	return errors.Join(
 		v.AmpModulator.Reset(),
 		v.FreqModulator.Reset(),
@@ -180,7 +182,7 @@ func (v *s3mVoice) Reset() error {
 }
 
 func (v *s3mVoice) Stop() {
-	v.voicer = nil
+	v.stopped = true
 }
 
 func (v s3mVoice) IsMuted() bool {
@@ -188,7 +190,7 @@ func (v s3mVoice) IsMuted() bool {
 }
 
 func (v s3mVoice) IsDone() bool {
-	if v.voicer == nil {
+	if v.voicer == nil || v.stopped {
 		return true
 	}
 
@@ -221,6 +223,7 @@ func (v *s3mVoice) Clone(bool) voice.Voice {
 		inst:          v.inst,
 		opl2Chip:      v.opl2Chip,
 		opl2Channel:   v.opl2Channel,
+		stopped:       v.stopped,
 		AmpModulator:  v.AmpModulator.Clone(),
 		FreqModulator: v.FreqModulator.Clone(),
 		PanModulator:  v.PanModulator.Clone(),

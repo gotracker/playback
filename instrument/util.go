@@ -4,13 +4,12 @@ import (
 	"fmt"
 
 	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/playback/note"
 )
 
 // ID is an identifier for an instrument/sample that means something to the format
 type ID interface {
 	IsEmpty() bool
-	GetIndexAndSemitone() (int, note.Semitone)
+	GetIndexAndSample() (int, int)
 	fmt.Stringer
 }
 

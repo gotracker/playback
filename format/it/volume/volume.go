@@ -10,7 +10,7 @@ import (
 
 var (
 	MaxItVolume     = itfile.Volume(0x40)
-	MaxItFineVolume = FineVolume(0x7f)
+	MaxItFineVolume = FineVolume(0x80)
 	DefaultItVolume = itfile.DefaultVolume
 
 	// DefaultVolume is the default volume value for most everything in IT format

@@ -129,15 +129,15 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) GetC
 	})
 }
 
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetChannelInstrumentByID(ch index.Channel, i instrument.ID) error {
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) SetChannelInstrumentByID(ch index.Channel, i int) error {
 	return withChannel(m, ch, func(c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
-		var oldID instrument.ID
+		var oldID int
 		if c.target.Inst != nil {
-			oldID = c.target.Inst.GetID()
+			oldID, _ = c.target.Inst.GetID().GetIndexAndSample()
 		}
 
 		traceChannelValueChangeWithComment(m, ch, "target.Inst", oldID, i, "SetChannelInstrumentByID")
-		inst, _ := m.songData.GetInstrument(i)
+		inst, _ := m.songData.GetInstrument(i, c.prev.Semitone.Coalesce(0))
 		var ok bool
 		c.target.Inst, ok = inst.(*instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning])
 		if !ok {

@@ -14,7 +14,7 @@ func FromItNote(in itfile.Note) note.Note {
 	case in.IsNoteCut():
 		return note.StopNote{}
 	case in.IsNoteFade(): // not really invalid, but...
-		return note.InvalidNote{}
+		return note.FadeoutNote{}
 	}
 
 	an := uint8(in)

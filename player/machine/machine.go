@@ -84,7 +84,7 @@ type Machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	SetChannelPeriod(ch index.Channel, p TPeriod) error
 	SetChannelPeriodDelta(ch index.Channel, d period.Delta) error
 	GetChannelInstrument(ch index.Channel) (*instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning], error)
-	SetChannelInstrumentByID(ch index.Channel, i instrument.ID) error
+	SetChannelInstrumentByID(ch index.Channel, i int) error
 	GetChannelVolume(ch index.Channel) (TVolume, error)
 	SetChannelVolume(ch index.Channel, v TVolume) error
 	SetChannelVolumeDelta(ch index.Channel, d types.VolumeDelta) error

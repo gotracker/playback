@@ -101,7 +101,7 @@ func (StringRow) decodeChannel(cstr string) (channel.Data, error) {
 
 		if i > 0 {
 			d.What |= s3mfile.PatternFlagNote
-			d.Instrument = channel.InstID(i)
+			d.Instrument = uint8(i)
 		}
 	}
 

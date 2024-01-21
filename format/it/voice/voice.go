@@ -35,6 +35,7 @@ type itVoice[TPeriod Period] struct {
 
 	component.KeyModulator
 
+	stopped     bool
 	voicer      component.Voicer[TPeriod, itVolume.FineVolume, itVolume.Volume]
 	amp         component.AmpModulator[itVolume.FineVolume, itVolume.Volume]
 	fadeout     component.FadeoutModulator
@@ -251,6 +252,7 @@ func (v *itVoice[TPeriod]) Setup(inst *instrument.Instrument[TPeriod, itVolume.F
 
 func (v *itVoice[TPeriod]) Reset() error {
 	v.KeyModulator.Release()
+	v.stopped = false
 	return errors.Join(
 		v.amp.Reset(),
 		v.fadeout.Reset(),
@@ -268,12 +270,12 @@ func (v *itVoice[TPeriod]) Reset() error {
 }
 
 func (v *itVoice[TPeriod]) Stop() {
-	v.voicer = nil
+	v.stopped = true
 	v.updateFinal()
 }
 
 func (v itVoice[TPeriod]) IsDone() bool {
-	if v.voicer == nil {
+	if v.voicer == nil || v.stopped {
 		return true
 	}
 
@@ -342,6 +344,7 @@ func (v *itVoice[TPeriod]) Clone(background bool) voice.Voice {
 		pitchAndFilterEnvShared: v.pitchAndFilterEnvShared,
 		filterEnvActive:         v.filterEnvActive,
 		fadeoutMode:             v.fadeoutMode,
+		stopped:                 v.stopped,
 		amp:                     v.amp.Clone(),
 		fadeout:                 v.fadeout.Clone(),
 		freq:                    v.freq.Clone(),

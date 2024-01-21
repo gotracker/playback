@@ -30,7 +30,7 @@ func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error)
 			*u = channel.Data{
 				What:       s3mfile.PatternFlags(c & 0x1F),
 				Note:       s3mfile.EmptyNote,
-				Instrument: channel.InstID(sampleNumber),
+				Instrument: sampleNumber,
 				Volume:     s3mVolume.Volume(s3mfile.EmptyVolume),
 				Command:    uint8(0),
 				Info:       channel.DataEffect(0),

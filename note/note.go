@@ -10,6 +10,7 @@ const (
 	SpecialTypeStop
 	SpecialTypeNormal
 	SpecialTypeStopOrRelease
+	SpecialTypeFadeout
 	SpecialTypeInvalid
 )
 
@@ -55,6 +56,16 @@ func (n StopNote) String() string {
 // Type returns the SpecialType enumerator reflecting the type of the note
 func (n StopNote) Type() SpecialType {
 	return SpecialTypeStop
+}
+
+type FadeoutNote baseNote
+
+func (n FadeoutNote) String() string {
+	return "vvv"
+}
+
+func (n FadeoutNote) Type() SpecialType {
+	return SpecialTypeFadeout
 }
 
 // Normal is a standard note, which is a combination of key and octave

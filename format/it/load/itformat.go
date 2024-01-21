@@ -122,11 +122,11 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 			GlobalVolume: h.GlobalVolume,
 			MixingVolume: h.MixingVolume,
 			InitialOrder: h.InitialOrder,
-			Instruments:  make([]*instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], f.Head.InstrumentCount),
+			Instruments:  make([]*instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], 0, f.Head.InstrumentCount),
 			Patterns:     make([]song.Pattern, len(f.Patterns)),
 			OrderList:    make([]index.Pattern, int(f.Head.OrderCount)),
 		},
-		InstrumentNoteMap: make(map[uint8]map[note.Semitone]layout.NoteInstrument[TPeriod]),
+		InstrumentNoteMap: make(map[uint8]layout.SemitoneSamples),
 		FilterPlugins:     make(map[int]filter.Info),
 	}
 
@@ -160,7 +160,7 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 				}
 
 				for _, ci := range instMap {
-					addSampleWithNoteMapToSong(songData, ci.Inst, ci.NR, instNum)
+					addSampleWithNoteMapToSong(songData, instNum, ci.Inst, ci.NR)
 				}
 
 			case *itfile.IMPIInstrument:
@@ -170,7 +170,7 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 				}
 
 				for _, ci := range instMap {
-					addSampleWithNoteMapToSong(songData, ci.Inst, ci.NR, instNum)
+					addSampleWithNoteMapToSong(songData, instNum, ci.Inst, ci.NR)
 				}
 			}
 		}
@@ -246,30 +246,31 @@ type noteRemap struct {
 	Remap note.Semitone
 }
 
-func addSampleWithNoteMapToSong[TPeriod period.Period](song *layout.Song[TPeriod], sample *instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], sts []noteRemap, instNum int) {
+func addSampleWithNoteMapToSong[TPeriod period.Period](song *layout.Song[TPeriod], instNum int, sample *instrument.Instrument[TPeriod, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], sts []noteRemap) {
 	if sample == nil {
 		return
 	}
+
+	idx := len(song.Instruments)
+	song.Instruments = append(song.Instruments, sample)
+
 	id := channel.SampleID{
 		InstID: uint8(instNum + 1),
+		SampID: uint8(idx),
 	}
 	sample.Static.ID = id
-	song.Instruments[instNum] = sample
 
-	id, ok := sample.Static.ID.(channel.SampleID)
-	if !ok {
-		return
-	}
-	inm, ok := song.InstrumentNoteMap[id.InstID]
-	if !ok {
-		inm = make(map[note.Semitone]layout.NoteInstrument[TPeriod])
-		song.InstrumentNoteMap[id.InstID] = inm
-	}
+	inm, _ := song.InstrumentNoteMap[id.InstID]
+	hasRemap := false
 	for _, st := range sts {
-		inm[st.Orig] = layout.NoteInstrument[TPeriod]{
-			NoteRemap: st.Remap,
-			Inst:      sample,
+		if uint8(instNum) != id.SampID || st.Orig != st.Remap {
+			hasRemap = true
+			inm[st.Orig] = layout.NewSemitoneSample(int(id.SampID), st.Remap)
 		}
+	}
+
+	if hasRemap {
+		song.InstrumentNoteMap[id.InstID] = inm
 	}
 }
 

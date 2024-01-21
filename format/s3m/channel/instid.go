@@ -2,8 +2,6 @@ package channel
 
 import (
 	"fmt"
-
-	"github.com/gotracker/playback/note"
 )
 
 // InstID is an instrument ID in S3M world
@@ -14,8 +12,9 @@ func (s InstID) IsEmpty() bool {
 	return s == 0
 }
 
-func (s InstID) GetIndexAndSemitone() (int, note.Semitone) {
-	return int(s) - 1, note.UnchangedSemitone
+func (s InstID) GetIndexAndSample() (int, int) {
+	idx := int(s) - 1
+	return idx, idx
 }
 
 func (s InstID) String() string {

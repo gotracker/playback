@@ -30,6 +30,7 @@ type xmVoice[TPeriod Period] struct {
 
 	component.KeyModulator
 
+	stopped     bool
 	voicer      component.Voicer[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume]
 	amp         component.AmpModulator[xmVolume.XmVolume, xmVolume.XmVolume]
 	fadeout     component.FadeoutModulator
@@ -206,6 +207,7 @@ func (v *xmVoice[TPeriod]) Setup(inst *instrument.Instrument[TPeriod, xmVolume.X
 
 func (v *xmVoice[TPeriod]) Reset() error {
 	v.KeyModulator.Release()
+	v.stopped = false
 	return errors.Join(
 		v.amp.Reset(),
 		v.fadeout.Reset(),
@@ -219,11 +221,11 @@ func (v *xmVoice[TPeriod]) Reset() error {
 }
 
 func (v *xmVoice[TPeriod]) Stop() {
-	v.voicer = nil
+	v.stopped = true
 }
 
 func (v xmVoice[TPeriod]) IsDone() bool {
-	if v.voicer == nil {
+	if v.voicer == nil || v.stopped {
 		return true
 	}
 
@@ -272,6 +274,7 @@ func (v *xmVoice[TPeriod]) Clone(bool) voice.Voice {
 	vv := xmVoice[TPeriod]{
 		inst:        v.inst,
 		fadeoutMode: v.fadeoutMode,
+		stopped:     v.stopped,
 		amp:         v.amp.Clone(),
 		fadeout:     v.fadeout.Clone(),
 		freq:        v.freq.Clone(),

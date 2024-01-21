@@ -342,7 +342,7 @@ func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []
 		for i, sts := range noteMap {
 			sample := samples[i]
 			inm, _ := s.InstrumentNoteMap[uint8(instNum)]
-			idx, _ := sample.Static.ID.GetIndexAndSemitone()
+			idx, _ := sample.Static.ID.GetIndexAndSample()
 
 			var remapped bool
 			for _, st := range sts {

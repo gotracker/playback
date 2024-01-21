@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/gotracker/gomixing/volume"
-	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 )
 
@@ -14,7 +13,7 @@ type ChannelDataIntf interface {
 	GetNote() note.Note
 
 	HasInstrument() bool
-	GetInstrument(note.Semitone) instrument.ID
+	GetInstrument() int
 
 	HasVolume() bool
 	GetVolumeGeneric() volume.Volume

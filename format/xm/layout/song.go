@@ -34,12 +34,12 @@ func (s Song[TPeriod]) GetChannelSettings(channelNum index.Channel) song.Channel
 }
 
 // GetInstrument returns the instrument interface indexed by `instNum` (0-based)
-func (s Song[TPeriod]) GetInstrument(instID instrument.ID) (instrument.InstrumentIntf, note.Semitone) {
-	if instID.IsEmpty() {
+func (s Song[TPeriod]) GetInstrument(instID int, st note.Semitone) (instrument.InstrumentIntf, note.Semitone) {
+	if instID == 0 {
 		return nil, note.UnchangedSemitone
 	}
 
-	idx, st := instID.GetIndexAndSemitone()
+	idx := instID - 1
 
 	i := idx
 	if inm, ok := s.InstrumentNoteMap[uint8(idx)]; ok {

@@ -7,17 +7,30 @@ import (
 	itPanning "github.com/gotracker/playback/format/it/panning"
 	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/song"
 )
 
+type SemitoneSample uint16
+
+func (s SemitoneSample) Split() (int, note.Semitone) {
+	return int(s >> 8), note.Semitone(s & 0xFF)
+}
+
+func NewSemitoneSample(sampIdx int, remap note.Semitone) SemitoneSample {
+	return SemitoneSample(uint16(sampIdx<<8) | uint16(remap))
+}
+
+type SemitoneSamples [120]SemitoneSample // semitone -> sample + semitone remap
+
 // Song is the full definition of the song data of an IT file
 type Song[TPeriod period.Period] struct {
 	common.BaseSong[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]
 
-	InstrumentNoteMap map[uint8]map[note.Semitone]NoteInstrument[TPeriod]
+	InstrumentNoteMap map[uint8]SemitoneSamples
 	ChannelSettings   []ChannelSetting
 	FilterPlugins     map[int]filter.Info
 }
@@ -30,6 +43,27 @@ func (s Song[TPeriod]) GetNumChannels() int {
 // GetChannelSettings returns the channel settings at index `channelNum`
 func (s Song[TPeriod]) GetChannelSettings(channelNum index.Channel) song.ChannelSettings {
 	return s.ChannelSettings[channelNum]
+}
+
+// GetInstrument returns the instrument interface indexed by `instNum` (0-based)
+func (s Song[TPeriod]) GetInstrument(instID int, st note.Semitone) (instrument.InstrumentIntf, note.Semitone) {
+	if instID == 0 {
+		return nil, st
+	}
+
+	idx := instID - 1
+
+	if inm, ok := s.InstrumentNoteMap[uint8(instID)]; ok {
+		if rm := inm[st]; rm != 0 {
+			idx, st = rm.Split()
+		}
+	}
+
+	if idx < 0 || idx >= len(s.Instruments) {
+		return nil, st
+	}
+
+	return s.Instruments[idx], st
 }
 
 func (s Song[TPeriod]) GetRowRenderStringer(row song.Row, channels int, longFormat bool) render.RowStringer {

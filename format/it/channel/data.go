@@ -6,14 +6,12 @@ import (
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
 	"github.com/gotracker/gomixing/volume"
-	"github.com/heucuva/optional"
 
 	"github.com/gotracker/playback"
 	itNote "github.com/gotracker/playback/format/it/note"
 	itPanning "github.com/gotracker/playback/format/it/panning"
 	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/index"
-	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/machine"
@@ -63,18 +61,8 @@ func (d Data[TPeriod]) HasInstrument() bool {
 }
 
 // GetInstrument returns the instrument for the channel
-func (d Data[TPeriod]) GetInstrument(stmem note.Semitone) instrument.ID {
-	st := stmem
-	if d.HasNote() {
-		n := d.GetNote()
-		if nn, ok := n.(note.Normal); ok {
-			st = note.Semitone(nn)
-		}
-	}
-	return SampleID{
-		InstID:   d.Instrument,
-		Semitone: optional.NewValue(st),
-	}
+func (d Data[TPeriod]) GetInstrument() int {
+	return int(d.Instrument)
 }
 
 // HasVolume returns true if there exists a volume on the channel
@@ -127,6 +115,8 @@ func (Data[TPeriod]) getNoteString(n note.Note) string {
 		return "==="
 	case note.SpecialTypeStop:
 		return "^^^"
+	case note.SpecialTypeFadeout:
+		return "vvv"
 	case note.SpecialTypeNormal:
 		return n.String()
 	default:

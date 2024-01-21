@@ -46,17 +46,21 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) deco
 	var inst *instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning]
 	if d.HasInstrument() {
 		// retrigger (new?) instrument with period specified by `st` (0 = previous semitone)
-		i := d.GetInstrument(c.prev.Semitone.Coalesce(st))
+		i := d.GetInstrument()
 
-		ii, _ := m.songData.GetInstrument(i)
+		var ii instrument.InstrumentIntf
+		ii, st = m.songData.GetInstrument(i, c.prev.Semitone.Coalesce(st))
 		inst, _ = ii.(*instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning])
 		wantInstrumentDefaults = inst != nil
 		changeNote.Period.Set(c.prev.Period)
 		changeNote.Inst.Set(inst)
 		wantTriggerNNA = true
-	} else if st != 0 {
+	} else if st != 0 && c.target.Inst != nil {
 		// retrigger same instrument
-		inst = c.target.Inst
+		i, _ := c.target.Inst.GetID().GetIndexAndSample()
+		var ii instrument.InstrumentIntf
+		ii, st = m.songData.GetInstrument(i, st)
+		inst, _ = ii.(*instrument.Instrument[TPeriod, TMixingVolume, TVolume, TPanning])
 		wantInstrumentDefaults = true
 		wantTriggerNNA = true
 	}
@@ -72,6 +76,11 @@ func (c *channel[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) deco
 	}
 
 	if n != nil {
+		switch n.(type) {
+		case note.Normal:
+			// perform remap
+			n = note.Normal(st)
+		}
 		if p := m.ConvertToPeriod(n); !p.IsInvalid() {
 			changeNote.Period.Set(p)
 		}

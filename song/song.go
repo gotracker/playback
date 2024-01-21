@@ -29,8 +29,7 @@ type Data interface {
 	GetNumChannels() int
 	GetChannelSettings(index.Channel) ChannelSettings
 	NumInstruments() int
-	IsValidInstrumentID(instrument.ID) bool
-	GetInstrument(instrument.ID) (instrument.InstrumentIntf, note.Semitone)
+	GetInstrument(int, note.Semitone) (instrument.InstrumentIntf, note.Semitone)
 	GetName() string
 	GetPatternByOrder(index.Order) (Pattern, error)
 	GetPattern(index.Pattern) (Pattern, error)
