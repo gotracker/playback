@@ -34,8 +34,15 @@ func NewProtrackerOscillator() oscillator.Oscillator {
 	return &protrackerOscillator{}
 }
 
+func (o protrackerOscillator) Clone() oscillator.Oscillator {
+	return &protrackerOscillator{
+		Table: o.Table,
+		Pos:   0,
+	}
+}
+
 // GetWave returns the wave amplitude for the current position
-func (o *protrackerOscillator) GetWave(depth float32) float32 {
+func (o protrackerOscillator) GetWave(depth float32) float32 {
 	var vib float32
 	switch o.Table {
 	case WaveTableSelectSineRetrigger, WaveTableSelectSineContinue:
@@ -74,14 +81,22 @@ func (o *protrackerOscillator) SetWaveform(table oscillator.WaveTableSelect) {
 	o.Table = table
 }
 
-// Reset resets the position of the oscillator
-func (o *protrackerOscillator) Reset(hard ...bool) {
-	hardReset := false
-	if len(hard) > 0 {
-		hardReset = hard[0]
-	}
+func (o protrackerOscillator) GetWaveform() oscillator.WaveTableSelect {
+	return o.Table
+}
 
-	doReset := hardReset
+// Reset resets the position of the oscillator
+func (o *protrackerOscillator) Reset() {
+	o.reset(false)
+}
+
+// HardReset resets the position of the oscillator regardless of how the wavetable operates
+func (o *protrackerOscillator) HardReset() {
+	o.reset(true)
+}
+
+func (o *protrackerOscillator) reset(hard bool) {
+	doReset := hard
 	switch o.Table {
 	case WaveTableSelectSineRetrigger, WaveTableSelectSawtoothRetrigger, WaveTableSelectSquareRetrigger, WaveTableSelectRandomRetrigger:
 		doReset = true

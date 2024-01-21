@@ -1,17 +1,13 @@
 package channel
 
 import (
-	"github.com/gotracker/playback/voice/oscillator"
-
 	"github.com/gotracker/playback/memory"
-	oscillatorImpl "github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/tremor"
-	formatutil "github.com/gotracker/playback/util"
 )
 
 // Memory is the storage object for custom effect/command values
 type Memory struct {
-	portaToNote   memory.Value[DataEffect]
+	porta         memory.Value[DataEffect]
 	vibratoSpeed  memory.Value[DataEffect]
 	vibratoDepth  memory.Value[DataEffect]
 	tremoloSpeed  memory.Value[DataEffect]
@@ -21,23 +17,14 @@ type Memory struct {
 	tempoIncrease memory.Value[DataEffect]
 	lastNonZero   memory.Value[DataEffect]
 
-	tremorMem         tremor.Tremor
-	vibratoOscillator oscillator.Oscillator
-	tremoloOscillator oscillator.Oscillator
-	patternLoop       formatutil.PatternLoop
+	tremorMem tremor.Tremor
 
 	Shared *SharedMemory
 }
 
-// ResetOscillators resets the oscillators to defaults
-func (m *Memory) ResetOscillators() {
-	m.vibratoOscillator = oscillatorImpl.NewProtrackerOscillator()
-	m.tremoloOscillator = oscillatorImpl.NewProtrackerOscillator()
-}
-
-// PortaToNote gets or sets the most recent non-zero value (or input) for Portamento-to-note
-func (m *Memory) PortaToNote(input DataEffect) DataEffect {
-	return m.portaToNote.Coalesce(input)
+// Porta gets or sets the most recent non-zero value (or input) for any Portamento command
+func (m *Memory) Porta(input DataEffect) DataEffect {
+	return m.porta.Coalesce(input)
 }
 
 // Vibrato gets or sets the most recent non-zero value (or input) for Vibrato
@@ -87,32 +74,14 @@ func (m *Memory) TremorMem() *tremor.Tremor {
 	return &m.tremorMem
 }
 
-// VibratoOscillator returns the Vibrato oscillator object
-func (m *Memory) VibratoOscillator() oscillator.Oscillator {
-	return m.vibratoOscillator
-}
-
-// TremoloOscillator returns the Tremolo oscillator object
-func (m *Memory) TremoloOscillator() oscillator.Oscillator {
-	return m.tremoloOscillator
-}
-
-// Retrigger runs certain operations when a note is retriggered
+// Retrigger is called when a voice is triggered
 func (m *Memory) Retrigger() {
-	for _, osc := range []oscillator.Oscillator{m.VibratoOscillator(), m.TremoloOscillator()} {
-		osc.Reset()
-	}
-}
-
-// GetPatternLoop returns the pattern loop object from the memory
-func (m *Memory) GetPatternLoop() *formatutil.PatternLoop {
-	return &m.patternLoop
 }
 
 // StartOrder is called when the first order's row at tick 0 is started
-func (m *Memory) StartOrder() {
+func (m *Memory) StartOrder0() {
 	if m.Shared.ResetMemoryAtStartOfOrder0 {
-		m.portaToNote.Reset()
+		m.porta.Reset()
 		m.vibratoSpeed.Reset()
 		m.vibratoDepth.Reset()
 		m.tremoloSpeed.Reset()

@@ -11,6 +11,10 @@ type PCMReader[TConverter SampleConverter] struct {
 	cnv TConverter
 }
 
-func (s *PCMReader[T]) Read() (volume.Matrix, error) {
+func (s *PCMReader[TConverter]) Read() (volume.Matrix, error) {
 	return s.readData(s.cnv)
+}
+
+func (s PCMReader[TConverter]) Format() SampleDataFormat {
+	return s.cnv.Format(&s.SampleData)
 }

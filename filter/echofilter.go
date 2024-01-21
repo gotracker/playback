@@ -3,9 +3,8 @@ package filter
 import (
 	"math"
 
-	"github.com/gotracker/playback/period"
-
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/frequency"
 )
 
 type EchoFilterSettings struct {
@@ -22,17 +21,15 @@ type EchoFilterFactory struct {
 }
 
 func (e *EchoFilterFactory) Factory() Factory {
-	return func(instrument, playback period.Frequency) Filter {
+	return func(instrument frequency.Frequency) Filter {
 		echo := EchoFilter{
 			EchoFilterSettings: e.EchoFilterSettings,
-			sampleRate:         playback,
 		}
-		echo.recalculate()
 		return &echo
 	}
 }
 
-type delayInfo struct {
+type echoFilterDelayInfo struct {
 	buf   []volume.Volume
 	delay int
 }
@@ -41,20 +38,37 @@ type delayInfo struct {
 
 type EchoFilter struct {
 	EchoFilterSettings
-	sampleRate      period.Frequency
 	initialFeedback volume.Volume
 	writePos        int
-	delay           [2]delayInfo // L,R
+	delay           [2]echoFilterDelayInfo // L,R
+	playbackRate    frequency.Frequency
+}
+
+func (e *EchoFilter) SetPlaybackRate(playback frequency.Frequency) {
+	if e.playbackRate == playback {
+		return
+	}
+	e.playbackRate = playback
+
+	e.initialFeedback = volume.Volume(math.Sqrt(float64(1.0 - (e.Feedback * e.Feedback))))
+
+	playbackRate := float32(playback)
+	bufferSize := int(playbackRate * 2)
+
+	for c, delayMs := range [2]float32{e.LeftDelay, e.RightDelay} {
+		delay := int(delayMs * 2.0 * playbackRate)
+		e.delay[c].delay = delay
+		e.delay[c].buf = make([]volume.Volume, bufferSize)
+	}
 }
 
 func (e *EchoFilter) Clone() Filter {
 	clone := EchoFilter{
 		EchoFilterSettings: e.EchoFilterSettings,
-		sampleRate:         e.sampleRate,
 		writePos:           e.writePos,
 	}
-	clone.recalculate()
 	for i := range clone.delay {
+		clone.delay[i].buf = make([]volume.Volume, len(e.delay[i].buf))
 		copy(clone.delay[i].buf, e.delay[i].buf)
 	}
 	return &clone
@@ -113,19 +127,6 @@ func (e *EchoFilter) Filter(dry volume.Matrix) volume.Matrix {
 	return wet
 }
 
-func (e *EchoFilter) recalculate() {
-	e.initialFeedback = volume.Volume(math.Sqrt(float64(1.0 - (e.Feedback * e.Feedback))))
-
-	playbackRate := float32(e.sampleRate)
-	bufferSize := int(playbackRate * 2)
-
-	for c, delayMs := range [2]float32{e.LeftDelay, e.RightDelay} {
-		delay := int(delayMs * 2.0 * playbackRate)
-		e.delay[c].delay = delay
-		e.delay[c].buf = make([]volume.Volume, bufferSize)
-	}
-}
-
-func (e *EchoFilter) UpdateEnv(val int8) {
+func (e *EchoFilter) UpdateEnv(val uint8) {
 
 }

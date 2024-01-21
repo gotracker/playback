@@ -40,6 +40,8 @@ const (
 	KeyInvalid4
 )
 
+const NumKeys = int(KeyB + 1)
+
 // IsInvalid returns true if the key is invalid
 func (k Key) IsInvalid() bool {
 	switch k {

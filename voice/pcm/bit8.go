@@ -15,12 +15,12 @@ const (
 type Sample8BitSigned struct{}
 
 // Volume returns the volume value for the sample
-func (s Sample8BitSigned) volume(v int8) volume.Volume {
+func (Sample8BitSigned) volume(v int8) volume.Volume {
 	return volume.Volume(v) * cSample8BitVolumeCoeff
 }
 
 // Size returns the size of the sample in bytes
-func (s Sample8BitSigned) Size() int {
+func (Sample8BitSigned) Size() int {
 	return cSample8BitBytes
 }
 
@@ -37,16 +37,20 @@ func (s Sample8BitSigned) ReadAt(d *SampleData, ofs int64) (volume.Volume, error
 	return s.volume(v), nil
 }
 
+func (Sample8BitSigned) Format(d *SampleData) SampleDataFormat {
+	return SampleDataFormat8BitSigned
+}
+
 // Sample8BitUnsigned is an unsigned 8-bit sample
 type Sample8BitUnsigned struct{}
 
 // Volume returns the volume value for the sample
-func (s Sample8BitUnsigned) volume(v uint8) volume.Volume {
+func (Sample8BitUnsigned) volume(v uint8) volume.Volume {
 	return volume.Volume(int8(v-0x80)) * cSample8BitVolumeCoeff
 }
 
 // Size returns the size of the sample in bytes
-func (s Sample8BitUnsigned) Size() int {
+func (Sample8BitUnsigned) Size() int {
 	return cSample8BitBytes
 }
 
@@ -61,4 +65,8 @@ func (s Sample8BitUnsigned) ReadAt(d *SampleData, ofs int64) (volume.Volume, err
 
 	v := uint8(d.data[ofs])
 	return s.volume(v), nil
+}
+
+func (Sample8BitUnsigned) Format(d *SampleData) SampleDataFormat {
+	return SampleDataFormat8BitUnsigned
 }

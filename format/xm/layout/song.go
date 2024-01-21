@@ -1,82 +1,86 @@
 package layout
 
 import (
+	"github.com/gotracker/playback/format/common"
 	"github.com/gotracker/playback/format/xm/channel"
+	xmPanning "github.com/gotracker/playback/format/xm/panning"
+	xmVolume "github.com/gotracker/playback/format/xm/volume"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/note"
-	"github.com/gotracker/playback/pattern"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/song"
 )
 
-// Song is the full definition of the song data of an Song file
-type Song struct {
-	Head              Header
-	Instruments       map[uint8]*instrument.Instrument
-	InstrumentNoteMap map[uint8]map[note.Semitone]*instrument.Instrument
-	Patterns          []pattern.Pattern[channel.Data]
+// Song is the full definition of the song data of an XM file
+type Song[TPeriod period.Period] struct {
+	common.BaseSong[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
+
+	InstrumentNoteMap map[uint8]SemitoneSamples
 	ChannelSettings   []ChannelSetting
-	OrderList         []index.Pattern
 }
 
-// GetOrderList returns the list of all pattern orders for the song
-func (s Song) GetOrderList() []index.Pattern {
-	return s.OrderList
+type SemitoneSamples [96]int // semitone -> instrument index
+
+// GetNumChannels returns the number of channels the song has
+func (s Song[TPeriod]) GetNumChannels() int {
+	return len(s.ChannelSettings)
 }
 
-// GetPattern returns an interface to a specific pattern indexed by `patNum`
-func (s Song) GetPattern(patNum index.Pattern) song.Pattern[channel.Data] {
-	if int(patNum) >= len(s.Patterns) {
-		return nil
-	}
-	return &s.Patterns[patNum]
-}
-
-// IsChannelEnabled returns true if the channel at index `channelNum` is enabled
-func (s Song) IsChannelEnabled(channelNum int) bool {
-	return s.ChannelSettings[channelNum].Enabled
-}
-
-// GetRenderChannel returns the output channel for the channel at index `channelNum`
-func (s Song) GetRenderChannel(channelNum int) int {
-	return s.ChannelSettings[channelNum].OutputChannelNum
-}
-
-// NumInstruments returns the number of instruments in the song
-func (s Song) NumInstruments() int {
-	return len(s.Instruments)
-}
-
-// IsValidInstrumentID returns true if the instrument exists
-func (s Song) IsValidInstrumentID(instNum instrument.ID) bool {
-	if instNum.IsEmpty() {
-		return false
-	}
-	switch id := instNum.(type) {
-	case channel.SampleID:
-		_, ok := s.Instruments[id.InstID]
-		return ok
-	}
-	return false
+// GetChannelSettings returns the channel settings at index `channelNum`
+func (s Song[TPeriod]) GetChannelSettings(channelNum index.Channel) song.ChannelSettings {
+	return s.ChannelSettings[channelNum]
 }
 
 // GetInstrument returns the instrument interface indexed by `instNum` (0-based)
-func (s Song) GetInstrument(instNum instrument.ID) (*instrument.Instrument, note.Semitone) {
-	if instNum.IsEmpty() {
+func (s Song[TPeriod]) GetInstrument(instID int, st note.Semitone) (instrument.InstrumentIntf, note.Semitone) {
+	if instID == 0 {
 		return nil, note.UnchangedSemitone
 	}
-	switch id := instNum.(type) {
-	case channel.SampleID:
-		if nm, ok1 := s.InstrumentNoteMap[id.InstID]; ok1 {
-			if sm, ok2 := nm[id.Semitone]; ok2 {
-				return sm, note.UnchangedSemitone
-			}
-		}
+
+	idx := instID - 1
+
+	i := idx
+	if inm, ok := s.InstrumentNoteMap[uint8(idx)]; ok {
+		i = inm[st]
 	}
-	return nil, note.UnchangedSemitone
+
+	if i < 0 || i >= len(s.Instruments) {
+		return nil, st
+	}
+
+	return s.Instruments[i], st
 }
 
-// GetName returns the name of the song
-func (s Song) GetName() string {
-	return s.Head.Name
+func (s Song[TPeriod]) GetRowRenderStringer(row song.Row, channels int, longFormat bool) render.RowStringer {
+	rt := render.NewRowText[channel.Data[TPeriod]](channels, longFormat)
+	rowData := make([]channel.Data[TPeriod], channels)
+	song.ForEachRowChannel(row, func(ch index.Channel, d song.ChannelData[xmVolume.XmVolume]) (bool, error) {
+		if int(ch) >= channels || !s.ChannelSettings[ch].Enabled || s.ChannelSettings[ch].Muted {
+			return true, nil
+		}
+		rowData[ch] = d.(channel.Data[TPeriod])
+		return true, nil
+	})
+	rt.Channels = rowData
+	return rt
+}
+
+func (s Song[TPeriod]) ForEachChannel(enabledOnly bool, fn func(ch index.Channel) (bool, error)) error {
+	for i, cs := range s.ChannelSettings {
+		if enabledOnly {
+			if !cs.Enabled || (cs.Muted && s.MS.Quirks.DoNotProcessEffectsOnMutedChannels) {
+				continue
+			}
+		}
+		cont, err := fn(index.Channel(i))
+		if err != nil {
+			return err
+		}
+		if !cont {
+			break
+		}
+	}
+	return nil
 }

@@ -72,6 +72,14 @@ func NewImpulseTrackerOscillator(mul uint8) oscillator.Oscillator {
 	}
 }
 
+func (o impulseOscillator) Clone() oscillator.Oscillator {
+	return &impulseOscillator{
+		Table: o.Table,
+		Pos:   0,
+		Mul:   o.Mul,
+	}
+}
+
 // GetWave returns the wave amplitude for the current position
 func (o *impulseOscillator) GetWave(depth float32) float32 {
 	var vib float32
@@ -106,14 +114,22 @@ func (o *impulseOscillator) SetWaveform(table oscillator.WaveTableSelect) {
 	o.Table = table
 }
 
-// Reset resets the position of the oscillator
-func (o *impulseOscillator) Reset(hard ...bool) {
-	hardReset := false
-	if len(hard) > 0 {
-		hardReset = hard[0]
-	}
+func (o *impulseOscillator) GetWaveform() oscillator.WaveTableSelect {
+	return o.Table
+}
 
-	doReset := hardReset
+// Reset resets the position of the oscillator
+func (o *impulseOscillator) Reset() {
+	o.reset(false)
+}
+
+// HardReset resets the position of the oscillator regardless of how the wavetable operates
+func (o *impulseOscillator) HardReset() {
+	o.reset(true)
+}
+
+func (o *impulseOscillator) reset(hard bool) {
+	doReset := hard
 	switch o.Table {
 	case WaveTableSelectSineRetrigger, WaveTableSelectSawtoothRetrigger, WaveTableSelectSquareRetrigger, WaveTableSelectRandomRetrigger:
 		doReset = true

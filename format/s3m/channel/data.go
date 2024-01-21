@@ -7,10 +7,15 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 	"github.com/gotracker/gomixing/volume"
 
-	s3mNote "github.com/gotracker/playback/format/s3m/note"
+	"github.com/gotracker/playback"
+	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
-	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
+	"github.com/gotracker/playback/player/machine/instruction"
+	"github.com/gotracker/playback/song"
 )
 
 // DataEffect is the type of a channel's EffectParameter value
@@ -20,8 +25,8 @@ type DataEffect uint8
 type Data struct {
 	What       s3mfile.PatternFlags
 	Note       s3mfile.Note
-	Instrument InstID
-	Volume     s3mfile.Volume
+	Instrument uint8
+	Volume     s3mVolume.Volume
 	Command    uint8
 	Info       DataEffect
 }
@@ -33,7 +38,7 @@ func (d Data) HasNote() bool {
 
 // GetNote returns the note for the channel
 func (d Data) GetNote() note.Note {
-	return s3mNote.NoteFromS3MNote(d.Note)
+	return NoteFromS3MNote(d.Note)
 }
 
 // HasInstrument returns true if there exists an instrument on the channel
@@ -42,8 +47,8 @@ func (d Data) HasInstrument() bool {
 }
 
 // GetInstrument returns the instrument for the channel
-func (d Data) GetInstrument(stmem note.Semitone) instrument.ID {
-	return d.Instrument
+func (d Data) GetInstrument() int {
+	return int(d.Instrument)
 }
 
 // HasVolume returns true if there exists a volume on the channel
@@ -51,9 +56,13 @@ func (d Data) HasVolume() bool {
 	return d.What.HasVolume()
 }
 
+func (d Data) GetVolumeGeneric() volume.Volume {
+	return d.Volume.ToVolume()
+}
+
 // GetVolume returns the volume for the channel
-func (d Data) GetVolume() volume.Volume {
-	return s3mVolume.VolumeFromS3M(d.Volume)
+func (d Data) GetVolume() s3mVolume.Volume {
+	return d.Volume
 }
 
 // HasCommand returns true if there exists a command on the channel
@@ -64,6 +73,16 @@ func (d Data) HasCommand() bool {
 // Channel returns the channel ID for the channel
 func (d Data) Channel() uint8 {
 	return d.What.Channel()
+}
+
+func (d Data) GetEffects(mem *Memory, p period.Period) []playback.Effect {
+	if d.HasCommand() {
+		if e := EffectFactory(mem, d); e != nil {
+			return []playback.Effect{e}
+		}
+	}
+
+	return nil
 }
 
 func (d Data) String() string {
@@ -93,4 +112,19 @@ func (d Data) ShortString() string {
 		return d.GetNote().String()
 	}
 	return "..."
+}
+
+func (d Data) ToInstructions(m machine.Machine[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning], ch index.Channel, songData song.Data) ([]instruction.Instruction, error) {
+	var instructions []instruction.Instruction
+
+	mem, err := machine.GetChannelMemory[*Memory](m, ch)
+	if err != nil {
+		return nil, err
+	}
+
+	if e := EffectFactory(mem, d); e != nil {
+		instructions = append(instructions, e)
+	}
+
+	return instructions, nil
 }

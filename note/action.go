@@ -1,5 +1,7 @@
 package note
 
+import "fmt"
+
 // Action is the action to take on a note
 type Action uint8
 
@@ -17,3 +19,20 @@ const (
 	// ActionRetrigger will perform a key-on for the note/instrument playback immediately
 	ActionRetrigger
 )
+
+func (a Action) String() string {
+	switch a {
+	case ActionCut:
+		return "ActionCut"
+	case ActionContinue:
+		return "ActionContinue"
+	case ActionRelease:
+		return "ActionRelease"
+	case ActionFadeout:
+		return "ActionFadeout"
+	case ActionRetrigger:
+		return "ActionRetrigger"
+	default:
+		return fmt.Sprintf("Unknown[%d]", int(a))
+	}
+}

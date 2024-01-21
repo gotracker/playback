@@ -76,10 +76,6 @@ type OPL2 struct {
 	AdditiveSynthesis bool
 }
 
-func (OPL2) GetKind() Kind {
-	return KindOPL2
-}
-
 func (OPL2) GetLength() sampling.Pos {
 	return sampling.Pos{Pos: math.MaxInt64}
 }

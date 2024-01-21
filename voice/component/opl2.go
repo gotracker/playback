@@ -4,8 +4,11 @@ import (
 	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/opl2"
 
+	"github.com/gotracker/playback/frequency"
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/period"
-	"github.com/gotracker/playback/voice/render"
+	"github.com/gotracker/playback/tracing"
+	"github.com/gotracker/playback/voice/types"
 )
 
 // OPL2Operator is a block of values specific to configuring an OPL operator (modulator or carrier)
@@ -24,28 +27,48 @@ type OPL2Registers struct {
 	RegC0 uint8
 }
 
+func (o OPL2Registers) Clone() OPL2Registers {
+	m := o
+	return m
+}
+
 // OPL2 is an OPL2 component
-type OPL2 struct {
-	chip     render.OPL2Chip
-	channel  int
-	reg      OPL2Registers
-	baseFreq period.Frequency
-	keyOn    bool
+type OPL2[TPeriod types.Period, TMixingVolume, TVolume types.Volume] struct {
+	chip            *opl2.Chip
+	channel         int
+	reg             OPL2Registers
+	baseFreq        frequency.Frequency
+	periodConverter period.PeriodConverter[TPeriod]
+	defaultVolume   TVolume
+	keyOn           bool
 }
 
 // Setup sets up the OPL2 component
-func (o *OPL2) Setup(chip render.OPL2Chip, channel int, reg OPL2Registers, baseFreq period.Frequency) {
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) Setup(chip *opl2.Chip, channel int, reg OPL2Registers, pc period.PeriodConverter[TPeriod], baseFreq frequency.Frequency, defaultVolume TVolume) {
 	o.chip = chip
 	o.channel = channel
 	o.reg = reg
 	o.baseFreq = baseFreq
+	o.periodConverter = pc
+	o.defaultVolume = defaultVolume
 	o.keyOn = false
 }
 
-// Attack activates the key-on bit
-func (o *OPL2) Attack() {
-	o.keyOn = true
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) Attack() {
+	// does nothing
+}
 
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) Release() {
+	// does nothing
+}
+
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) Fadeout() {
+	// does nothing
+}
+
+// DeferredAttack activates the key-on bit
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) DeferredAttack() {
+	o.keyOn = true
 	// calculate the register addressing information
 	index := uint32(o.channel)
 	mod := o.getChannelIndex(o.channel)
@@ -68,8 +91,8 @@ func (o *OPL2) Attack() {
 	ch.WriteReg(0xC0|index, o.reg.RegC0)
 }
 
-// Release deactivates the key-on bit
-func (o *OPL2) Release() {
+// DeferredRelease deactivates the key-on bit
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) DeferredRelease() {
 	o.keyOn = false
 
 	// calculate the register addressing information
@@ -81,7 +104,7 @@ func (o *OPL2) Release() {
 }
 
 // Advance advances the playback
-func (o *OPL2) Advance(carVol volume.Volume, period period.Period) {
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) Advance(carVol volume.Volume, period TPeriod) {
 	// calculate the register addressing information
 	index := uint32(o.channel)
 	mod := o.getChannelIndex(o.channel)
@@ -111,17 +134,30 @@ func (o *OPL2) Advance(carVol volume.Volume, period period.Period) {
 	ch.WriteReg(0xB0|index, regB0)
 }
 
+func (o OPL2[TPeriod, TMixingVolume, TVolume]) Clone() Voicer[TPeriod, TMixingVolume, TVolume] {
+	m := o
+	return &m
+}
+
+func (o OPL2[TPeriod, TMixingVolume, TVolume]) GetDefaultVolume() TVolume {
+	return o.defaultVolume
+}
+
+func (o OPL2[TPeriod, TMixingVolume, TVolume]) GetNumChannels() int {
+	return 1
+}
+
 // twoOperatorMelodic
 var twoOperatorMelodic = [...]uint32{
 	0x00, 0x01, 0x02, 0x08, 0x09, 0x0A, 0x10, 0x11, 0x12,
 	0x100, 0x101, 0x102, 0x108, 0x109, 0x10A, 0x110, 0x111, 0x112,
 }
 
-func (o *OPL2) getChannelIndex(channelIdx int) uint32 {
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) getChannelIndex(channelIdx int) uint32 {
 	return twoOperatorMelodic[channelIdx%18]
 }
 
-func (o *OPL2) calc40(reg40 uint8, vol volume.Volume) uint8 {
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) calc40(reg40 uint8, vol volume.Volume) uint8 {
 	oVol := volume.Volume(63-uint16(reg40&0x3f)) / 63
 	totalVol := oVol * vol * 63
 	if totalVol > 63 {
@@ -134,21 +170,21 @@ func (o *OPL2) calc40(reg40 uint8, vol volume.Volume) uint8 {
 	return result
 }
 
-func (o *OPL2) periodToFreqBlock(period period.Period, baseFreq period.Frequency) (uint16, uint8) {
-	modFreq := period.GetFrequency()
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) periodToFreqBlock(p TPeriod, baseFreq frequency.Frequency) (uint16, uint8) {
+	modFreq := o.periodConverter.GetFrequency(p)
 	freq := float64(baseFreq) * float64(modFreq) / 261625
 
 	return o.freqToFnumBlock(freq)
 }
 
-func (o *OPL2) freqBlockToRegA0B0(freq uint16, block uint8) (uint8, uint8) {
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) freqBlockToRegA0B0(freq uint16, block uint8) (uint8, uint8) {
 	regA0 := uint8(freq)
 	regB0 := uint8(uint16(freq)>>8) & 0x03
 	regB0 |= (block & 0x07) << 3
 	return regA0, regB0
 }
 
-func (o *OPL2) freqToFnumBlock(freq float64) (uint16, uint8) {
+func (o *OPL2[TPeriod, TMixingVolume, TVolume]) freqToFnumBlock(freq float64) (uint16, uint8) {
 	if freq > 6208.431 {
 		return 0, 0
 	}
@@ -174,4 +210,8 @@ func (o *OPL2) freqToFnumBlock(freq float64) (uint16, uint8) {
 	fnum := uint16(freq * float64(int(1)<<(20-block)) / opl2.OPLRATE)
 
 	return fnum, block
+}
+
+func (o OPL2[TPeriod, TMixingVolume, TVolume]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
+	// TODO - add state dumper
 }

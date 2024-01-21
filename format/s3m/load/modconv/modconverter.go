@@ -10,6 +10,8 @@ import (
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
 
 	"github.com/gotracker/playback/format/s3m/channel"
+	"github.com/gotracker/playback/format/s3m/layout"
+	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 )
 
 func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error) {
@@ -17,7 +19,7 @@ func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error)
 
 	for _, row := range mp {
 		worthwhileChannels := 0
-		unpackedChannels := make([]channel.Data, len(row))
+		unpackedChannels := make(layout.Row, len(row))
 		for c, chn := range row {
 			sampleNumber := chn.Instrument()
 			samplePeriod := chn.Period()
@@ -28,8 +30,8 @@ func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error)
 			*u = channel.Data{
 				What:       s3mfile.PatternFlags(c & 0x1F),
 				Note:       s3mfile.EmptyNote,
-				Instrument: channel.InstID(sampleNumber),
-				Volume:     s3mfile.EmptyVolume,
+				Instrument: sampleNumber,
+				Volume:     s3mVolume.Volume(s3mfile.EmptyVolume),
 				Command:    uint8(0),
 				Info:       channel.DataEffect(0),
 			}
@@ -86,7 +88,18 @@ func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error)
 					u.Command = 'R' - '@'
 				case 0xC: // Set Volume
 					u.What |= s3mfile.PatternFlagVolume
-					u.Volume = s3mfile.Volume(u.Info)
+					u.Volume = s3mVolume.Volume(u.Info)
+				case 0x8: // Set Pan (mod-style)
+					if effectParameter >= 0x00 && effectParameter <= 0x80 {
+						u.What |= s3mfile.PatternFlagCommand
+						u.Command = 'S' - '@'
+						u.Info = channel.DataEffect(0x80 | (effectParameter >> 4))
+					} else if effectParameter == 0xA4 {
+						// surround
+						u.What |= s3mfile.PatternFlagCommand
+						u.Command = 'S' - '@'
+						u.Info = channel.DataEffect(0x91)
+					}
 				}
 
 				if effect == 0xE {
@@ -211,7 +224,7 @@ func convertMODPatternToS3M(mp *modfile.Pattern) (*s3mfile.PackedPattern, error)
 }
 
 var (
-	finetuneC2Spds = [...]s3mfile.C2SPD{
+	finetuneC4SampleRates = [...]s3mfile.C2SPD{
 		8363, 8413, 8463, 8529, 8581, 8651, 8723, 8757,
 		7895, 7941, 7985, 8046, 8107, 8169, 8232, 8280,
 	}
@@ -254,7 +267,7 @@ func convertMODInstrumentToS3M(num int, inst *modfile.InstrumentHeader, samp []u
 			Lo: uint16(len(samp)),
 		},
 		C2Spd: s3mfile.HiLo32{
-			Lo: uint16(finetuneC2Spds[inst.FineTune&0xF]),
+			Lo: uint16(finetuneC4SampleRates[inst.FineTune&0xF]),
 		},
 		Volume: s3mfile.Volume(inst.Volume),
 		LoopBegin: s3mfile.HiLo32{
@@ -277,9 +290,6 @@ func convertMODInstrumentToS3M(num int, inst *modfile.InstrumentHeader, samp []u
 	copy(anc.SampleName[:], inst.Name[:])
 
 	scrs.Sample = samp
-	for i, s := range samp {
-		samp[i] = modSampleToS3MSample(s)
-	}
 	return &scrs, nil
 }
 
@@ -295,14 +305,22 @@ func Read(r io.Reader) (*s3mfile.File, error) {
 
 	f := s3mfile.File{
 		Head: s3mfile.ModuleHeader{
-			Name:            [28]byte{},
-			OrderCount:      uint16(mf.Head.SongLen),
-			InstrumentCount: 31,
-			PatternCount:    uint16(len(mf.Patterns)),
-			GlobalVolume:    s3mfile.DefaultVolume,
-			InitialSpeed:    6,
-			InitialTempo:    125,
-			MixingVolume:    s3mfile.Volume(0x30) | s3mfile.Volume(0x80), // default mixing volume (0x30) for a converted mod in st3, stereo enabled (0x80)
+			Name:                  [28]byte{},
+			Reserved1C:            0x1A, // 0x1A = magic
+			Type:                  16,   // 16 = ST3 module
+			OrderCount:            uint16(mf.Head.SongLen),
+			InstrumentCount:       31,
+			PatternCount:          uint16(len(mf.Patterns)),
+			Flags:                 0x0004 | 0x0010 | 0x0020, // amigaSlides (0x0004) | amigaLimits (0x0010) | sbFilterEnable (0x0020)
+			TrackerVersion:        0x1300,                   // 0x1300 = specific version to support above flags
+			FileFormatInformation: 1,                        // 1 = signed samples
+			SCRM:                  [4]byte{'S', 'C', 'R', 'M'},
+			GlobalVolume:          s3mfile.DefaultVolume,
+			InitialSpeed:          6,
+			InitialTempo:          125,
+			MixingVolume:          s3mfile.Volume(0x30) | s3mfile.Volume(0x80), // default mixing volume (0x30) for a converted mod in st3, stereo enabled (0x80)
+			UltraClickRemoval:     uint8(numCh) * 2,
+			DefaultPanValueFlag:   252, // load pan settings
 		},
 	}
 
@@ -316,12 +334,12 @@ func Read(r io.Reader) (*s3mfile.File, error) {
 			continue
 		}
 
-		isLeft := (i & 1) == 0
-		if isLeft {
-			f.ChannelSettings[i] = s3mfile.MakeChannelSetting(true, s3mfile.ChannelCategoryPCMLeft, i>>1)
+		// MODs process in 0 -> max channel order, so shove them all in the left category in order
+		f.ChannelSettings[i] = s3mfile.MakeChannelSetting(true, s3mfile.ChannelCategoryPCMLeft, i)
+
+		if isLeft := (i & 1) == 0; isLeft {
 			f.Panning[i] = s3mfile.DefaultPanningLeft
 		} else {
-			f.ChannelSettings[i] = s3mfile.MakeChannelSetting(true, s3mfile.ChannelCategoryPCMRight, i>>1)
 			f.Panning[i] = s3mfile.DefaultPanningRight
 		}
 	}
@@ -351,8 +369,4 @@ func Read(r io.Reader) (*s3mfile.File, error) {
 	}
 
 	return &f, nil
-}
-
-func modSampleToS3MSample(sample uint8) uint8 {
-	return sample - 0x80
 }

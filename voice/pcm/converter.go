@@ -6,4 +6,5 @@ import "github.com/gotracker/gomixing/volume"
 type SampleConverter interface {
 	Size() int
 	ReadAt(s *SampleData, ofs int64) (volume.Volume, error)
+	Format(s *SampleData) SampleDataFormat
 }

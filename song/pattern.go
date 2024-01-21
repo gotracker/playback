@@ -11,17 +11,23 @@ var (
 	ErrStopSong = errors.New("stop song")
 )
 
-// Pattern is an interface for pattern data
-type Pattern[TChannelData any] interface {
-	GetRow(index.Row) Row[TChannelData]
-	GetRows() Rows[TChannelData]
+type PatternIntf interface {
+	GetRow(row index.Row) Row
+	NumRows() int
+}
+
+// Pattern is structure containing the pattern data
+type Pattern []Row
+
+// GetRow returns a single row of channel data
+func (p Pattern) GetRow(row index.Row) Row {
+	return p[row]
+}
+
+// NumRows returns the number of rows contained within the pattern
+func (p Pattern) NumRows() int {
+	return len(p)
 }
 
 // Patterns is an array of pattern interfaces
-type Patterns[TChannelData any] []Pattern[TChannelData]
-
-// Rows is an interface to obtain row data
-type Rows[TChannelData any] interface {
-	GetRow(index.Row) Row[TChannelData]
-	NumRows() int
-}
+type Patterns[TChannelData ChannelData[TVolume], TVolume Volume] []Pattern

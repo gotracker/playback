@@ -1,102 +1,154 @@
 package component
 
 import (
+	"fmt"
+
 	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/tracing"
+	"github.com/gotracker/playback/voice/types"
+	"github.com/heucuva/optional"
 )
 
 // AmpModulator is an amplitude (volume) modulator
-type AmpModulator struct {
-	vol            volume.Volume
-	mixing         volume.Volume
-	fadeoutEnabled bool
-	fadeoutVol     volume.Volume
-	fadeoutAmt     volume.Volume
-	final          volume.Volume // = [fadeoutVol *] mixing * vol
+type AmpModulator[TMixingVolume, TVolume types.Volume] struct {
+	settings AmpModulatorSettings[TMixingVolume, TVolume]
+
+	unkeyed struct {
+		active bool
+		muted  bool
+		vol    TVolume
+		mixing TMixingVolume
+	}
+	keyed struct {
+		delta          types.VolumeDelta
+		mixingOverride optional.Value[TMixingVolume]
+	}
+	final volume.Volume // = active? * mixing * vol
 }
 
-// Setup configures the initial settings of the modulator
-func (a *AmpModulator) Setup(mixing volume.Volume) {
-	a.mixing = mixing
-	a.updateFinal()
+type AmpModulatorSettings[TMixingVolume, TVolume types.Volume] struct {
+	Active              bool
+	Muted               bool
+	DefaultMixingVolume TMixingVolume
+	DefaultVolume       TVolume
 }
 
-// Attack disables the fadeout and resets its volume
-func (a *AmpModulator) Attack() {
-	a.fadeoutEnabled = false
-	a.fadeoutVol = volume.Volume(1)
-	a.updateFinal()
+func (a *AmpModulator[TMixingVolume, TVolume]) Setup(settings AmpModulatorSettings[TMixingVolume, TVolume]) {
+	a.settings = settings
+	a.unkeyed.active = settings.Active
+	a.unkeyed.muted = settings.Muted
+	a.unkeyed.vol = settings.DefaultVolume
+	a.unkeyed.mixing = settings.DefaultMixingVolume
+	a.Reset()
 }
 
-// Release currently does nothing
-func (a *AmpModulator) Release() {
+func (a AmpModulator[TMixingVolume, TVolume]) Clone() AmpModulator[TMixingVolume, TVolume] {
+	m := a
+	return m
 }
 
-// Fadeout activates the fadeout
-func (a *AmpModulator) Fadeout() {
-	a.fadeoutEnabled = true
-	a.updateFinal()
+func (a *AmpModulator[TMixingVolume, TVolume]) Reset() error {
+	a.keyed.delta = 0
+	a.keyed.mixingOverride.Reset()
+	return a.updateFinal()
+}
+
+func (a *AmpModulator[TMixingVolume, TVolume]) SetActive(active bool) error {
+	a.unkeyed.active = active
+	return a.updateFinal()
+}
+
+func (a AmpModulator[TMixingVolume, TVolume]) IsActive() bool {
+	return a.unkeyed.active
+}
+
+func (a *AmpModulator[TMixingVolume, TVolume]) SetMuted(muted bool) error {
+	a.unkeyed.muted = muted
+	return nil
+}
+
+func (a AmpModulator[TMixingVolume, TVolume]) IsMuted() bool {
+	return a.unkeyed.muted
+}
+
+// SetMixingVolume configures the mixing volume of the modulator
+func (a *AmpModulator[TMixingVolume, TVolume]) SetMixingVolume(mixing TMixingVolume) error {
+	if mixing.IsUseInstrumentVol() {
+		return nil
+	}
+
+	a.unkeyed.mixing = mixing
+	return a.updateFinal()
+}
+
+// GetMixingVolume returns the current mixing volume of the modulator
+func (a AmpModulator[TMixingVolume, TVolume]) GetMixingVolume() TMixingVolume {
+	return a.unkeyed.mixing
+}
+
+func (a *AmpModulator[TMixingVolume, TVolume]) SetMixingVolumeOverride(mvo optional.Value[TMixingVolume]) error {
+	a.keyed.mixingOverride = mvo
+	return nil
+}
+
+func (a AmpModulator[TMixingVolume, TVolume]) GetMixingVolumeOverride() optional.Value[TMixingVolume] {
+	return a.keyed.mixingOverride
 }
 
 // SetVolume sets the current volume (before fadeout calculation)
-func (a *AmpModulator) SetVolume(vol volume.Volume) {
-	a.vol = vol
-	a.updateFinal()
+func (a *AmpModulator[TMixingVolume, TVolume]) SetVolume(vol TVolume) error {
+	if vol.IsUseInstrumentVol() {
+		vol = a.settings.DefaultVolume
+	}
+	a.unkeyed.vol = vol
+	return a.updateFinal()
 }
 
 // GetVolume returns the current volume (before fadeout calculation)
-func (a *AmpModulator) GetVolume() volume.Volume {
-	return a.vol
+func (a AmpModulator[TMixingVolume, TVolume]) GetVolume() TVolume {
+	return a.unkeyed.vol
 }
 
-// SetFadeoutEnabled sets the status of the fadeout enablement flag
-func (a *AmpModulator) SetFadeoutEnabled(enabled bool) {
-	a.fadeoutEnabled = enabled
-	a.updateFinal()
+func (a *AmpModulator[TMixingVolume, TVolume]) SetVolumeDelta(d types.VolumeDelta) error {
+	a.keyed.delta = d
+	return a.updateFinal()
 }
 
-// ResetFadeoutValue resets the current fadeout value and optionally configures the amount of fadeout
-func (a *AmpModulator) ResetFadeoutValue(amount ...volume.Volume) {
-	a.fadeoutVol = volume.Volume(1)
-	if len(amount) > 0 {
-		a.fadeoutAmt = amount[0]
-	}
-	a.updateFinal()
-}
-
-// IsFadeoutEnabled returns the status of the fadeout enablement flag
-func (a *AmpModulator) IsFadeoutEnabled() bool {
-	return a.fadeoutEnabled
-}
-
-// GetFadeoutVolume returns the value of the fadeout volume
-func (a *AmpModulator) GetFadeoutVolume() volume.Volume {
-	return a.fadeoutVol
+func (a AmpModulator[TMixingVolume, TVolume]) GetVolumeDelta() types.VolumeDelta {
+	return a.keyed.delta
 }
 
 // GetFinalVolume returns the current volume (after fadeout calculation)
-func (a *AmpModulator) GetFinalVolume() volume.Volume {
+func (a AmpModulator[TMixingVolume, TVolume]) GetFinalVolume() volume.Volume {
 	return a.final
 }
 
-// Advance advances the fadeout value by 1 tick
-func (a *AmpModulator) Advance() {
-	if a.fadeoutEnabled || a.fadeoutVol <= 0 {
-		return
+func (a *AmpModulator[TMixingVolume, TVolume]) updateFinal() error {
+	if !a.unkeyed.active {
+		a.final = 0
+		return nil
 	}
 
-	a.fadeoutVol -= a.fadeoutAmt
-	switch {
-	case a.fadeoutVol < 0:
-		a.fadeoutVol = 0
-	case a.fadeoutVol > 1:
-		a.fadeoutVol = 1
+	v := types.AddVolumeDelta(a.unkeyed.vol, a.keyed.delta)
+
+	mv := a.unkeyed.mixing
+	if mvo, set := a.keyed.mixingOverride.Get(); set {
+		mv = mvo
 	}
-	a.updateFinal()
+
+	a.final = mv.ToVolume() * v.ToVolume()
+	return nil
 }
 
-func (a *AmpModulator) updateFinal() {
-	a.final = a.mixing * a.vol
-	if a.fadeoutEnabled {
-		a.final *= a.fadeoutVol
-	}
+func (a AmpModulator[TMixingVolume, TVolume]) DumpState(ch index.Channel, t tracing.Tracer, comment string) {
+	t.TraceChannelWithComment(ch, fmt.Sprintf("active{%v} muted{%v} vol{%v} mixing{%v} mixingOverride{%v} delta{%v} final{%v}",
+		a.unkeyed.active,
+		a.unkeyed.muted,
+		a.unkeyed.vol,
+		a.unkeyed.mixing,
+		a.keyed.mixingOverride,
+		a.keyed.delta,
+		a.final,
+	), comment)
 }

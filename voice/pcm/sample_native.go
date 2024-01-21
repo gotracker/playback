@@ -1,7 +1,11 @@
 package pcm
 
 import (
+	"bytes"
+	"encoding/base64"
+	"encoding/binary"
 	"errors"
+	"math"
 
 	"github.com/gotracker/gomixing/volume"
 )
@@ -58,6 +62,21 @@ func (s *NativeSampleData) readData() (volume.Matrix, error) {
 	s.pos++
 
 	return samp, nil
+}
+
+func (s NativeSampleData) Format() SampleDataFormat {
+	return SampleDataFormat64BitLEFloat
+}
+
+func (s NativeSampleData) Base64() string {
+	var src bytes.Buffer
+	for _, d := range s.data {
+		for c := 0; c < s.channels; c++ {
+			binary.Write(&src, binary.LittleEndian, math.Float64bits(float64(d.StaticMatrix[c])))
+		}
+	}
+
+	return base64.StdEncoding.EncodeToString(src.Bytes())
 }
 
 func NewSampleNative(data []volume.Matrix, length int, channels int) Sample {

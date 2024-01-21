@@ -9,6 +9,9 @@ import (
 	"github.com/gotracker/playback/format"
 	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/player/feature"
+	"github.com/gotracker/playback/player/machine"
+	"github.com/gotracker/playback/player/machine/settings"
+	"github.com/gotracker/playback/player/sampler"
 	"github.com/gotracker/playback/song"
 )
 
@@ -53,24 +56,22 @@ func ExamplePlayFileToStdout() {
 	// There's an automagical loader utility which divines the file type and presents a player that can
 	// effectively play it. See `ExamplePlayBufferToStdout` (./internal/examples/bufferload) for an
 	// example of the io.Reader version of this call.
-	player, _, err := format.Load(filename, features)
+	songData, songFormat, err := format.Load(filename, features)
 	if err != nil {
 		panic(err)
 	}
 
-	// Now that we have a player allocated for the format, we need to tell it the minimal configuration
-	// for the stream of data we are wanting to produce - namely, the sampling rate and the number of
-	// channels. These two parameters are fundamental to a huge number of operations, so they must be
-	// set outside of the configuration process you will see below.
-	if err := player.SetupSampler(sampleRate, channels); err != nil {
+	// Here is where we get a final chance to submit any overrides or configurations we want to
+	// supply - we can send it the configuration we already have built up, since it will know how to
+	// pull the settings it wants, so no need to worry about filtering or splitting out the settings.
+	var userSettings settings.UserSettings
+	if err := songFormat.ConvertFeaturesToSettings(&userSettings, features); err != nil {
 		panic(err)
 	}
 
-	// The player's nearly ready to start playing! Here is where we get a final chance to submit any
-	// overrides or configurations we want to supply - we can send it the configuration we already
-	// have built up, since it will know how to pull the settings it wants, so no need to worry about
-	// filtering or splitting out the settings.
-	if err := player.Configure(features); err != nil {
+	// Next, create a player machine to operate over the song configured by the settings.
+	player, err := machine.NewMachine(songData, userSettings)
+	if err != nil {
 		panic(err)
 	}
 
@@ -87,6 +88,21 @@ func ExamplePlayFileToStdout() {
 	// but in this case, when the function ends, the channel deferred close will cause the goroutine
 	// to end.
 	defer close(premixDataChannel)
+
+	// Now that we have a player allocated for the format, we need to tell it the minimal configuration
+	// for the stream of data we are wanting to produce - namely, the sampling rate and the number of
+	// channels. These first two parameters are fundamental to a huge number of operations, so they must
+	// be set outside of the configuration process you will see below. The third parameter provides a
+	// way for the calling application (our example) to get the generated output data in the form of
+	// pre-mixed packets. These packets can be further mixed into audio streams for use with sound
+	// devices and files.
+	out := sampler.NewSampler(sampleRate, channels, func(premix *output.PremixData) {
+		// put our premixed data into the premixDataChannel we built earlier.
+		premixDataChannel <- premix
+	})
+	if out == nil {
+		panic(errors.New("could not create sampler"))
+	}
 
 	// Our desire is to output a specific format of PCM audio data to the standard output device, so
 	// we need to mix and convert the pre-mix data into that format. This mixer will be able to do
@@ -116,9 +132,10 @@ func ExamplePlayFileToStdout() {
 playerUpdateLoop:
 	for {
 		// Now we need to tell the player to update its internal state - this will generate a single
-		// row tick's worth of pre-mix data and add it to the `premixDataChannel`.
-		// normally, we would want to set up a goroutine for this call to run in and
-		if err := player.Update(0, premixDataChannel); err != nil {
+		// row tick's worth of pre-mix data and call our callback function specified in the Sampler
+		// stage we specified earlier. Normally, we would want to set up a goroutine for this call to
+		// run in, but in this example, we're fine to do a simple loop.
+		if err := player.Tick(out); err != nil {
 			// In the event we finish our song, we will receive a specific error message informing us
 			// we can quit.
 			if errors.Is(err, song.ErrStopSong) {

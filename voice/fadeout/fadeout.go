@@ -21,3 +21,16 @@ type Settings struct {
 	Mode   Mode
 	Amount volume.Volume
 }
+
+func (m Mode) IsFadeoutActive(forceFadeout, volEnvEnabled, volEnvDone bool) bool {
+	switch m {
+	case ModeDisabled:
+		return false
+	case ModeAlwaysActive:
+		return forceFadeout || !volEnvEnabled || volEnvDone
+	case ModeOnlyIfVolEnvActive:
+		return forceFadeout || volEnvEnabled
+	default:
+		return false
+	}
+}

@@ -1,115 +1,54 @@
 package playback
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+
+	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/period"
+	"github.com/gotracker/playback/player/machine"
+	"github.com/gotracker/playback/song"
+)
 
 // Effect is an interface to command/effect
 type Effect interface {
 	//fmt.Stringer
+	TraceData() string
 }
 
-type effectPreStartIntf[TMemory, TChannelData any] interface {
-	PreStart(Channel[TMemory, TChannelData], Playback) error
+type Effecter[TMemory song.ChannelMemory] interface {
+	GetEffects(TMemory, period.Period) []Effect
 }
 
-// EffectPreStart triggers when the effect enters onto the channel state
-func EffectPreStart[TMemory, TChannelData any](e Effect, cs Channel[TMemory, TChannelData], p Playback) error {
-	if eff, ok := e.(effectPreStartIntf[TMemory, TChannelData]); ok {
-		if err := eff.PreStart(cs, p); err != nil {
-			return err
-		}
+func GetEffects[TPeriod period.Period, TMemory song.ChannelMemory, TChannelData song.ChannelData[TVolume], TGlobalVolume, TMixingVolume, TVolume song.Volume, TPanning song.Panning](mem TMemory, d TChannelData) []Effect {
+	var e []Effect
+	if eff, ok := any(d).(Effecter[TMemory]); ok {
+		var p TPeriod
+		e = eff.GetEffects(mem, p)
 	}
-	return nil
+	return e
 }
 
-type effectStartIntf[TMemory, TChannelData any] interface {
-	Start(Channel[TMemory, TChannelData], Playback) error
+type EffectNamer interface {
+	Names() []string
 }
 
-// EffectStart triggers on the first tick, but before the Tick() function is called
-func EffectStart[TMemory, TChannelData any](e Effect, cs Channel[TMemory, TChannelData], p Playback) error {
-	if eff, ok := e.(effectStartIntf[TMemory, TChannelData]); ok {
-		if err := eff.Start(cs, p); err != nil {
-			return err
-		}
+func GetEffectNames(e Effect) []string {
+	if namer, ok := e.(EffectNamer); ok {
+		return namer.Names()
+	} else {
+		typ := reflect.TypeOf(e)
+		return []string{typ.Name()}
 	}
-	return nil
-}
-
-type effectTickIntf[TMemory, TChannelData any] interface {
-	Tick(Channel[TMemory, TChannelData], Playback, int) error
-}
-
-// EffectTick is called on every tick
-func EffectTick[TMemory, TChannelData any](e Effect, cs Channel[TMemory, TChannelData], p Playback, currentTick int) error {
-	if eff, ok := e.(effectTickIntf[TMemory, TChannelData]); ok {
-		if err := eff.Tick(cs, p, currentTick); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-type effectStopIntf[TMemory, TChannelData any] interface {
-	Stop(Channel[TMemory, TChannelData], Playback, int) error
-}
-
-// EffectStop is called on the last tick of the row, but after the Tick() function is called
-func EffectStop[TMemory, TChannelData any](e Effect, cs Channel[TMemory, TChannelData], p Playback, lastTick int) error {
-	if eff, ok := e.(effectStopIntf[TMemory, TChannelData]); ok {
-		if err := eff.Stop(cs, p, lastTick); err != nil {
-			return err
-		}
-	}
-	return nil
 }
 
 // CombinedEffect specifies multiple simultaneous effects into one
-type CombinedEffect[TMemory, TChannelData any] struct {
+type CombinedEffect[TPeriod period.Period, TGlobalVolume, TMixingVolume, TVolume song.Volume, TPanning song.Panning, TMemory song.ChannelMemory, TChannelData song.ChannelData[TVolume]] struct {
 	Effects []Effect
 }
 
-// PreStart triggers when the effect enters onto the channel state
-func (e CombinedEffect[TMemory, TChannelData]) PreStart(cs Channel[TMemory, TChannelData], p Playback) error {
-	for _, effect := range e.Effects {
-		if err := EffectPreStart(effect, cs, p); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Start triggers on the first tick, but before the Tick() function is called
-func (e CombinedEffect[TMemory, TChannelData]) Start(cs Channel[TMemory, TChannelData], p Playback) error {
-	for _, effect := range e.Effects {
-		if err := EffectStart(effect, cs, p); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Tick is called on every tick
-func (e CombinedEffect[TMemory, TChannelData]) Tick(cs Channel[TMemory, TChannelData], p Playback, currentTick int) error {
-	for _, effect := range e.Effects {
-		if err := EffectTick(effect, cs, p, currentTick); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// Stop is called on the last tick of the row, but after the Tick() function is called
-func (e CombinedEffect[TMemory, TChannelData]) Stop(cs Channel[TMemory, TChannelData], p Playback, lastTick int) error {
-	for _, effect := range e.Effects {
-		if err := EffectStop(effect, cs, p, lastTick); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 // String returns the string for the effect list
-func (e CombinedEffect[TMemory, TChannelData]) String() string {
+func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) String() string {
 	for _, eff := range e.Effects {
 		s := fmt.Sprint(eff)
 		if s != "" {
@@ -119,24 +58,59 @@ func (e CombinedEffect[TMemory, TChannelData]) String() string {
 	return ""
 }
 
-// DoEffect runs the standard tick lifetime of an effect
-func DoEffect[TMemory, TChannelData any](e Effect, cs Channel[TMemory, TChannelData], p Playback, currentTick int, lastTick bool) error {
-	if e == nil {
-		return nil
+func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) Names() []string {
+	var names []string
+	for _, eff := range e.Effects {
+		names = append(names, GetEffectNames(eff)...)
 	}
+	return names
+}
 
-	if currentTick == 0 {
-		if err := EffectStart(e, cs, p); err != nil {
-			return err
-		}
-	}
-	if err := EffectTick(e, cs, p, currentTick); err != nil {
-		return err
-	}
-	if lastTick {
-		if err := EffectStop(e, cs, p, currentTick); err != nil {
+func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) OrderStart(ch index.Channel, m machine.Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
+	for _, effect := range e.Effects {
+		if err := m.DoInstructionOrderStart(ch, effect); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) RowStart(ch index.Channel, m machine.Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
+	for _, effect := range e.Effects {
+		if err := m.DoInstructionRowStart(ch, effect); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) Tick(ch index.Channel, m machine.Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning], tick int) error {
+	for _, effect := range e.Effects {
+		if err := m.DoInstructionTick(ch, effect); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) RowEnd(ch index.Channel, m machine.Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
+	for _, effect := range e.Effects {
+		if err := m.DoInstructionRowEnd(ch, effect); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) OrderEnd(ch index.Channel, m machine.Machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) error {
+	for _, effect := range e.Effects {
+		if err := m.DoInstructionOrderEnd(ch, effect); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (e CombinedEffect[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning, TMemory, TChannelData]) TraceData() string {
+	return e.String()
 }
