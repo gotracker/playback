@@ -4,7 +4,7 @@ import (
 	"io"
 	"math"
 
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing/volume"
 )
 
 const (

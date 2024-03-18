@@ -3,7 +3,7 @@ package instrument
 import (
 	"fmt"
 
-	"github.com/gotracker/gomixing/sampling"
+	"github.com/gotracker/playback/mixing/sampling"
 )
 
 // ID is an identifier for an instrument/sample that means something to the format

@@ -3,8 +3,8 @@ package filter
 import (
 	"math"
 
-	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/frequency"
+	"github.com/gotracker/playback/mixing/volume"
 )
 
 type EchoFilterSettings struct {

@@ -3,10 +3,10 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/gomixing/sampling"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"
 	s3mVolume "github.com/gotracker/playback/format/s3m/volume"
 	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/mixing/sampling"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/machine"
 )

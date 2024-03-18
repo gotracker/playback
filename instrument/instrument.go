@@ -1,8 +1,8 @@
 package instrument
 
 import (
-	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing/sampling"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/heucuva/optional"
 
 	"github.com/gotracker/playback/filter"

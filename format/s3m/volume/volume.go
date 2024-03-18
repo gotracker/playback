@@ -4,7 +4,7 @@ import (
 	"math"
 
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/voice/types"
 )
 

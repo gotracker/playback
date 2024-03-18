@@ -4,8 +4,8 @@ import (
 	"slices"
 	"sort"
 
-	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/voice"
 )

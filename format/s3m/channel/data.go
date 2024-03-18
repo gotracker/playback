@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing/volume"
 
 	"github.com/gotracker/playback"
 	s3mPanning "github.com/gotracker/playback/format/s3m/panning"

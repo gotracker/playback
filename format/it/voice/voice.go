@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gotracker/gomixing/panning"
-	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/filter"
 	itFilter "github.com/gotracker/playback/format/it/filter"
 	itOscillator "github.com/gotracker/playback/format/it/oscillator"
@@ -13,6 +11,8 @@ import (
 	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/mixing/panning"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/autovibrato"

@@ -1,6 +1,6 @@
 package pcm
 
-import "github.com/gotracker/gomixing/volume"
+import "github.com/gotracker/playback/mixing/volume"
 
 // SampleConverter is an interface to a sample converter
 type SampleConverter interface {

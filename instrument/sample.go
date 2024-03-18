@@ -1,7 +1,7 @@
 package instrument
 
 import (
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/voice/pcm"
 )

@@ -1,6 +1,6 @@
 package volume
 
-import "github.com/gotracker/gomixing/volume"
+import "github.com/gotracker/playback/mixing/volume"
 
 // VolEffect holds the data related to volume and effects from the volume data channel
 type VolEffect uint8

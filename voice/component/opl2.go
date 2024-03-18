@@ -1,8 +1,8 @@
 package component
 
 import (
-	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/opl2"
+	"github.com/gotracker/playback/mixing/volume"
 
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"

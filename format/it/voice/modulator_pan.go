@@ -1,8 +1,8 @@
 package voice
 
 import (
-	"github.com/gotracker/gomixing/panning"
 	itPanning "github.com/gotracker/playback/format/it/panning"
+	"github.com/gotracker/playback/mixing/panning"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/voice/types"
 )

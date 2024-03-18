@@ -1,8 +1,8 @@
 package filter
 
 import (
-	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/frequency"
+	"github.com/gotracker/playback/mixing/volume"
 )
 
 type Info struct {

@@ -1,6 +1,6 @@
 package types
 
-import "github.com/gotracker/gomixing/volume"
+import "github.com/gotracker/playback/mixing/volume"
 
 type Volume interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |

@@ -1,7 +1,7 @@
 package playback
 
 import (
-	"github.com/gotracker/gomixing/sampling"
+	"github.com/gotracker/playback/mixing/sampling"
 
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/voice/types"

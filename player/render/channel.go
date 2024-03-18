@@ -1,9 +1,10 @@
 package render
 
 import (
-	"github.com/gotracker/gomixing/mixing"
-	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/opl2"
+	"github.com/gotracker/playback/mixing"
+	"github.com/gotracker/playback/mixing/panning"
+	"github.com/gotracker/playback/mixing/volume"
 
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/period"
@@ -27,7 +28,7 @@ type Channel[TPeriod period.Period] struct {
 	vrem func() // function to call when voice is stopped/removed
 }
 
-func (c *Channel[TPeriod]) RenderAndTick(pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details) (*mixing.Data, error) {
+func (c *Channel[TPeriod]) RenderAndTick(pc period.PeriodConverter[TPeriod], centerAheadPan panning.PanMixer, details mixer.Details) (*mixing.Data, error) {
 	if filt := c.PluginFilter; filt != nil {
 		filt.SetPlaybackRate(details.SampleRate)
 	}

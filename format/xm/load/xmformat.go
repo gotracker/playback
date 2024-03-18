@@ -6,7 +6,7 @@ import (
 	"math"
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/heucuva/optional"
 
 	"github.com/gotracker/playback/format/common"

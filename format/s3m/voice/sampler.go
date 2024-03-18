@@ -1,9 +1,9 @@
 package voice
 
 import (
-	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/frequency"
+	"github.com/gotracker/playback/mixing/sampling"
+	"github.com/gotracker/playback/mixing/volume"
 )
 
 type voicerPos interface {

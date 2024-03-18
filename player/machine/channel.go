@@ -1,11 +1,11 @@
 package machine
 
 import (
-	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/memory"
+	"github.com/gotracker/playback/mixing/sampling"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/machine/instruction"
 	"github.com/gotracker/playback/song"
