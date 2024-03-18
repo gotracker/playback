@@ -4,9 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/opl2"
+	"github.com/gotracker/playback/mixing/sampling"
+	"github.com/gotracker/playback/mixing/volume"
 
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/index"

@@ -3,7 +3,7 @@ package panning
 import (
 	"math"
 
-	"github.com/gotracker/gomixing/panning"
+	"github.com/gotracker/playback/mixing/panning"
 	"github.com/gotracker/playback/voice/types"
 )
 

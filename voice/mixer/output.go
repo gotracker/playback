@@ -1,8 +1,8 @@
 package mixer
 
 import (
-	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing/sampling"
+	"github.com/gotracker/playback/mixing/volume"
 )
 
 // Output applies a filter to a sample stream

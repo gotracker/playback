@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/mixing/volume"
 )
 
 type globals[TGlobalVolume Volume] struct {

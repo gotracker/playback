@@ -1,7 +1,7 @@
 package pcm
 
 import (
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing/volume"
 )
 
 // SampleReader is a reader interface that can return a whole multichannel sample at the current position

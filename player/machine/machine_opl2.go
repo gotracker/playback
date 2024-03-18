@@ -3,10 +3,10 @@ package machine
 import (
 	"errors"
 
-	"github.com/gotracker/gomixing/mixing"
-	"github.com/gotracker/gomixing/panning"
-	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/opl2"
+	"github.com/gotracker/playback/mixing"
+	"github.com/gotracker/playback/mixing/panning"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/player/sampler"
 	"github.com/gotracker/playback/voice"
 )
@@ -40,7 +40,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) setu
 	return nil
 }
 
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) renderOPL2Tick(mixerData *mixing.Data, mix *mixing.Mixer, tickSamples int) error {
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) renderOPL2Tick(centerAheadPan panning.PanMixer, mixerData *mixing.Data, mix *mixing.Mixer, tickSamples int) error {
 	// make a stand-alone data buffer for this channel for this tick
 	data := mix.NewMixBuffer(tickSamples)
 
@@ -56,7 +56,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 	}
 	*mixerData = mixing.Data{
 		Data:       data,
-		Pan:        panning.CenterAhead,
+		PanMatrix:  centerAheadPan,
 		Volume:     m.gv.ToVolume(),
 		SamplesLen: tickSamples,
 	}

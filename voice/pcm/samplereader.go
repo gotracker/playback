@@ -1,6 +1,6 @@
 package pcm
 
-import "github.com/gotracker/gomixing/volume"
+import "github.com/gotracker/playback/mixing/volume"
 
 type SampleType interface {
 	~int8 | ~uint8 | ~int16 | ~uint16 | ~float32 | ~float64

@@ -5,9 +5,9 @@ import (
 	"errors"
 	"os"
 
-	"github.com/gotracker/gomixing/mixing"
-	"github.com/gotracker/gomixing/sampling"
 	"github.com/gotracker/playback/format"
+	"github.com/gotracker/playback/mixing"
+	"github.com/gotracker/playback/mixing/sampling"
 	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/player/machine"
@@ -112,16 +112,12 @@ func ExamplePlayBufferToStdout() {
 		Channels: channels,
 	}
 
-	// A panning mixer knows how to coordinate panning values into a pre-final (penultimate?) mixing
-	// matrix that can be collapsed into the final form, ready for the sample type conversion.
-	panMixer := mixing.GetPanMixer(channels)
-
 	go func() {
 		// Wait for a pre-mix data blob to show up
 		for premix := range premixDataChannel {
 			// Flatten the data into the final format - this is a very complex process that this one
 			// helper function miraculously does for us, placing into a very handy slice of bytes.
-			data := m.Flatten(panMixer, premix.SamplesLen, premix.Data, premix.MixerVolume, sampleFormat)
+			data := m.Flatten(premix.SamplesLen, premix.Data, premix.MixerVolume, sampleFormat)
 
 			// write it out!  If we run into an error, then ignore it for now. This is where a context
 			// with a cancellation would be a good solution to properly coordinate the player update

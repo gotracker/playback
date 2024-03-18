@@ -1,8 +1,8 @@
 package output
 
 import (
-	"github.com/gotracker/gomixing/mixing"
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing"
+	"github.com/gotracker/playback/mixing/volume"
 )
 
 // PremixData is a structure containing the audio pre-mix data for a specific row or buffer

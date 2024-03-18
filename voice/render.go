@@ -1,14 +1,15 @@
 package voice
 
 import (
-	"github.com/gotracker/gomixing/mixing"
-	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing"
+	"github.com/gotracker/playback/mixing/panning"
+	"github.com/gotracker/playback/mixing/sampling"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice/mixer"
 )
 
-func RenderAndTick[TPeriod Period](in Voice, pc period.PeriodConverter[TPeriod], centerAheadPan volume.Matrix, details mixer.Details, out mixer.ApplyFilter) (*mixing.Data, error) {
+func RenderAndTick[TPeriod Period](in Voice, pc period.PeriodConverter[TPeriod], centerAheadPan panning.PanMixer, details mixer.Details, out mixer.ApplyFilter) (*mixing.Data, error) {
 	if in.IsDone() {
 		return nil, nil
 	}
@@ -54,7 +55,7 @@ func RenderAndTick[TPeriod Period](in Voice, pc period.PeriodConverter[TPeriod],
 	sampleData := mixing.SampleMixIn{
 		Sample:    sampler,
 		StaticVol: volume.Volume(1.0),
-		VolMatrix: centerAheadPan,
+		PanMatrix: centerAheadPan,
 		MixPos:    0,
 		MixLen:    details.Samples,
 	}
@@ -63,7 +64,7 @@ func RenderAndTick[TPeriod Period](in Voice, pc period.PeriodConverter[TPeriod],
 	mixBuffer.MixInSample(sampleData)
 	data := &mixing.Data{
 		Data:       mixBuffer,
-		Pan:        pan,
+		PanMatrix:  details.Panmixer.GetMixingMatrix(pan, details.StereoSeparation),
 		Volume:     volume.Volume(1.0),
 		Pos:        0,
 		SamplesLen: details.Samples,

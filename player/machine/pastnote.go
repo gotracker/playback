@@ -1,8 +1,8 @@
 package machine
 
 import (
-	"github.com/gotracker/gomixing/mixing"
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/voice/mixer"

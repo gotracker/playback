@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/opl2"
+	"github.com/gotracker/playback/mixing/volume"
 
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/note"

@@ -3,7 +3,7 @@ package channel
 import (
 	"fmt"
 
-	"github.com/gotracker/gomixing/sampling"
+	"github.com/gotracker/playback/mixing/sampling"
 
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"

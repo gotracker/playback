@@ -1,7 +1,7 @@
 package instrument
 
 import (
-	"github.com/gotracker/gomixing/sampling"
+	"github.com/gotracker/playback/mixing/sampling"
 	"github.com/gotracker/playback/voice/envelope"
 	"github.com/gotracker/playback/voice/fadeout"
 	"github.com/gotracker/playback/voice/loop"

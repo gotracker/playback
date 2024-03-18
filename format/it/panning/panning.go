@@ -4,7 +4,7 @@ import (
 	"math"
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
-	"github.com/gotracker/gomixing/panning"
+	"github.com/gotracker/playback/mixing/panning"
 	"github.com/gotracker/playback/voice/types"
 )
 

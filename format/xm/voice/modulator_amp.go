@@ -1,8 +1,8 @@
 package voice
 
 import (
-	"github.com/gotracker/gomixing/volume"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/voice/types"
 )
 

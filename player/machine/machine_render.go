@@ -3,11 +3,11 @@ package machine
 import (
 	"fmt"
 
-	"github.com/gotracker/gomixing/mixing"
-	"github.com/gotracker/gomixing/panning"
-	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/mixing"
+	"github.com/gotracker/playback/mixing/panning"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/output"
 	"github.com/gotracker/playback/player/render"
 	"github.com/gotracker/playback/player/sampler"
@@ -38,14 +38,15 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 	}
 
 	details := mixer.Details{
-		Mix:        s.Mixer(),
-		Panmixer:   s.GetPanMixer(),
-		SampleRate: frequency.Frequency(s.SampleRate),
-		Samples:    premix.SamplesLen,
-		Duration:   tickDuration,
+		Mix:              s.Mixer(),
+		Panmixer:         s.GetPanMixer(),
+		SampleRate:       frequency.Frequency(s.SampleRate),
+		StereoSeparation: s.StereoSeparation,
+		Samples:          premix.SamplesLen,
+		Duration:         tickDuration,
 	}
 
-	centerAheadPan := details.Panmixer.GetMixingMatrix(panning.CenterAhead)
+	centerAheadPan := details.Panmixer.GetMixingMatrix(panning.CenterAhead, s.StereoSeparation)
 
 	var mixData []mixing.Data
 	for i := range m.actualOutputs {
@@ -64,7 +65,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 		} else {
 			mixData = append(mixData, mixing.Data{
 				Data:       details.Mix.NewMixBuffer(details.Samples),
-				Pan:        panning.CenterAhead,
+				PanMatrix:  centerAheadPan,
 				Volume:     volume.Volume(0),
 				Pos:        0,
 				SamplesLen: details.Samples,
@@ -92,7 +93,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 		} else {
 			mixData = append(mixData, mixing.Data{
 				Data:       details.Mix.NewMixBuffer(details.Samples),
-				Pan:        panning.CenterAhead,
+				PanMatrix:  centerAheadPan,
 				Volume:     volume.Volume(0),
 				Pos:        0,
 				SamplesLen: details.Samples,
@@ -106,7 +107,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 
 	if m.opl2 != nil {
 		rr := [1]mixing.Data{}
-		if err := m.renderOPL2Tick(&rr[0], s.Mixer(), premix.SamplesLen); err != nil {
+		if err := m.renderOPL2Tick(centerAheadPan, &rr[0], s.Mixer(), premix.SamplesLen); err != nil {
 			return nil, err
 		}
 		premix.Data = append(premix.Data, rr[:])
@@ -127,7 +128,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 		premix.Data = append(premix.Data, mixing.ChannelData{
 			mixing.Data{
 				Data:       details.Mix.NewMixBuffer(details.Samples),
-				Pan:        panning.CenterAhead,
+				PanMatrix:  centerAheadPan,
 				Volume:     volume.Volume(0),
 				Pos:        0,
 				SamplesLen: details.Samples,

@@ -3,8 +3,8 @@ package component
 import (
 	"fmt"
 
-	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing/sampling"
+	"github.com/gotracker/playback/mixing/volume"
 
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/tracing"

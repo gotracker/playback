@@ -1,6 +1,6 @@
 package types
 
-import "github.com/gotracker/gomixing/panning"
+import "github.com/gotracker/playback/mixing/panning"
 
 type Panning interface {
 	~int | ~int8 | ~int16 | ~int32 | ~int64 |

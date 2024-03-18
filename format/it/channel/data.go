@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing/volume"
 
 	"github.com/gotracker/playback"
 	itNote "github.com/gotracker/playback/format/it/note"

@@ -3,7 +3,7 @@ package instrument
 import (
 	"math"
 
-	"github.com/gotracker/gomixing/sampling"
+	"github.com/gotracker/playback/mixing/sampling"
 )
 
 // OPL2OperatorData is the operator data for an OPL2/Adlib instrument

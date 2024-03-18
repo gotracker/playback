@@ -1,8 +1,8 @@
 package voice
 
 import (
-	"github.com/gotracker/gomixing/volume"
 	itVolume "github.com/gotracker/playback/format/it/volume"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/voice/types"
 	"github.com/heucuva/optional"
 )

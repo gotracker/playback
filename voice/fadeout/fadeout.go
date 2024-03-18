@@ -1,7 +1,7 @@
 package fadeout
 
 import (
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing/volume"
 )
 
 // Mode is the mode used to process fade-out

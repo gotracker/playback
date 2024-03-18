@@ -1,10 +1,10 @@
 package voice
 
 import (
-	"github.com/gotracker/gomixing/panning"
-	"github.com/gotracker/gomixing/sampling"
-	"github.com/gotracker/gomixing/volume"
 	"github.com/gotracker/opl2"
+	"github.com/gotracker/playback/mixing/panning"
+	"github.com/gotracker/playback/mixing/sampling"
+	"github.com/gotracker/playback/mixing/volume"
 
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"

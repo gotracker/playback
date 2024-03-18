@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing/volume"
 
 	"github.com/gotracker/playback"
 	xmNote "github.com/gotracker/playback/format/xm/note"

@@ -3,7 +3,7 @@ package volume
 import (
 	"math"
 
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/voice/types"
 )
 

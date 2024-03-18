@@ -3,7 +3,7 @@ package song
 import (
 	"fmt"
 
-	"github.com/gotracker/gomixing/volume"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/note"
 )
 
