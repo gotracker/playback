@@ -150,6 +150,26 @@ func (v *s3mVoice) Setup(inst *instrument.Instrument[period.Amiga, s3mVolume.Fin
 			return err
 		}
 
+		// Build OPL2 register set from instrument definition.
+		instOPL := d
+		v.opl2 = component.OPL2Registers{
+			Mod: component.OPL2Operator{
+				Reg20: instOPL.Modulator.GetReg20(),
+				Reg40: instOPL.Modulator.GetReg40(),
+				Reg60: instOPL.Modulator.GetReg60(),
+				Reg80: instOPL.Modulator.GetReg80(),
+				RegE0: instOPL.Modulator.GetRegE0(),
+			},
+			Car: component.OPL2Operator{
+				Reg20: instOPL.Carrier.GetReg20(),
+				Reg40: instOPL.Carrier.GetReg40(),
+				Reg60: instOPL.Carrier.GetReg60(),
+				Reg80: instOPL.Carrier.GetReg80(),
+				RegE0: instOPL.Carrier.GetRegE0(),
+			},
+			RegC0: instOPL.GetRegC0(),
+		}
+
 		var o component.OPL2[period.Amiga, s3mVolume.FineVolume, s3mVolume.Volume]
 		o.Setup(v.opl2Chip, int(v.opl2Channel), v.opl2, s3mPeriod.S3MAmigaConverter, s3mSystem.DefaultC4SampleRate, inst.GetDefaultVolume())
 		v.voicer = &o
