@@ -171,9 +171,20 @@ func (o *OPL2[TPeriod, TMixingVolume, TVolume]) calc40(reg40 uint8, vol volume.V
 }
 
 func (o *OPL2[TPeriod, TMixingVolume, TVolume]) periodToFreqBlock(p TPeriod, baseFreq frequency.Frequency) (uint16, uint8) {
-	modFreq := o.periodConverter.GetFrequency(p)
-	freq := float64(baseFreq) * float64(modFreq) / 261625
-
+	// The period converter can return either an absolute frequency (Hz) or a
+	// relative multiplier, depending on the converter implementation. For the
+	// legacy OPL path, absolute frequencies need to be scaled down to the
+	// expected OPL range (mirroring dbopl): baseFreq * freq / 261625.
+	modFreq := float64(o.periodConverter.GetFrequency(p))
+	var freq float64
+	if modFreq > 200 { // treat as absolute Hz (Amiga-style converters)
+		freq = float64(baseFreq) * modFreq / 261625.0
+	} else { // treat as a ratio/multiplier (Linear-style converters)
+		freq = modFreq * float64(baseFreq)
+	}
+	if freq <= 0 {
+		return 0, 0
+	}
 	return o.freqToFnumBlock(freq)
 }
 
