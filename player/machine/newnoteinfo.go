@@ -1,10 +1,11 @@
 package machine
 
 import (
+	"github.com/heucuva/optional"
+
 	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/mixing/sampling"
 	"github.com/gotracker/playback/note"
-	"github.com/heucuva/optional"
 )
 
 type ActionTick struct {

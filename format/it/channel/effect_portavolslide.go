@@ -11,7 +11,7 @@ import (
 
 // PortaVolumeSlide defines a portamento-to-note combined with a volume slide effect
 type PortaVolumeSlide[TPeriod period.Period] struct { // 'L'
-	playback.CombinedEffect[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning, *Memory, Data[TPeriod]]
+	playback.CombinedEffect[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]
 }
 
 // NewPortaVolumeSlide creates a new PortaVolumeSlide object

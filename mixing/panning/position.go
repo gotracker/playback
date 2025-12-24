@@ -13,6 +13,12 @@ type Position struct {
 var (
 	// CenterAhead is the position directly ahead of the listener
 	CenterAhead = MakeStereoPosition(0.5, 0, 1)
+
+	// SurroundPosition is the position directly behind the listener
+	SurroundPosition = Position{
+		Angle:    float32(math.Pi),
+		Distance: 1.0,
+	}
 )
 
 // MakeStereoPosition creates a stereo panning position based on a linear interpolation between `leftValue` and `RightValue`

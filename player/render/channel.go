@@ -2,11 +2,11 @@ package render
 
 import (
 	"github.com/gotracker/opl2"
+
+	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/mixing"
 	"github.com/gotracker/playback/mixing/panning"
 	"github.com/gotracker/playback/mixing/volume"
-
-	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/mixer"

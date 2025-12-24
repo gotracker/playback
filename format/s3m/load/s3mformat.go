@@ -7,7 +7,6 @@ import (
 	"io"
 
 	s3mfile "github.com/gotracker/goaudiofile/music/tracked/s3m"
-	"github.com/gotracker/playback/mixing/volume"
 
 	"github.com/gotracker/playback/format/common"
 	"github.com/gotracker/playback/format/s3m/channel"
@@ -19,6 +18,7 @@ import (
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/song"

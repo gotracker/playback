@@ -3,10 +3,9 @@ package component
 import (
 	"fmt"
 
+	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/mixing/sampling"
 	"github.com/gotracker/playback/mixing/volume"
-
-	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/tracing"
 	"github.com/gotracker/playback/voice/loop"
 	"github.com/gotracker/playback/voice/pcm"
@@ -130,16 +129,19 @@ func (s *Sampler[TPeriod, TMixingVolume, TVolume]) getConvertedSample(pos int) v
 		return volume.Matrix{}
 	}
 	sl := s.settings.Sample.Length()
+	looped := false
+	if s.canLoop() {
+		// Always run through the loop calculator when looping is enabled so we never
+		// read past the loop end and drag in post-loop garbage.
+		pos, looped = loop.CalcLoopPos(s.settings.WholeLoop, s.settings.SustainLoop, pos, sl, s.keyOn)
+	}
+
 	fadeout := false
 	fadeoutLen := 0
-	if pos >= sl {
-		if s.canLoop() {
-			pos, _ = loop.CalcLoopPos(s.settings.WholeLoop, s.settings.SustainLoop, pos, sl, s.keyOn)
-		} else {
-			fadeoutLen = pos - sl
-			pos = sl - 1
-			fadeout = true
-		}
+	if pos >= sl && !looped {
+		fadeoutLen = pos - sl
+		pos = sl - 1
+		fadeout = true
 	}
 	if pos < 0 || pos >= sl {
 		return volume.Matrix{}

@@ -11,7 +11,7 @@ import (
 
 // VibratoVolumeSlide defines a combination vibrato and volume slide effect
 type VibratoVolumeSlide[TPeriod period.Period] struct { // '6'
-	playback.CombinedEffect[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning, *Memory, Data[TPeriod]]
+	playback.CombinedEffect[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
 }
 
 // NewVibratoVolumeSlide creates a new VibratoVolumeSlide object

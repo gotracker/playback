@@ -15,9 +15,40 @@ import (
 )
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) render(s *sampler.Sampler) (*output.PremixData, error) {
+	frame, err := m.prepareRenderFrame(s)
+	if err != nil {
+		return nil, err
+	}
+
+	mixData, err := m.renderVoices(frame)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(mixData) > 0 {
+		frame.premix.Data = append(frame.premix.Data, mixData)
+	}
+
+	if err := m.mixHardwareSynths(frame, &frame.premix); err != nil {
+		return nil, err
+	}
+
+	m.normalizePremix(&frame)
+
+	return &frame.premix, nil
+}
+
+type renderFrame struct {
+	renderRow      render.RowRender
+	premix         output.PremixData
+	details        mixer.Details
+	centerAheadPan panning.PanMixer
+}
+
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) prepareRenderFrame(s *sampler.Sampler) (renderFrame, error) {
 	tickDuration := m.songData.GetTickDuration(m.bpm)
 	if tickDuration <= 0 {
-		return nil, fmt.Errorf("unexpected tick duration: %v", tickDuration)
+		return renderFrame{}, fmt.Errorf("unexpected tick duration: %v", tickDuration)
 	}
 
 	renderRow := render.RowRender{
@@ -48,14 +79,24 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 
 	centerAheadPan := details.Panmixer.GetMixingMatrix(panning.CenterAhead, s.StereoSeparation)
 
+	return renderFrame{
+		renderRow:      renderRow,
+		premix:         premix,
+		details:        details,
+		centerAheadPan: centerAheadPan,
+	}, nil
+}
+
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) renderVoices(frame renderFrame) ([]mixing.Data, error) {
 	var mixData []mixing.Data
+
 	for i := range m.actualOutputs {
 		rc := &m.actualOutputs[i]
 
 		rc.GlobalVolume = m.gv.ToVolume()
 
 		rc.GetVoice().DumpState(index.Channel(i), m.us.Tracer)
-		data, err := rc.RenderAndTick(m.ms.PeriodConverter, centerAheadPan, details)
+		data, err := rc.RenderAndTick(m.ms.PeriodConverter, frame.centerAheadPan, frame.details)
 		if err != nil {
 			return nil, err
 		}
@@ -64,11 +105,11 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 			mixData = append(mixData, *data)
 		} else {
 			mixData = append(mixData, mixing.Data{
-				Data:       details.Mix.NewMixBuffer(details.Samples),
-				PanMatrix:  centerAheadPan,
+				Data:       frame.details.Mix.NewMixBuffer(frame.details.Samples),
+				PanMatrix:  frame.centerAheadPan,
 				Volume:     volume.Volume(0),
 				Pos:        0,
-				SamplesLen: details.Samples,
+				SamplesLen: frame.details.Samples,
 			})
 		}
 	}
@@ -82,7 +123,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 
 			//rc.GetVoice().DumpState(index.Channel(i), m.us.Tracer)
 			var err error
-			data, err = rc.RenderAndTick(m.ms.PeriodConverter, centerAheadPan, details)
+			data, err = rc.RenderAndTick(m.ms.PeriodConverter, frame.centerAheadPan, frame.details)
 			if err != nil {
 				return nil, err
 			}
@@ -92,49 +133,52 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) rend
 			mixData = append(mixData, *data)
 		} else {
 			mixData = append(mixData, mixing.Data{
-				Data:       details.Mix.NewMixBuffer(details.Samples),
-				PanMatrix:  centerAheadPan,
+				Data:       frame.details.Mix.NewMixBuffer(frame.details.Samples),
+				PanMatrix:  frame.centerAheadPan,
 				Volume:     volume.Volume(0),
 				Pos:        0,
-				SamplesLen: details.Samples,
+				SamplesLen: frame.details.Samples,
 			})
 		}
 	}
 
-	if len(mixData) > 0 {
-		premix.Data = append(premix.Data, mixData)
+	return mixData, nil
+}
+
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) mixHardwareSynths(frame renderFrame, premix *output.PremixData) error {
+	if len(m.hardwareSynths) == 0 {
+		return nil
 	}
 
-	if m.opl2 != nil {
-		rr := [1]mixing.Data{}
-		if err := m.renderOPL2Tick(centerAheadPan, &rr[0], s.Mixer(), premix.SamplesLen); err != nil {
-			return nil, err
+	for _, synth := range m.hardwareSynths {
+		data, adjust, err := synth.RenderTick(frame.centerAheadPan, frame.details)
+		if err != nil {
+			return err
 		}
-		premix.Data = append(premix.Data, rr[:])
 
-		// make room in the mixer for the OPL2 data
-		// effectively, we can do this by calculating the new number (+1) of channels from the mixer volume (channels = reciprocal of mixer volume):
-		//   numChannels = (1/mv) + 1
-		// then by taking the reciprocal of it:
-		//   1 / numChannels
-		// but that ends up being simplified to:
-		//   mv / (mv + 1)
-		// and we get protection from div/0 in the process - provided, of course, that the mixerVolume is not exactly -1...
-		mv := premix.MixerVolume
-		premix.MixerVolume /= (mv + 1)
+		premix.Data = append(premix.Data, mixing.ChannelData{data})
+
+		if adjust != nil {
+			premix.MixerVolume = adjust(premix.MixerVolume)
+		}
 	}
 
-	if len(premix.Data) == 0 {
-		premix.Data = append(premix.Data, mixing.ChannelData{
-			mixing.Data{
-				Data:       details.Mix.NewMixBuffer(details.Samples),
-				PanMatrix:  centerAheadPan,
-				Volume:     volume.Volume(0),
-				Pos:        0,
-				SamplesLen: details.Samples,
-			},
-		})
+	return nil
+}
+
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) normalizePremix(frame *renderFrame) {
+	if len(frame.premix.Data) != 0 {
+		return
 	}
 
-	return &premix, nil
+	frame.premix.Data = append(frame.premix.Data, mixing.ChannelData{
+		mixing.Data{
+			Data:       frame.details.Mix.NewMixBuffer(frame.details.Samples),
+			PanMatrix:  frame.centerAheadPan,
+			Volume:     volume.Volume(0),
+			Pos:        0,
+			SamplesLen: frame.details.Samples,
+		},
+	})
+	return
 }

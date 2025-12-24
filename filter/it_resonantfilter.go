@@ -3,9 +3,9 @@ package filter
 import (
 	"math"
 
+	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/mixing/volume"
 
-	"github.com/gotracker/playback/frequency"
 	"github.com/heucuva/optional"
 )
 

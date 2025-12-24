@@ -75,7 +75,7 @@ func (d Data) Channel() uint8 {
 	return d.What.Channel()
 }
 
-func (d Data) GetEffects(mem *Memory, p period.Period) []playback.Effect {
+func (d Data) GetEffects(mem *Memory) []playback.Effect {
 	if d.HasCommand() {
 		if e := EffectFactory(mem, d); e != nil {
 			return []playback.Effect{e}

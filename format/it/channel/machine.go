@@ -9,7 +9,7 @@ import (
 )
 
 func withOscillatorDo[TPeriod period.Period](ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], speed int, depth float32, osc machine.Oscillator, fn func(value float32) error) error {
-	value, err := m.GetNextChannelWavetableValue(ch, speed, depth, machine.OscillatorVibrato)
+	value, err := m.GetNextChannelWavetableValue(ch, speed, depth, osc)
 	if err != nil {
 		return err
 	}

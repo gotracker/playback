@@ -15,7 +15,7 @@ import (
 type Panbrello[TPeriod period.Period] DataEffect // 'Y'
 
 func (e Panbrello[TPeriod]) String() string {
-	return fmt.Sprintf("H%0.2x", DataEffect(e))
+	return fmt.Sprintf("Y%0.2x", DataEffect(e))
 }
 
 func (e Panbrello[TPeriod]) Tick(ch index.Channel, m machine.Machine[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning], tick int) error {

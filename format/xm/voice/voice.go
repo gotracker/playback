@@ -218,6 +218,7 @@ func (v *xmVoice[TPeriod]) Reset() error {
 
 func (v *xmVoice[TPeriod]) Stop() {
 	v.stopped = true
+	_ = v.amp.SetActive(false)
 }
 
 func (v xmVoice[TPeriod]) IsDone() bool {

@@ -5,14 +5,14 @@ import (
 	"strings"
 )
 
-type entry[TPrefix Ticker, TPayload fmt.Stringer] struct {
-	prefix    TPrefix
+type entry struct {
+	prefix    Ticker
 	operation string
 	comment   string
-	payload   TPayload
+	payload   fmt.Stringer
 }
 
-func (e entry[TPrefix, TPayload]) String() string {
+func (e entry) String() string {
 	var chunks []string
 	if len(e.operation) > 0 {
 		chunks = append(chunks, e.operation)
@@ -26,11 +26,11 @@ func (e entry[TPrefix, TPayload]) String() string {
 	return strings.Join(chunks, " ")
 }
 
-func (e entry[TPrefix, TPayload]) GetTick() Tick {
+func (e entry) GetTick() Tick {
 	return e.prefix.GetTick()
 }
 
-func (e entry[TPrefix, TPayload]) Prefix() string {
+func (e entry) Prefix() string {
 	return e.prefix.String()
 }
 
@@ -55,8 +55,8 @@ func (t *tracerFile) traceWithComment(tick Tick, op, comment string) {
 	traceWithPayload(t, tick, op, comment, empty)
 }
 
-func traceWithPayload[TPrefix Ticker, TPayload fmt.Stringer](t *tracerFile, prefix TPrefix, op, comment string, payload TPayload) {
-	e := entry[TPrefix, TPayload]{
+func traceWithPayload(t *tracerFile, prefix Ticker, op, comment string, payload fmt.Stringer) {
+	e := entry{
 		prefix:    prefix,
 		operation: op,
 		comment:   comment,

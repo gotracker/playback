@@ -27,6 +27,10 @@ func ExamplePlayFileToStdout() {
 		sampleFormat = sampling.Format16BitLESigned
 	)
 
+	if os.Getenv("GOTRACKER_SKIP_EXAMPLES") == "1" {
+		return
+	}
+
 	// This is a list of features we can build up before handing off to the loader and player.
 	var features []feature.Feature
 
@@ -96,7 +100,7 @@ func ExamplePlayFileToStdout() {
 	// way for the calling application (our example) to get the generated output data in the form of
 	// pre-mixed packets. These packets can be further mixed into audio streams for use with sound
 	// devices and files.
-	out := sampler.NewSampler(sampleRate, channels, func(premix *output.PremixData) {
+	out := sampler.NewSampler(sampleRate, channels, 1.0, func(premix *output.PremixData) {
 		// put our premixed data into the premixDataChannel we built earlier.
 		premixDataChannel <- premix
 	})
@@ -131,7 +135,16 @@ playerUpdateLoop:
 		// row tick's worth of pre-mix data and call our callback function specified in the Sampler
 		// stage we specified earlier. Normally, we would want to set up a goroutine for this call to
 		// run in, but in this example, we're fine to do a simple loop.
-		if err := player.Tick(out); err != nil {
+		if err := player.Advance(); err != nil {
+			// In the event we finish our song, we will receive a specific error message informing us
+			// we can quit.
+			if errors.Is(err, song.ErrStopSong) {
+				break playerUpdateLoop
+			}
+			panic(err)
+		}
+
+		if err := player.Render(out); err != nil {
 			// In the event we finish our song, we will receive a specific error message informing us
 			// we can quit.
 			if errors.Is(err, song.ErrStopSong) {

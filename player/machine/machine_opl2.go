@@ -4,11 +4,13 @@ import (
 	"errors"
 
 	"github.com/gotracker/opl2"
+
 	"github.com/gotracker/playback/mixing"
 	"github.com/gotracker/playback/mixing/panning"
 	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/player/sampler"
 	"github.com/gotracker/playback/voice"
+	"github.com/gotracker/playback/voice/mixer"
 )
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) setupOPL2(s *sampler.Sampler) error {
@@ -37,28 +39,42 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) setu
 		}
 	}
 
+	m.hardwareSynths = append(m.hardwareSynths, opl2Synth{
+		chip: m.opl2,
+		gv:   func() volume.Volume { return m.gv.ToVolume() },
+	})
+
 	return nil
 }
 
-func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) renderOPL2Tick(centerAheadPan panning.PanMixer, mixerData *mixing.Data, mix *mixing.Mixer, tickSamples int) error {
-	// make a stand-alone data buffer for this channel for this tick
-	data := mix.NewMixBuffer(tickSamples)
+type opl2Synth struct {
+	chip *opl2.Chip
+	gv   func() volume.Volume
+}
 
-	opl2data := make([]int32, tickSamples)
+func (o opl2Synth) RenderTick(centerAheadPan panning.PanMixer, details mixer.Details) (mixing.Data, mixerVolumeAdjuster, error) {
+	data := details.Mix.NewMixBuffer(details.Samples)
+	opl2data := make([]int32, details.Samples)
 
-	if opl2 := m.opl2; opl2 != nil {
-		opl2.GenerateBlock2(uint(tickSamples), opl2data)
+	if chip := o.chip; chip != nil {
+		chip.GenerateBlock2(uint(details.Samples), opl2data)
 	}
 
 	for i, s := range opl2data {
 		sv := volume.Volume(s) / 32768.0
 		data[i].Assign(1, []volume.Volume{sv})
 	}
-	*mixerData = mixing.Data{
+
+	mixerData := mixing.Data{
 		Data:       data,
 		PanMatrix:  centerAheadPan,
-		Volume:     m.gv.ToVolume(),
-		SamplesLen: tickSamples,
+		Volume:     o.gv(),
+		SamplesLen: details.Samples,
 	}
-	return nil
+
+	adjust := func(mv volume.Volume) volume.Volume {
+		return mv / (mv + 1)
+	}
+
+	return mixerData, adjust, nil
 }

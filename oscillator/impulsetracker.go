@@ -63,6 +63,7 @@ type impulseOscillator struct {
 	Table oscillator.WaveTableSelect
 	Pos   uint8
 	Mul   uint8
+	Delay uint8 // only used for random waveforms (speed as delay)
 }
 
 // NewImpulseTrackerOscillator creates a new ImpulseTracker-compatible oscillator
@@ -77,6 +78,7 @@ func (o impulseOscillator) Clone() oscillator.Oscillator {
 		Table: o.Table,
 		Pos:   0,
 		Mul:   o.Mul,
+		Delay: 0,
 	}
 }
 
@@ -98,7 +100,12 @@ func (o *impulseOscillator) GetWave(depth float32) float32 {
 			vib = -1.0
 		}
 	case WaveTableSelectRandomRetrigger, WaveTableSelectRandomContinue:
-		vib = GetImpulseSine(rand.Intn(0xff))
+		if o.Delay > 0 {
+			o.Delay--
+			vib = 0
+		} else {
+			vib = GetImpulseSine(rand.Intn(0xff))
+		}
 	}
 	delta := vib * depth
 	return delta
@@ -106,6 +113,13 @@ func (o *impulseOscillator) GetWave(depth float32) float32 {
 
 // Advance advances the oscillator position by the specified amount
 func (o *impulseOscillator) Advance(speed int) {
+	if o.Table == WaveTableSelectRandomRetrigger || o.Table == WaveTableSelectRandomContinue {
+		// IT random waveform: speed acts as a delay between random picks
+		if o.Delay == 0 {
+			o.Delay = uint8(speed)
+		}
+		return
+	}
 	o.Pos += uint8(speed) * o.Mul
 }
 

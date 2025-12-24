@@ -1,19 +1,26 @@
 package machine
 
 import (
+	"errors"
+
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/player/sampler"
 )
 
 func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick(s *sampler.Sampler) error {
-	if s != nil {
-		if m.opl2Enabled && m.opl2 == nil && m.ms.OPL2Enabled {
-			if err := m.setupOPL2(s); err != nil {
-				return err
-			}
-		}
+	if s == nil {
+		return errors.New("sampler is required; call Advance() for sequencing-only")
 	}
 
+	if err := m.Advance(); err != nil {
+		return err
+	}
+
+	return m.Render(s)
+}
+
+// Advance progresses song sequencing and channel state without rendering audio.
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Advance() error {
 	if err := m.songData.ForEachChannel(true, func(ch index.Channel) (bool, error) {
 		c := &m.channels[ch]
 		if err := c.DoNoteAction(ch, m); err != nil {
@@ -24,22 +31,35 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Tick
 		return err
 	}
 
-	err := runTick(&m.ticker, m)
-	if err != nil {
+	if err := runTick(&m.ticker, m); err != nil {
 		return err
 	}
 
 	m.age++
+	return nil
+}
 
-	if s != nil {
-		premix, err := m.render(s)
-		if err != nil {
+// Render produces audio for the current state using the provided sampler.
+func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) Render(s *sampler.Sampler) error {
+	if s == nil {
+		return errors.New("sampler is nil")
+	}
+
+	if m.opl2Enabled && m.opl2 == nil && m.ms.OPL2Enabled {
+		if err := m.setupOPL2(s); err != nil {
 			return err
 		}
-		if s.OnGenerate != nil {
-			s.OnGenerate(premix)
-		}
 	}
+
+	premix, err := m.render(s)
+	if err != nil {
+		return err
+	}
+
+	if s.OnGenerate != nil {
+		s.OnGenerate(premix)
+	}
+
 	return nil
 }
 

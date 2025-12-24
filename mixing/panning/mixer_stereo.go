@@ -13,5 +13,6 @@ func (m MixerStereo) ApplyToMatrix(mtx volume.Matrix) volume.Matrix {
 }
 
 func (m MixerStereo) Apply(vol volume.Volume) volume.Matrix {
-	return m.Matrix.Apply(vol)
+	dry := m.Matrix.Apply(vol)
+	return m.StereoSeparationFunc(dry)
 }

@@ -8,6 +8,15 @@ import (
 // Volume is a mixable volume
 type Volume float32
 
+const denormThreshold Volume = 1e-18
+
+func clearDenorm(v Volume) Volume {
+	if v > -denormThreshold && v < denormThreshold {
+		return 0
+	}
+	return v
+}
+
 var (
 	// VolumeUseInstVol tells the system to use the volume stored on the instrument
 	// This is useful for trackers and other musical applications
@@ -71,7 +80,7 @@ func (v Volume) ToUintSample(bitsPerSample int) uint32 {
 
 // Apply multiplies the volume to 1 sample, then returns the results
 func (v Volume) ApplySingle(samp Volume) Volume {
-	return samp * v
+	return clearDenorm(samp * v)
 }
 
 // Apply multiplies the volume to 1 sample, then returns the results

@@ -1,9 +1,10 @@
 package loop
 
 // PingPong is a loop that bounces forward and backward between loopBegin and loopEnd
-//  |start>-----------------------loopEnd|------------| <= on playthrough 1, whole sample plays
-//  |-------------|loopBegin>----<loopEnd|------------| <= only if looped and on playthrough 2+, part that loops plays and ping-pongs
-//  |-------------|loopBegin>----------------------end| <= on playthrough 2+, the loop ends and playback continues to end, if !keyOn
+//
+//	|start>-----------------------loopEnd|------------| <= on playthrough 1, whole sample plays
+//	|-------------|loopBegin>----<loopEnd|------------| <= only if looped and on playthrough 2+, part that loops plays and ping-pongs
+//	|-------------|loopBegin>----------------------end| <= on playthrough 2+, the loop ends and playback continues to end, if !keyOn
 type PingPong struct {
 	Settings
 }
@@ -29,10 +30,7 @@ func (l *PingPong) CalcPos(pos int, length int) (int, bool) {
 
 	loopLen := l.Length()
 	if loopLen < 0 {
-		if pos < length {
-			return pos, false
-		}
-		return length, false
+		return max(pos, length), false
 	} else if loopLen == 0 {
 		return l.Begin, true
 	}

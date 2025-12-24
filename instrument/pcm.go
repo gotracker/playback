@@ -1,6 +1,8 @@
 package instrument
 
 import (
+	"github.com/heucuva/optional"
+
 	"github.com/gotracker/playback/mixing/sampling"
 	"github.com/gotracker/playback/voice/envelope"
 	"github.com/gotracker/playback/voice/fadeout"
@@ -8,7 +10,6 @@ import (
 	"github.com/gotracker/playback/voice/pcm"
 	"github.com/gotracker/playback/voice/pitchpan"
 	"github.com/gotracker/playback/voice/types"
-	"github.com/heucuva/optional"
 )
 
 // PCM is a PCM-data instrument

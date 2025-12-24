@@ -14,7 +14,7 @@ type EffectXM = playback.Effect
 
 // VolEff is a combined effect that includes a volume effect and a standard effect
 type VolEff[TPeriod period.Period] struct {
-	playback.CombinedEffect[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning, *Memory, Data[TPeriod]]
+	playback.CombinedEffect[TPeriod, xmVolume.XmVolume, xmVolume.XmVolume, xmVolume.XmVolume, xmPanning.Panning]
 	eff EffectXM
 }
 

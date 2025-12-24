@@ -2,10 +2,10 @@ package component
 
 import (
 	"github.com/gotracker/opl2"
-	"github.com/gotracker/playback/mixing/volume"
 
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/tracing"
 	"github.com/gotracker/playback/voice/types"
@@ -69,6 +69,9 @@ func (o *OPL2[TPeriod, TMixingVolume, TVolume]) Fadeout() {
 // DeferredAttack activates the key-on bit
 func (o *OPL2[TPeriod, TMixingVolume, TVolume]) DeferredAttack() {
 	o.keyOn = true
+	if o.chip == nil {
+		return
+	}
 	// calculate the register addressing information
 	index := uint32(o.channel)
 	mod := o.getChannelIndex(o.channel)
@@ -98,6 +101,9 @@ func (o *OPL2[TPeriod, TMixingVolume, TVolume]) DeferredRelease() {
 	// calculate the register addressing information
 	index := uint32(o.channel)
 	ch := o.chip
+	if ch == nil {
+		return
+	}
 
 	// send the voice details out to the chip
 	ch.WriteReg(0xB0|index, 0x00)
@@ -105,6 +111,10 @@ func (o *OPL2[TPeriod, TMixingVolume, TVolume]) DeferredRelease() {
 
 // Advance advances the playback
 func (o *OPL2[TPeriod, TMixingVolume, TVolume]) Advance(carVol volume.Volume, period TPeriod) {
+	if o.chip == nil {
+		return
+	}
+
 	// calculate the register addressing information
 	index := uint32(o.channel)
 	mod := o.getChannelIndex(o.channel)

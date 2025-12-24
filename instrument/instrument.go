@@ -1,12 +1,12 @@
 package instrument
 
 import (
-	"github.com/gotracker/playback/mixing/sampling"
-	"github.com/gotracker/playback/mixing/volume"
 	"github.com/heucuva/optional"
 
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/frequency"
+	"github.com/gotracker/playback/mixing/sampling"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/voice/autovibrato"

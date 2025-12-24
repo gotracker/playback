@@ -2,6 +2,7 @@ package component
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/tracing"
@@ -41,6 +42,7 @@ type EnvelopeSettings[TIn, TOut any] struct {
 
 func (e *baseEnvelope[TIn, TOut]) Setup(settings EnvelopeSettings[TIn, TOut], update func(TIn, TIn, float64) TOut) {
 	e.settings = settings
+	e.ensureDefaults()
 	e.updater = update
 	e.Reset()
 }
@@ -48,6 +50,7 @@ func (e *baseEnvelope[TIn, TOut]) Setup(settings EnvelopeSettings[TIn, TOut], up
 func (e baseEnvelope[TIn, TOut]) Clone(update func(TIn, TIn, float64) TOut, onFinished voice.Callback) baseEnvelope[TIn, TOut] {
 	m := e
 	m.settings.OnFinished = onFinished
+	m.ensureDefaults()
 	m.updater = update
 	return m
 }
@@ -56,6 +59,22 @@ func (e baseEnvelope[TIn, TOut]) Clone(update func(TIn, TIn, float64) TOut, onFi
 func (e *baseEnvelope[TIn, TOut]) Reset() error {
 	e.keyed.active = e.settings.Enabled
 	return e.stateReset()
+}
+
+func (e *baseEnvelope[TIn, TOut]) ensureDefaults() {
+	if e.settings.Envelope.Loop == nil {
+		e.settings.Envelope.Loop = &loop.Disabled{}
+	}
+	if e.settings.Envelope.Sustain == nil {
+		e.settings.Envelope.Sustain = &loop.Disabled{}
+	}
+	if e.settings.Envelope.Length < 0 {
+		e.settings.Envelope.Length = 0
+	}
+}
+
+func (e baseEnvelope[TIn, TOut]) loopPos(pos int, keyOn bool) (int, bool) {
+	return loop.CalcLoopPos(e.settings.Envelope.Loop, e.settings.Envelope.Sustain, pos, e.settings.Envelope.Length, keyOn)
 }
 
 func (e baseEnvelope[TIn, TOut]) CanLoop() bool {
@@ -128,6 +147,7 @@ func (e *baseEnvelope[TIn, TOut]) stateReset() error {
 
 	e.keyed.pos = 0
 	e.keyed.done = false
+	e.ensureDefaults()
 	return e.updateValue()
 }
 
@@ -142,42 +162,28 @@ func (e *baseEnvelope[TIn, TOut]) updateValue() error {
 		return nil
 	}
 
-	curTick, _ := loop.CalcLoopPos(e.settings.Envelope.Loop, e.settings.Envelope.Sustain, e.keyed.pos, e.settings.Envelope.Length, e.prevKeyOn)
-	nextTick, _ := loop.CalcLoopPos(e.settings.Envelope.Loop, e.settings.Envelope.Sustain, curTick+1, e.settings.Envelope.Length, e.keyOn)
-
-	curPoint := -1
-	for i, it := range e.settings.Envelope.Values {
-		if it.Pos > curTick {
-			curPoint = i - 1
-			break
-		}
-	}
-	var cur envelope.Point[TIn]
-	if curPoint >= 0 && curPoint < nPoints {
-		cur = e.settings.Values[curPoint]
-	} else {
-		cur = e.settings.Values[nPoints-1]
+	curTick, _ := e.loopPos(e.keyed.pos, e.prevKeyOn)
+	vals := e.settings.Envelope.Values
+	curIdx := sort.Search(len(vals), func(i int) bool { return vals[i].Pos > curTick }) - 1
+	if curIdx < 0 {
+		curIdx = 0
+	} else if curIdx >= nPoints {
+		curIdx = nPoints - 1
 	}
 
-	nextPoint := -1
-	for i, it := range e.settings.Envelope.Values {
-		if it.Pos > nextTick {
-			nextPoint = i
-			break
-		}
-	}
-
-	if nextPoint < 0 || nextPoint >= nPoints {
-		e.value = e.updater(cur.Y, cur.Y, 0)
+	nextIdx := curIdx + 1
+	if nextIdx >= nPoints {
+		e.value = e.updater(vals[curIdx].Y, vals[curIdx].Y, 0)
 		return nil
 	}
 
-	next := e.settings.Values[nextPoint]
+	cur := vals[curIdx]
+	next := vals[nextIdx]
 
 	t := float64(0)
-	if cur.Length > 0 {
+	if cur.Length > 0 && curTick >= cur.Pos {
 		if tl := curTick - cur.Pos; tl > 0 {
-			t = max(min((float64(tl)/float64(cur.Length)), 1), 0)
+			t = max(min(float64(tl)/float64(cur.Length), 1), 0)
 		}
 	}
 
@@ -208,23 +214,12 @@ func (e *baseEnvelope[TIn, TOut]) stateAdvance(keyOn bool) bool {
 	}
 
 	e.keyed.pos++
-	curTick, looped := loop.CalcLoopPos(e.settings.Envelope.Loop, e.settings.Envelope.Sustain, e.keyed.pos, e.settings.Envelope.Length, keyOn)
+	curTick, looped := e.loopPos(e.keyed.pos, keyOn)
 
-	found := false
-	for _, i := range e.settings.Envelope.Values {
-		if i.Pos >= curTick {
-			found = true
-			break
-		}
-	}
-
-	if !found {
+	vals := e.settings.Envelope.Values
+	idx := sort.Search(len(vals), func(i int) bool { return vals[i].Pos >= curTick })
+	if idx == len(vals) && !looped && !keyOn && curTick >= e.settings.Length {
 		e.keyed.done = true
-		return true
-	}
-
-	if !keyOn && !looped && curTick >= e.settings.Length {
-		e.keyed.done = false
 		return true
 	}
 
