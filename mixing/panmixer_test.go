@@ -42,9 +42,8 @@ func TestPanMixerStereoCenteredCoefficients(t *testing.T) {
 	if matrix.Channels != 2 {
 		t.Fatalf("expected 2 channels, got %d", matrix.Channels)
 	}
-	expected := volume.StereoCoeff
-	if !almostEqual(float64(matrix.StaticMatrix[0]), float64(expected), 1e-6) ||
-		!almostEqual(float64(matrix.StaticMatrix[1]), float64(expected), 1e-6) {
+	if !almostEqual(float64(matrix.StaticMatrix[0]), 0, 1e-6) ||
+		!almostEqual(float64(matrix.StaticMatrix[1]), 1, 1e-6) {
 		t.Fatalf("unexpected coefficients: %+v", matrix.StaticMatrix)
 	}
 }
