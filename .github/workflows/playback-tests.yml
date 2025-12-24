@@ -1,4 +1,4 @@
-name: Playback Tests
+name: Tests
 
 on:
   push:

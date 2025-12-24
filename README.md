@@ -1,5 +1,7 @@
 # playback
 
+![Tests](https://github.com/gotracker/playback/workflows/Tests/badge.svg)
+
 ## What is it?
 
 It's an embeddable tracked music player written in Go.
