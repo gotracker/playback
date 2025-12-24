@@ -81,7 +81,14 @@ func VolumeToS3M(v volume.Volume) Volume {
 	case v == volume.VolumeUseInstVol:
 		return Volume(s3mfile.EmptyVolume)
 	default:
-		return Volume(v * volume.Volume(MaxVolume))
+		scaled := math.Round(float64(v * volume.Volume(MaxVolume)))
+		switch {
+		case scaled < 0:
+			scaled = 0
+		case scaled > float64(MaxVolume):
+			scaled = float64(MaxVolume)
+		}
+		return Volume(scaled)
 	}
 }
 

@@ -3,9 +3,10 @@ package machine
 import (
 	"errors"
 
+	"github.com/heucuva/optional"
+
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/song"
-	"github.com/heucuva/optional"
 )
 
 type ticker struct {

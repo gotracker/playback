@@ -1,14 +1,16 @@
 package settings
 
 import (
+	"github.com/heucuva/optional"
+
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/tracing"
-	"github.com/heucuva/optional"
 )
 
 type UserSettings struct {
 	Tracer        tracing.TracerWithClose
 	SongLoopCount int
+	Quirks        QuirksUserSettings
 	Start         struct {
 		Order optional.Value[index.Order] // default: based on song
 		Row   optional.Value[index.Row]   // default: 0
@@ -24,12 +26,27 @@ type UserSettings struct {
 	EnableNewNoteActions bool
 }
 
+type QuirkOverride[T any] = optional.Value[T]
+
+type QuirksUserSettings struct {
+	Profile                                    optional.Value[string]
+	LinearSlidesOverride                       QuirkOverride[bool]
+	PreviousPeriodUsesModifiedPeriodOverride   QuirkOverride[bool]
+	PortaToNoteUsesModifiedPeriodOverride      QuirkOverride[bool]
+	DoNotProcessEffectsOnMutedChannelsOverride QuirkOverride[bool]
+}
+
 // Reset applies the defaults
 //
 //	NOTE: does not reset the Tracer value
 func (s *UserSettings) Reset() {
 	// don't touch the Tracer here
 	s.SongLoopCount = 0
+	s.Quirks.Profile.Reset()
+	s.Quirks.LinearSlidesOverride = QuirkOverride[bool]{}
+	s.Quirks.PreviousPeriodUsesModifiedPeriodOverride = QuirkOverride[bool]{}
+	s.Quirks.PortaToNoteUsesModifiedPeriodOverride = QuirkOverride[bool]{}
+	s.Quirks.DoNotProcessEffectsOnMutedChannelsOverride = QuirkOverride[bool]{}
 	s.Start.Order.Reset()
 	s.Start.Row.Reset()
 	s.Start.Tempo = 0

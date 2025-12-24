@@ -31,9 +31,9 @@ func (s Song) GetChannelSettings(channelNum index.Channel) song.ChannelSettings 
 
 func (s Song) GetRowRenderStringer(row song.Row, channels int, longFormat bool) render.RowStringer {
 	nch := min(s.NumChannels, channels)
-	rt := render.NewRowText[channel.Data](nch, longFormat)
-	rowData := make([]channel.Data, 0, nch)
-	_ = song.ForEachRowChannel[s3mVolume.Volume](row, func(ch index.Channel, d song.ChannelData[s3mVolume.Volume]) (bool, error) {
+	vm := render.NewRowViewModel[channel.Data](nch)
+	rowData := vm.Channels[:0]
+	song.ForEachRowChannel(row, func(ch index.Channel, d song.ChannelData[s3mVolume.Volume]) (bool, error) {
 		if int(ch) >= nch || !s.ChannelSettings[ch].Enabled || s.ChannelSettings[ch].Muted {
 			return true, nil
 		}
@@ -43,8 +43,8 @@ func (s Song) GetRowRenderStringer(row song.Row, channels int, longFormat bool) 
 	for len(rowData) < nch {
 		rowData = append(rowData, channel.Data{})
 	}
-	rt.Channels = rowData
-	return rt
+	vm.Channels = rowData
+	return render.FormatRowText(vm, longFormat)
 }
 
 func (s Song) ForEachChannel(enabledOnly bool, fn func(ch index.Channel) (bool, error)) error {

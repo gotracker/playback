@@ -14,7 +14,7 @@ type EffectIT = playback.Effect
 
 // VolEff is a combined effect that includes a volume effect and a standard effect
 type VolEff[TPeriod period.Period] struct {
-	playback.CombinedEffect[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning, *Memory, Data[TPeriod]]
+	playback.CombinedEffect[TPeriod, itVolume.FineVolume, itVolume.FineVolume, itVolume.Volume, itPanning.Panning]
 	eff EffectIT
 }
 

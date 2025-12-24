@@ -6,7 +6,6 @@ import (
 	"math"
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
-	"github.com/gotracker/playback/mixing/volume"
 	"github.com/heucuva/optional"
 
 	"github.com/gotracker/playback/format/common"
@@ -20,6 +19,7 @@ import (
 	"github.com/gotracker/playback/frequency"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/period"
@@ -32,7 +32,7 @@ import (
 	"github.com/gotracker/playback/voice/pcm"
 )
 
-func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*xmLayout.Header, error) {
+func moduleHeaderToHeader(fh *xmfile.ModuleHeader, linearSlides bool) (*xmLayout.Header, error) {
 	if fh == nil {
 		return nil, errors.New("file header is nil")
 	}
@@ -42,7 +42,7 @@ func moduleHeaderToHeader(fh *xmfile.ModuleHeader) (*xmLayout.Header, error) {
 		InitialTempo:     int(fh.DefaultTempo),
 		GlobalVolume:     xmVolume.DefaultXmVolume,
 		MixingVolume:     xmVolume.DefaultXmMixingVolume,
-		LinearFreqSlides: fh.Flags.IsLinearSlides(),
+		LinearFreqSlides: linearSlides,
 		InitialOrder:     0,
 	}
 	return &head, nil
@@ -286,20 +286,18 @@ func convertXmPattern[TPeriod period.Period](pkt xmfile.Pattern) (song.Pattern, 
 }
 
 func convertXmFileToSong(f *xmfile.File, features []feature.Feature) (song.Data, error) {
-	if f.Head.Flags.IsLinearSlides() {
-		return convertXmFileToTypedSong[period.Linear](f, features)
-	} else {
-		return convertXmFileToTypedSong[period.Amiga](f, features)
+	linearSlides := common.ResolveLinearSlides(f.Head.Flags.IsLinearSlides(), features)
+	if linearSlides {
+		return convertXmFileToTypedSong[period.Linear](f, features, linearSlides)
 	}
+	return convertXmFileToTypedSong[period.Amiga](f, features, linearSlides)
 }
 
-func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []feature.Feature) (*xmLayout.Song[TPeriod], error) {
-	h, err := moduleHeaderToHeader(&f.Head)
+func convertXmFileToTypedSong[TPeriod period.Period](f *xmfile.File, features []feature.Feature, linearFrequencySlides bool) (*xmLayout.Song[TPeriod], error) {
+	h, err := moduleHeaderToHeader(&f.Head, linearFrequencySlides)
 	if err != nil {
 		return nil, err
 	}
-
-	linearFrequencySlides := f.Head.Flags.IsLinearSlides()
 
 	ms := xmSettings.GetMachineSettings[TPeriod]()
 

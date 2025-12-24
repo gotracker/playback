@@ -5,13 +5,13 @@ import (
 	"strings"
 
 	xmfile "github.com/gotracker/goaudiofile/music/tracked/xm"
-	"github.com/gotracker/playback/mixing/volume"
 
 	"github.com/gotracker/playback"
 	xmNote "github.com/gotracker/playback/format/xm/note"
 	xmPanning "github.com/gotracker/playback/format/xm/panning"
 	xmVolume "github.com/gotracker/playback/format/xm/volume"
 	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/machine"
@@ -101,7 +101,7 @@ func (d Data[TPeriod]) Channel() uint8 {
 	return 0
 }
 
-func (d Data[TPeriod]) GetEffects(mem *Memory, periodType period.Period) []playback.Effect {
+func (d Data[TPeriod]) GetEffects(mem *Memory) []playback.Effect {
 	if e := EffectFactory[TPeriod](mem, d); e != nil {
 		return []playback.Effect{e}
 	}

@@ -4,11 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gotracker/playback/mixing/sampling"
-
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/mixing/sampling"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/song"

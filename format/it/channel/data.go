@@ -5,13 +5,13 @@ import (
 	"strings"
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
-	"github.com/gotracker/playback/mixing/volume"
 
 	"github.com/gotracker/playback"
 	itNote "github.com/gotracker/playback/format/it/note"
 	itPanning "github.com/gotracker/playback/format/it/panning"
 	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/machine"

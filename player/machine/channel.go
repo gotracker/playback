@@ -1,6 +1,8 @@
 package machine
 
 import (
+	"github.com/heucuva/optional"
+
 	"github.com/gotracker/playback/filter"
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
@@ -11,7 +13,6 @@ import (
 	"github.com/gotracker/playback/song"
 	"github.com/gotracker/playback/voice"
 	"github.com/gotracker/playback/voice/oscillator"
-	"github.com/heucuva/optional"
 )
 
 type channel[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] struct {

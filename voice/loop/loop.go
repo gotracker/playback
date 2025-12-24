@@ -15,6 +15,13 @@ type Settings struct {
 
 // CalcLoopPos returns the new location and looped flag within a pair of loops (normal and sustain)
 func CalcLoopPos(loop Loop, sustain Loop, pos int, length int, keyOn bool) (int, bool) {
+	if loop == nil {
+		loop = &Disabled{}
+	}
+	if sustain == nil {
+		sustain = &Disabled{}
+	}
+
 	if keyOn && sustain.Enabled() {
 		// sustain loop
 		return sustain.CalcPos(pos, length)

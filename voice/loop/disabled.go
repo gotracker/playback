@@ -1,7 +1,8 @@
 package loop
 
 // Disabled is a disabled loop
-//  |start>----------------------------------------end| <= on playthrough 1, whole sample plays
+//
+//	|start>----------------------------------------end| <= on playthrough 1, whole sample plays
 type Disabled struct{}
 
 // Enabled returns true if the loop is enabled

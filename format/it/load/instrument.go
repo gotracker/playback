@@ -8,8 +8,17 @@ import (
 	"math"
 
 	itfile "github.com/gotracker/goaudiofile/music/tracked/it"
+	"github.com/heucuva/optional"
+
+	"github.com/gotracker/playback/filter"
+	itNote "github.com/gotracker/playback/format/it/note"
+	itPanning "github.com/gotracker/playback/format/it/panning"
+	itVolume "github.com/gotracker/playback/format/it/volume"
 	"github.com/gotracker/playback/frequency"
+	"github.com/gotracker/playback/instrument"
 	"github.com/gotracker/playback/mixing/volume"
+	"github.com/gotracker/playback/note"
+	oscillatorImpl "github.com/gotracker/playback/oscillator"
 	"github.com/gotracker/playback/period"
 	"github.com/gotracker/playback/player/feature"
 	"github.com/gotracker/playback/util"
@@ -20,15 +29,6 @@ import (
 	"github.com/gotracker/playback/voice/pcm"
 	"github.com/gotracker/playback/voice/pitchpan"
 	"github.com/gotracker/playback/voice/types"
-	"github.com/heucuva/optional"
-
-	"github.com/gotracker/playback/filter"
-	itNote "github.com/gotracker/playback/format/it/note"
-	itPanning "github.com/gotracker/playback/format/it/panning"
-	itVolume "github.com/gotracker/playback/format/it/volume"
-	"github.com/gotracker/playback/instrument"
-	"github.com/gotracker/playback/note"
-	oscillatorImpl "github.com/gotracker/playback/oscillator"
 )
 
 type convInst[TPeriod period.Period] struct {
@@ -242,7 +242,16 @@ func convertVolEnvValue(v int8) itVolume.Volume {
 }
 
 func convertPanEnvValue(v int8) itPanning.Panning {
-	return itPanning.Panning(int(v) + 128)
+	// IT pan envelope nodes are stored as -32..+32 with 0 at center (ITTECH.TXT)
+	// Map to playback panning range 0..MaxPanning with center at DefaultPanning.
+	p := (int(v) + 32) * 4
+	if p < 0 {
+		p = 0
+	}
+	if p > int(itPanning.MaxPanning) {
+		p = int(itPanning.MaxPanning)
+	}
+	return itPanning.Panning(p)
 }
 
 func convertPitchEnvValue(v int8) types.PitchFiltValue {

@@ -67,8 +67,8 @@ func (s Song[TPeriod]) GetInstrument(instID int, st note.Semitone) (instrument.I
 }
 
 func (s Song[TPeriod]) GetRowRenderStringer(row song.Row, channels int, longFormat bool) render.RowStringer {
-	rt := render.NewRowText[channel.Data[TPeriod]](channels, longFormat)
-	rowData := make([]channel.Data[TPeriod], channels)
+	vm := render.NewRowViewModel[channel.Data[TPeriod]](channels)
+	rowData := vm.Channels
 	song.ForEachRowChannel(row, func(ch index.Channel, d song.ChannelData[itVolume.Volume]) (bool, error) {
 		if int(ch) >= channels || !s.ChannelSettings[ch].Enabled || s.ChannelSettings[ch].Muted {
 			return true, nil
@@ -76,8 +76,8 @@ func (s Song[TPeriod]) GetRowRenderStringer(row song.Row, channels int, longForm
 		rowData[ch] = d.(channel.Data[TPeriod])
 		return true, nil
 	})
-	rt.Channels = rowData
-	return rt
+	vm.Channels = rowData
+	return render.FormatRowText(vm, longFormat)
 }
 
 func (s Song[TPeriod]) ForEachChannel(enabledOnly bool, fn func(ch index.Channel) (bool, error)) error {

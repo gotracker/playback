@@ -60,7 +60,24 @@ func FromItPanning(pos itfile.PanValue) panning.Position {
 	if pos.IsDisabled() {
 		return panning.CenterAhead
 	}
-	return panning.MakeStereoPosition(pos.Value(), 0, 1)
+
+	if pos.IsSurround() {
+		return panning.SurroundPosition
+	}
+
+	// Don't use pos.Value() - it panics on out-of-range values
+	pv := pos &^ 128
+	var value float32
+	switch {
+	case pv <= 64:
+		value = float32(pv) / 64
+	case pv == 100:
+		value = 0.5
+	default:
+		value = 1
+	}
+
+	return panning.MakeStereoPosition(value, 0, 1)
 }
 
 // ToItPanning returns the it panning value for a radian panning position

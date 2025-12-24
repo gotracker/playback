@@ -9,10 +9,14 @@ import (
 type Playback interface {
 	Configure([]feature.Feature) error
 
-	// runs a single tick
-	//  if the onGenerate function was provided to the SetupSampler call,
-	//  then the generated output will be provided through it
+	// Tick is a convenience for Advance+Render; sampler must be non-nil.
 	Tick(s *sampler.Sampler) error
+
+	// Advance progresses sequencing without rendering audio.
+	Advance() error
+
+	// Render produces audio for the current state using the provided sampler.
+	Render(s *sampler.Sampler) error
 
 	GetNumOrders() int
 	CanOrderLoop() bool

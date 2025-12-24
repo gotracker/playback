@@ -4,10 +4,9 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/gotracker/playback/mixing/volume"
-
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/instrument"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/machine/settings"
 	"github.com/gotracker/playback/player/render"

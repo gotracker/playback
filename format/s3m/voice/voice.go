@@ -204,6 +204,7 @@ func (v *s3mVoice) Reset() error {
 
 func (v *s3mVoice) Stop() {
 	v.stopped = true
+	_ = v.AmpModulator.SetActive(false)
 }
 
 func (v s3mVoice) IsMuted() bool {

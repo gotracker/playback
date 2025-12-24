@@ -1,9 +1,10 @@
 package loop
 
 // Legacy is a legacy loop based on how some old protracker players worked
-//  |start>----------------------------------------end| <= on playthrough 1, whole sample plays
-//  |-------------|loopBegin>-----loopEnd|------------| <= only if looped and on playthrough 2+, only the part that loops plays
-//  |-------------|loopBegin>----------------------end| <= on playthrough 2+, the loop ends and playback continues to end, if !keyOn
+//
+//	|start>----------------------------------------end| <= on playthrough 1, whole sample plays
+//	|-------------|loopBegin>-----loopEnd|------------| <= only if looped and on playthrough 2+, only the part that loops plays
+//	|-------------|loopBegin>----------------------end| <= on playthrough 2+, the loop ends and playback continues to end, if !keyOn
 type Legacy struct {
 	Settings
 }

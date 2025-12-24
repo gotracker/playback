@@ -29,6 +29,13 @@ func (Format) ConvertFeaturesToSettings(us *settings.UserSettings, features []fe
 			us.Start.BPM = f.BPM
 		case feature.IgnoreUnknownEffect:
 			us.IgnoreUnknownEffect = f.Enabled
+		case feature.QuirksMode:
+			if prof, ok := f.Profile.Get(); ok {
+				us.Quirks.Profile.Set(prof)
+			}
+			if linear, ok := f.LinearSlides.Get(); ok {
+				us.Quirks.LinearSlidesOverride.Set(linear)
+			}
 		}
 	}
 	return nil

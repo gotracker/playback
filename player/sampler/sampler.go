@@ -6,7 +6,12 @@ import (
 	"github.com/gotracker/playback/output"
 )
 
-// Sampler is a container of sampler/mixer settings
+// Sampler is a container of sampler/mixer settings.
+//
+// Concurrency and ownership:
+// - OnGenerate runs synchronously during rendering; long-running callbacks will stall playback.
+// - Mixer should be configured before playback starts; do not mutate it while playback or callbacks run.
+// - External goroutines must not race with Sampler state (SampleRate, StereoSeparation, Mixer).
 type Sampler struct {
 	SampleRate       int
 	BaseClockRate    frequency.Frequency
@@ -32,6 +37,11 @@ func NewSampler(samplesPerSec, channels int, stereoSeparation float32, onGenerat
 // Mixer returns a pointer to the current mixer object
 func (s *Sampler) Mixer() *mixing.Mixer {
 	return &s.mixer
+}
+
+// MixerConfig returns a copy of the current mixer settings without exposing mutability.
+func (s *Sampler) MixerConfig() mixing.Mixer {
+	return s.mixer
 }
 
 // GetPanMixer returns the panning mixer that can generate a matrix

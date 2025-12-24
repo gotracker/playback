@@ -9,21 +9,21 @@ import (
 
 // ChannelState is the information needed to make an instrument play
 type ChannelState[TPeriod types.Period, TVolume types.Volume, TPanning types.Panning] struct {
-	Instrument instrument.InstrumentIntf
-	Period     TPeriod
-	vol        TVolume
-	Pos        sampling.Pos
-	Pan        TPanning
+	inst   instrument.InstrumentIntf
+	period TPeriod
+	vol    TVolume
+	pos    sampling.Pos
+	pan    TPanning
 }
 
 // Reset sets the render state to defaults
 func (s *ChannelState[TPeriod, TVolume, TPanning]) Reset() {
-	s.Instrument = nil
+	s.inst = nil
 	var emptyPeriod TPeriod
-	s.Period = emptyPeriod
-	s.Pos = sampling.Pos{}
+	s.period = emptyPeriod
+	s.pos = sampling.Pos{}
 	var emptyPan TPanning
-	s.Pan = emptyPan
+	s.pan = emptyPan
 }
 
 func (s *ChannelState[TPeriod, TVolume, TPanning]) GetVolume() TVolume {
@@ -38,5 +38,37 @@ func (s *ChannelState[TPeriod, TVolume, TPanning]) SetVolume(vol TVolume) {
 
 func (s *ChannelState[TPeriod, TVolume, TPanning]) NoteCut() {
 	var empty TPeriod
-	s.Period = empty
+	s.period = empty
+}
+
+func (s *ChannelState[TPeriod, TVolume, TPanning]) Instrument() instrument.InstrumentIntf {
+	return s.inst
+}
+
+func (s *ChannelState[TPeriod, TVolume, TPanning]) SetInstrument(inst instrument.InstrumentIntf) {
+	s.inst = inst
+}
+
+func (s *ChannelState[TPeriod, TVolume, TPanning]) Period() TPeriod {
+	return s.period
+}
+
+func (s *ChannelState[TPeriod, TVolume, TPanning]) SetPeriod(p TPeriod) {
+	s.period = p
+}
+
+func (s *ChannelState[TPeriod, TVolume, TPanning]) Pos() sampling.Pos {
+	return s.pos
+}
+
+func (s *ChannelState[TPeriod, TVolume, TPanning]) SetPos(pos sampling.Pos) {
+	s.pos = pos
+}
+
+func (s *ChannelState[TPeriod, TVolume, TPanning]) Pan() TPanning {
+	return s.pan
+}
+
+func (s *ChannelState[TPeriod, TVolume, TPanning]) SetPan(p TPanning) {
+	s.pan = p
 }

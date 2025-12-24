@@ -27,7 +27,7 @@ import (
 	"github.com/gotracker/playback/song"
 )
 
-func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
+func moduleHeaderToHeader(fh *itfile.ModuleHeader, linearSlides bool) (*layout.Header, error) {
 	if fh == nil {
 		return nil, errors.New("file header is nil")
 	}
@@ -37,7 +37,7 @@ func moduleHeaderToHeader(fh *itfile.ModuleHeader) (*layout.Header, error) {
 		InitialTempo:     int(fh.InitialTempo),
 		GlobalVolume:     itVolume.FineVolume(fh.GlobalVolume),
 		MixingVolume:     itVolume.FineVolume(fh.MixingVolume),
-		LinearFreqSlides: fh.Flags.IsLinearSlides(),
+		LinearFreqSlides: linearSlides,
 		InitialOrder:     0,
 	}
 	switch {
@@ -91,20 +91,19 @@ func convertItPattern[TPeriod period.Period](pkt itfile.PackedPattern, channels 
 }
 
 func convertItFileToSong(f *itfile.File, features []feature.Feature) (song.Data, error) {
-	if f.Head.Flags.IsLinearSlides() {
-		return convertItFileToTypedSong[period.Linear](f, features)
-	} else {
-		return convertItFileToTypedSong[period.Amiga](f, features)
+	linearSlides := common.ResolveLinearSlides(f.Head.Flags.IsLinearSlides(), features)
+	if linearSlides {
+		return convertItFileToTypedSong[period.Linear](f, features, linearSlides)
 	}
+	return convertItFileToTypedSong[period.Amiga](f, features, linearSlides)
 }
 
-func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []feature.Feature) (*layout.Song[TPeriod], error) {
-	h, err := moduleHeaderToHeader(&f.Head)
+func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []feature.Feature, linearFrequencySlides bool) (*layout.Song[TPeriod], error) {
+	h, err := moduleHeaderToHeader(&f.Head, linearFrequencySlides)
 	if err != nil {
 		return nil, err
 	}
 
-	linearFrequencySlides := f.Head.Flags.IsLinearSlides()
 	oldEffectMode := f.Head.Flags.IsOldEffects()
 	efgLinkMode := f.Head.Flags.IsEFGLinking()
 	stereoMode := f.Head.Flags.IsStereo()
@@ -199,14 +198,18 @@ func convertItFileToTypedSong[TPeriod period.Period](f *itfile.File, features []
 
 	channels := make([]layout.ChannelSetting, lastEnabledChannel+1)
 	for chNum := range channels {
+		panByte := f.Head.ChannelPan[chNum]
+		disabled := (panByte & 0x80) != 0
+		pan := itPanning.Panning(panByte &^ 0x80)
+
 		cs := layout.ChannelSetting{
 			OutputChannelNum: chNum,
 			Enabled:          true,
-			Muted:            false,
+			Muted:            disabled,
 			InitialVolume:    itVolume.Volume(itVolume.DefaultItVolume),
 			ChannelVolume:    min(itVolume.FineVolume(f.Head.ChannelVol[chNum]*2), itVolume.MaxItFineVolume),
 			PanEnabled:       stereoMode,
-			InitialPanning:   itPanning.Panning(f.Head.ChannelPan[chNum]),
+			InitialPanning:   pan,
 			Memory: channel.Memory{
 				Shared: &sharedMem,
 			},

@@ -3,11 +3,12 @@ package component
 import (
 	"fmt"
 
+	"github.com/heucuva/optional"
+
 	"github.com/gotracker/playback/index"
 	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/tracing"
 	"github.com/gotracker/playback/voice/types"
-	"github.com/heucuva/optional"
 )
 
 // AmpModulator is an amplitude (volume) modulator

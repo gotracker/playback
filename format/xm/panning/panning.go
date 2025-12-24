@@ -62,5 +62,12 @@ func PanningFromXm(pos Panning) panning.Position {
 
 // PanningToXm returns the xm panning value for a radian panning position
 func PanningToXm(pan panning.Position) uint8 {
-	return uint8(panning.FromStereoPosition(pan, 0, 0xFF))
+	val := math.Round(float64(panning.FromStereoPosition(pan, 0, 0xFF)))
+	switch {
+	case val < 0:
+		val = 0
+	case val > 0xFF:
+		val = 0xFF
+	}
+	return uint8(val)
 }

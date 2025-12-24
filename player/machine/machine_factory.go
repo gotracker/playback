@@ -5,9 +5,9 @@ import (
 	"reflect"
 
 	"github.com/gotracker/opl2"
-	"github.com/gotracker/playback/mixing/volume"
 
 	"github.com/gotracker/playback/index"
+	"github.com/gotracker/playback/mixing/volume"
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/player/machine/settings"
 	"github.com/gotracker/playback/player/render"
@@ -64,6 +64,11 @@ func RegisterMachine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volum
 
 		m.songData = songData
 		m.us = us
+
+		// Apply quirks overrides (user profile or flag overrides)
+		msCopy := *m.ms
+		msCopy.Quirks = resolveQuirks(msCopy.Quirks, us)
+		m.ms = &msCopy
 
 		order := songData.GetInitialOrder()
 		if o, set := us.Start.Order.Get(); set {

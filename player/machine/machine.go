@@ -46,6 +46,8 @@ type MachineTicker interface {
 	MachineInfo
 
 	Tick(s *sampler.Sampler) error
+	Advance() error
+	Render(s *sampler.Sampler) error
 }
 
 type Machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPanning Panning] interface {
@@ -134,11 +136,12 @@ type machine[TPeriod Period, TGlobalVolume, TMixingVolume, TVolume Volume, TPann
 	ticker ticker
 	age    int
 
-	songData    song.Data
-	ms          *settings.MachineSettings[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
-	us          settings.UserSettings
-	opl2        *opl2.Chip
-	opl2Enabled bool
+	songData       song.Data
+	ms             *settings.MachineSettings[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]
+	us             settings.UserSettings
+	opl2           *opl2.Chip
+	opl2Enabled    bool
+	hardwareSynths []hardwareSynth
 
 	rowStringer render.RowStringer
 	// 1:1 with channels
@@ -232,7 +235,7 @@ func (m *machine[TPeriod, TGlobalVolume, TMixingVolume, TVolume, TPanning]) upda
 		m.channels[i].instructions = nil
 	}
 
-	numRowChannels := song.GetRowNumChannels[TVolume](rowData)
+	numRowChannels := song.GetRowNumChannels(rowData)
 	rowChannels := min(m.songData.GetNumChannels(), numRowChannels)
 	return song.ForEachRowChannel(rowData, func(ch index.Channel, d song.ChannelData[TVolume]) (bool, error) {
 		if int(ch) >= rowChannels {

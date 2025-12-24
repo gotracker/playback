@@ -11,7 +11,7 @@ import (
 
 // PortaVolumeSlide defines a portamento-to-note combined with a volume slide effect
 type PortaVolumeSlide struct { // 'L'
-	playback.CombinedEffect[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning, *Memory, Data]
+	playback.CombinedEffect[period.Amiga, s3mVolume.Volume, s3mVolume.FineVolume, s3mVolume.Volume, s3mPanning.Panning]
 }
 
 // NewPortaVolumeSlide creates a new PortaVolumeSlide object

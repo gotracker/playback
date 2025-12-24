@@ -1,9 +1,10 @@
 package loop
 
 // Normal is a normal loop
-//  |start>-----------------------loopEnd|------------| <= on playthrough 1, whole sample plays
-//  |-------------|loopBegin>-----loopEnd|------------| <= only if looped and on playthrough 2+, only the part that loops plays
-//  |-------------|loopBegin>----------------------end| <= on playthrough 2+, the loop ends and playback continues to end, if !keyOn
+//
+//	|start>-----------------------loopEnd|------------| <= on playthrough 1, whole sample plays
+//	|-------------|loopBegin>-----loopEnd|------------| <= only if looped and on playthrough 2+, only the part that loops plays
+//	|-------------|loopBegin>----------------------end| <= on playthrough 2+, the loop ends and playback continues to end, if !keyOn
 type Normal struct {
 	Settings
 }
@@ -29,10 +30,7 @@ func (l *Normal) CalcPos(pos int, length int) (int, bool) {
 
 	loopLen := l.Length()
 	if loopLen < 0 {
-		if pos < length {
-			return pos, false
-		}
-		return length, false
+		return max(pos, length), false
 	} else if loopLen == 0 {
 		return l.Begin, true
 	}

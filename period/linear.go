@@ -3,9 +3,10 @@ package period
 import (
 	"fmt"
 
+	"github.com/heucuva/comparison"
+
 	"github.com/gotracker/playback/note"
 	"github.com/gotracker/playback/util"
-	"github.com/heucuva/comparison"
 )
 
 // Linear is a linear period, based on semitone and finetune values
